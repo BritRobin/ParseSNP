@@ -107,7 +107,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_ )
 
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                         && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && rdindex < 256)
+                         && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
                     {
                         rdindex++;
                     }
@@ -115,7 +115,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_ )
                     rdindex++;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && rdindex < 256)
+                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
                     {
                         rdindex++;
                     }
