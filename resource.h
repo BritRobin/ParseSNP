@@ -29,12 +29,18 @@
 #define IDC_STEXT                       1013
 #define IDC_SOURCE                      1014
 #define IDC_COPYCLIP                    1015
-#define IDC_BUTTON2                     1016
 #define IDC_COPYPROJ                    1016
+#define IDC_STATIC_ASC                  1017
+#define IDC_STATIC_TRANS                1018
+#define IDC_COUNT_TRANS                 1019
+#define IDC_STATIC_TRANS2               1020
+#define IDC_COUNT_TRANS2                1021
+#define IDC_COUNT_UNTRANS               1021
 #define ID_Menu                         32771
 #define ID_OPENFILE                     32772
 #define ID_FILE_OPEN23TOMETXTFILE       32773
 #define ID_OPEN23                       32774
+#define ID_FILE_OPENFTDNA               32775
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -43,8 +49,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        133
-#define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1016
+#define _APS_NEXT_COMMAND_VALUE         32776
+#define _APS_NEXT_CONTROL_VALUE         1019
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

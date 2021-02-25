@@ -4,3 +4,4 @@
 
 	
 HWND aDiag;
+void ScreenUpdate(int unsigned x, PWSTR FilePath);

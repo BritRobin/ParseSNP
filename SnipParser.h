@@ -13,13 +13,19 @@ class SnipParser
  
 public:
 	std::string fi_;
-	struct ST;
 	int SNPCount(void);
 	bool Ancestory(wchar_t* fi_);
+	bool FTDNA(wchar_t* fi_);
+	bool f23andMe(wchar_t* fi_);
+	void FConvert(void);  //<- One off code generator
+	unsigned int IllumTransVG(void);
+	unsigned int IllumUntransVG(void);
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 private:
-	int unsigned loadCount_= 0;
-
+	struct ST;
+	unsigned int loadCount_ = 0;
+	unsigned int illuminaU_ = 0;
+	unsigned int illuminaT_ = 0;
 };
 
 #endif--------------
