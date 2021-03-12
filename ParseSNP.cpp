@@ -148,10 +148,10 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         {
         case IDC_BUTTON_SEARCH:
         {
-           TCHAR buffer[10] = { 0 };
+           TCHAR buffer[15] = { 0 };
 
            
-              if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, 10))
+              if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, 15))
                {
             
                   rs_number = _wtoi(buffer);
@@ -305,9 +305,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     //Unpadate ramining disgarded VG code lines
                                     s = std::to_string(untranslated);
                                     lp = A2W_EX(s.c_str(), s.length());
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_UNTRANS), lp);
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
-                                    ScreenUpdate(count, pszFilePath);
+                                    ScreenUpdate(hWnd, count, pszFilePath);
                                 }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -337,9 +337,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
-
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -369,7 +366,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 unsigned int count;
                                 unsigned int tranlated;
                                 unsigned int untranslated;
-
                                if(x.FTDNA(pszFilePath))
                                { 
                                 count = x.SNPCount();
@@ -383,9 +379,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 //Unpadate ramining disgarded VG code lines
                                 s = std::to_string(untranslated);
                                 lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_UNTRANS), lp);
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                 //Update count and path per normal
-                                ScreenUpdate(count, pszFilePath);
+                                
+                                ScreenUpdate(hWnd, count, pszFilePath);
                                }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -403,8 +400,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
        
         case ID_OPENFILE:
         {
-            x.FConvert();
-
+            //TEST Code
+            //x.FConvert();
+            //TEST Code
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -445,14 +443,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             if (SUCCEEDED(hr))
                             {
                                 int unsigned count;
-                                if(x.Ancestory(pszFilePath))
-                                { 
-                                LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_UNTRANS), lp);
-                                //Update count and path per normal
-                                count = x.SNPCount();
-                                ScreenUpdate(count, pszFilePath);
+                                if (x.Ancestory(pszFilePath))
+                                {
+                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    //Update count and path per normal
+                                    count = x.SNPCount();
+                                    ScreenUpdate(hWnd, count, pszFilePath);
                                 }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -465,8 +463,67 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
             }
+         break;
+        }
+        
+      
+        case ID_FILE_EXPORT:
+        {
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileWrite;
+
+                // Create the FileOpenDialog object.
+            /*    hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL,
+                    IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));*/
+                  hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, 
+                     ::IID_IFileSaveDialog,  reinterpret_cast<void**>(&pFileWrite) );
+
+                if (SUCCEEDED(hr))
+                {
+
+                    LPCWSTR a = L"Text Files";
+                    LPCWSTR b = L"All Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.txt"},
+                        {b, L"*.*" },
+                    };
+                    //set file type options
+                    hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                    // Show the Open dialog box.
+                    hr = pFileWrite->Show(NULL);
+
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileWrite->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath;
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                               x.AncestoryWriter((pszFilePath));
+
+                               CoTaskMemFree(pszFilePath);
+                               pItem->Release();
+                            }
+                        }
+                    }
+                    pFileWrite->Release();
+                }
+                CoUninitialize();
+            }
             break;
         }
+            break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), aDiag, About);
             break;
@@ -476,8 +533,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
-    }
-     break;
+     } 
+     break; 
 
     case WM_PAINT:
     {
@@ -502,7 +559,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 LPWSTR lp = A2W_EX(s.c_str(), s.length());
                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_UNTRANS), lp);
+                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
             }
             //End Based off Drake Wu - MSFT code on Stackoverflow
         }
@@ -520,7 +577,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
  }
 //}
-void ScreenUpdate(int unsigned x, PWSTR FilePath)
+void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath)
 {
     if (x > 0)
     {//Data loaded
@@ -531,10 +588,11 @@ void ScreenUpdate(int unsigned x, PWSTR FilePath)
         EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), TRUE);
         EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH), TRUE);
         //Set a limit on rs field
-        SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 8, 0);
+        SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
         //Show source path
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
-       }
+        EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
+        }
           else {
                  std::string s = "0";
                  USES_CONVERSION_EX;
@@ -543,10 +601,10 @@ void ScreenUpdate(int unsigned x, PWSTR FilePath)
                  EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), FALSE);
                  EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH),   FALSE);
                  //Set a limit on rs field
-                  SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 8, 0);
+                  SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
                   //Show source path
-                  SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL);
-                  
+                  SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL);  
+                  EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_GRAYED);  //ensure export is deactivated
                  }
     //Covert RS number for display
     std::string s = "";
