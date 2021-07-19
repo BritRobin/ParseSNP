@@ -7,12 +7,12 @@
 #include <shobjidl_core.h>
 #include <string>
 #include <atlstr.h>
-//#include <wingdi.h>
 #include <windows.h>
 #include <tchar.h>
-//trmp
 #include <stdlib.h>
 #include <WinUser.h>
+
+
 
 #define MAX_LOADSTRING 100
 
@@ -21,6 +21,7 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+
 //Global class instance
 SnipParser x;
 //START:Global returned values
@@ -28,6 +29,7 @@ int rs_number = 0; //RS Number
 int position = 0; //relative position
 char chromosome[4] = { NULL,NULL,NULL,NULL };//chromosome number
 char allele1 = NULL, allele2 = NULL;
+wchar_t global_s[256];
 //END:Global returned values
 
 // Forward declarations of functions included in this code module:
@@ -35,7 +37,9 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK NotF(HWND, UINT, WPARAM, LPARAM);
+HRESULT OnSize(HWND hwndTab, LPARAM lParam);
+BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
+HWND DoCreateTabControl(HWND hwndParent);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -88,8 +92,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
-
+    wcex.cbSize         = sizeof(WNDCLASSEX);
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
@@ -97,9 +100,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PARSESNP));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-  
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
- 
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_PARSESNP);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -121,7 +122,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   const int width = 985;
+   const int width = 1000;
    const int height = 700;// was CW_USEDEFAULT
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, width, height, nullptr, nullptr, hInstance, nullptr);
@@ -143,6 +144,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG:
         return TRUE;
+  
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -150,7 +152,6 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         {
            TCHAR buffer[15] = { 0 };
 
-           
               if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, 15))
                {
             
@@ -185,12 +186,27 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                   }
                   else
                   { //Not Found dialog
-                      DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOGNOTF), aDiag, NotF);
+                 
                   }
                }
                return TRUE;
         }
-       
+        case IDC_COPYPROJ:
+        {
+         std::string s = " Chromosome: " + chromosome + "RS" + std::to_string(rs_number) + " Postion: " + std::to_string(position) + " Alleles: " + allele1 + "  " + allele2 + "";
+         std::wstring str2(s.length(), L' '); // Make room for characters
+
+         // Copy string to wstring.
+         std::copy(s.begin(), s.end(), str2.begin());
+         
+         wcsncpy_s(global_s,  str2.c_str(),255);
+            SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
+
+            //trigger WM_PAINT              
+         InvalidateRect(aDiag, NULL, TRUE);
+         UpdateWindow(aDiag);
+            break;
+        }
         
         case IDC_COPYCLIP:
         {
@@ -215,7 +231,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         
         default:
-            return FALSE;
+            return DefWindowProc(hwnd, Message, wParam, lParam);
         }
         return TRUE;
     }
@@ -237,13 +253,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 
         // other commands
-
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId)
         {
+          
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
 
@@ -259,9 +275,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
-
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -291,7 +304,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 unsigned int count;
                                 unsigned int tranlated;
                                 unsigned int untranslated;
-
                                 if (x.f23andMe(pszFilePath))
                                 {
                                     count = x.SNPCount();
@@ -363,9 +375,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
-                                unsigned int count;
-                                unsigned int tranlated;
-                                unsigned int untranslated;
+                               unsigned int count;
+                               unsigned int tranlated;
+                               unsigned int untranslated;
                                if(x.FTDNA(pszFilePath))
                                { 
                                 count = x.SNPCount();
@@ -476,10 +488,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileWrite;
 
                 // Create the FileOpenDialog object.
-            /*    hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL,
-                    IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));*/
-                  hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, 
-                     ::IID_IFileSaveDialog,  reinterpret_cast<void**>(&pFileWrite) );
+                hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog,  reinterpret_cast<void**>(&pFileWrite) );
 
                 if (SUCCEEDED(hr))
                 {
@@ -510,6 +519,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
+                               
                                x.AncestoryWriter((pszFilePath));
 
                                CoTaskMemFree(pszFilePath);
@@ -524,6 +534,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
             break;
+
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), aDiag, About);
             break;
@@ -535,7 +546,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
      } 
      break; 
-
+    case WM_SIZE:
+            InvalidateRect(aDiag, NULL, TRUE);
+            UpdateWindow(aDiag);
+            break;
+  
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -560,13 +575,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-            }
+                //Tab_Controls = DoCreateTabControl(aDiag);
+               }
             //End Based off Drake Wu - MSFT code on Stackoverflow
         }
         // TODO: Add any drawing code that uses hdc here...
         EndPaint(hWnd, &ps);
     }
-    break;
+        break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -646,26 +662,104 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-// Message handler for about box.
-INT_PTR CALLBACK NotF(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+
+
+////// TEMP TEST //////
+// Creates a tab control, sized to fit the specified parent window's client
+//   area, and adds some tabs. 
+// Returns the handle to the tab control. 
+// hwndParent - parent window (the application's main window). 
+// 
+////// TEMP TEST ///////*
+/*
+HWND DoCreateTabControl(HWND hwndParent)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    //Because we have created a form dialog after the menu
-    ShowWindow(hDlg, 5);
+    RECT rcClient;
+    INITCOMMONCONTROLSEX icex;
+    
+    TCITEM tie;
+    TCHAR achTemp[256];  // Temporary buffer for strings.
 
-    switch (message)
+
+   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+   icex.dwICC = ICC_TAB_CLASSES;
+   InitCommonControlsEx(&icex);
+
+    // Get the dimensions of the parent window's client area, and 
+    // create a tab control child window of that size. Note that hInst
+    // is the global instance handle.
+  
+
+    GetClientRect(hwndParent, &rcClient);
+   //position:  rect.left, rect.top
+// Messy and I do not know why it works!!!
+   long lTop, lBotton, lRight, lLeft;
+   lTop = 176;
+   lBotton = rcClient.bottom - (long)200;
+   lRight = rcClient.right - (long)128;
+   lLeft = 10;
+   //WS_EX_CONTROLPARENT, WC_TABCONTROL
+  //hwndTab = CreateWindow( WC_TABCONTROL, L"", WS_EX_CONTROLPARENT, | WS_CLIPSIBLINGS | WS_VISIBLE, lLeft, lTop, lRight, lBotton, hwndParent, nullptr, hInst, nullptr);
+   hwndTab = CreateWindowEx(WS_EX_CONTROLPARENT, WC_TABCONTROL, 0, WS_VISIBLE | WS_CHILD, lLeft, lTop, lRight, lBotton, hwndParent, HMENU(600), 0, 0);
+
+    if (hwndTab == NULL)
     {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
+        return NULL;
     }
-    return (INT_PTR)FALSE;
+
+    // Add tabs for each day of the week. 
+    tie.mask = TCIF_TEXT | TCIF_IMAGE;
+    tie.iImage = -1;
+    tie.pszText = achTemp;
+
+    //TAB 1
+
+    LoadStringW(hInst, IDS_PROJECTAB, achTemp, sizeof(achTemp) / sizeof(achTemp[0]));
+
+
+    if (TabCtrl_InsertItem(hwndTab, IDS_PROJECTAB, &tie) == -1)
+    {
+        DestroyWindow(hwndTab);
+        return NULL;
+    }
+
+   
+
+   hwndTab_1 = CreateWindowW(WC_STATIC,
+        L"",
+       WS_CHILD | WS_VISIBLE | WS_BORDER,
+        20, 20,
+        lRight - 40,
+        lBotton - 40,
+        hwndTab,
+        NULL,
+        hInst,
+        NULL);
+    //TAB 2
+
+    LoadStringW(hInst, IDS_MULTITAB, achTemp, sizeof(achTemp) / sizeof(achTemp[0]));
+    if (TabCtrl_InsertItem(hwndTab, IDS_MULTITAB, &tie) == -1)
+    {
+        DestroyWindow(hwndTab);
+        return NULL;
+    }
+
+    return hwndTab;
 }
-//test
+
+// Creates a child window (a static control) to occupy the tab control's 
+//   display area. 
+// Returns the handle to the static control. 
+// hwndTab - handle of the tab control. 
+// 
+HWND DoCreateDisplayWindow(HWND hwndTab)
+{
+    HWND hwndStatic = CreateWindow(WC_STATIC, L"",
+        WS_CHILD | WS_VISIBLE | WS_BORDER,
+        100, 100, 100, 100,        // Position and dimensions; example only.
+        hwndTab, NULL, hInst,    // hInst is the global instance handle
+        NULL);
+    return hwndStatic;
+}
+
+*/
