@@ -193,19 +193,28 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         case IDC_COPYPROJ:
         {
-         std::string s = " Chromosome: " + chromosome + "RS" + std::to_string(rs_number) + " Postion: " + std::to_string(position) + " Alleles: " + allele1 + "  " + allele2 + "";
+         int lindex = -1;
+         int lcount = 0;
+        //Character allign chr numver and letters
+         std::string chr_s= (std::string)(chromosome + NULL);
+
+         if (atoi(chromosome) < 9 && chr_s != "MT") chr_s = " " + chr_s;
+
+         std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Postion: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
          std::wstring str2(s.length(), L' '); // Make room for characters
 
          // Copy string to wstring.
          std::copy(s.begin(), s.end(), str2.begin());
-         
          wcsncpy_s(global_s,  str2.c_str(),255);
-            SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
+
+         lcount = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_GETCOUNT, 0, 0);
+         if(lcount > 0)   lindex = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
+         if(lindex==-1)  SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
 
             //trigger WM_PAINT              
          InvalidateRect(aDiag, NULL, TRUE);
          UpdateWindow(aDiag);
-            break;
+         break;
         }
         
         case IDC_COPYCLIP:
