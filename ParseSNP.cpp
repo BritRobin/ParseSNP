@@ -137,6 +137,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    return TRUE;
 }
+
 //Form Control Message Handler
 INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
@@ -144,10 +145,28 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG:
         return TRUE;
-  
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
+
+        case IDC_LIST3:
+        {
+
+            switch (HIWORD(wParam))
+            { 
+             //as an enry been double clicked
+             case LBN_DBLCLK:
+             int lcount;
+             int gselected;
+             HWND plst=GetDlgItem(aDiag, IDC_LIST3);
+             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+             gselected = SendMessage(plst, LB_GETCOUNT, 0, 0);
+             int  ynret = MessageBoxW(NULL, L"Delete selected entry?", L"Delete",0x00010001L);
+             break;
+             //case LBN_SELCHANGE:
+            }
+            break;
+        }
         case IDC_BUTTON_SEARCH:
         {
            TCHAR buffer[15] = { 0 };
@@ -260,15 +279,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-
-        // other commands
+         // other commands
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId)
         {
-          
+
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
 
@@ -559,7 +577,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             InvalidateRect(aDiag, NULL, TRUE);
             UpdateWindow(aDiag);
             break;
-  
+
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -670,105 +688,3 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
-
-
-////// TEMP TEST //////
-// Creates a tab control, sized to fit the specified parent window's client
-//   area, and adds some tabs. 
-// Returns the handle to the tab control. 
-// hwndParent - parent window (the application's main window). 
-// 
-////// TEMP TEST ///////*
-/*
-HWND DoCreateTabControl(HWND hwndParent)
-{
-    RECT rcClient;
-    INITCOMMONCONTROLSEX icex;
-    
-    TCITEM tie;
-    TCHAR achTemp[256];  // Temporary buffer for strings.
-
-
-   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-   icex.dwICC = ICC_TAB_CLASSES;
-   InitCommonControlsEx(&icex);
-
-    // Get the dimensions of the parent window's client area, and 
-    // create a tab control child window of that size. Note that hInst
-    // is the global instance handle.
-  
-
-    GetClientRect(hwndParent, &rcClient);
-   //position:  rect.left, rect.top
-// Messy and I do not know why it works!!!
-   long lTop, lBotton, lRight, lLeft;
-   lTop = 176;
-   lBotton = rcClient.bottom - (long)200;
-   lRight = rcClient.right - (long)128;
-   lLeft = 10;
-   //WS_EX_CONTROLPARENT, WC_TABCONTROL
-  //hwndTab = CreateWindow( WC_TABCONTROL, L"", WS_EX_CONTROLPARENT, | WS_CLIPSIBLINGS | WS_VISIBLE, lLeft, lTop, lRight, lBotton, hwndParent, nullptr, hInst, nullptr);
-   hwndTab = CreateWindowEx(WS_EX_CONTROLPARENT, WC_TABCONTROL, 0, WS_VISIBLE | WS_CHILD, lLeft, lTop, lRight, lBotton, hwndParent, HMENU(600), 0, 0);
-
-    if (hwndTab == NULL)
-    {
-        return NULL;
-    }
-
-    // Add tabs for each day of the week. 
-    tie.mask = TCIF_TEXT | TCIF_IMAGE;
-    tie.iImage = -1;
-    tie.pszText = achTemp;
-
-    //TAB 1
-
-    LoadStringW(hInst, IDS_PROJECTAB, achTemp, sizeof(achTemp) / sizeof(achTemp[0]));
-
-
-    if (TabCtrl_InsertItem(hwndTab, IDS_PROJECTAB, &tie) == -1)
-    {
-        DestroyWindow(hwndTab);
-        return NULL;
-    }
-
-   
-
-   hwndTab_1 = CreateWindowW(WC_STATIC,
-        L"",
-       WS_CHILD | WS_VISIBLE | WS_BORDER,
-        20, 20,
-        lRight - 40,
-        lBotton - 40,
-        hwndTab,
-        NULL,
-        hInst,
-        NULL);
-    //TAB 2
-
-    LoadStringW(hInst, IDS_MULTITAB, achTemp, sizeof(achTemp) / sizeof(achTemp[0]));
-    if (TabCtrl_InsertItem(hwndTab, IDS_MULTITAB, &tie) == -1)
-    {
-        DestroyWindow(hwndTab);
-        return NULL;
-    }
-
-    return hwndTab;
-}
-
-// Creates a child window (a static control) to occupy the tab control's 
-//   display area. 
-// Returns the handle to the static control. 
-// hwndTab - handle of the tab control. 
-// 
-HWND DoCreateDisplayWindow(HWND hwndTab)
-{
-    HWND hwndStatic = CreateWindow(WC_STATIC, L"",
-        WS_CHILD | WS_VISIBLE | WS_BORDER,
-        100, 100, 100, 100,        // Position and dimensions; example only.
-        hwndTab, NULL, hInst,    // hInst is the global instance handle
-        NULL);
-    return hwndStatic;
-}
-
-*/
