@@ -10,7 +10,8 @@
 #include <windows.h>
 #include <tchar.h>
 #include <stdlib.h>
-#include <WinUser.h>
+#include <Winuser.h>
+
 
 
 
@@ -156,12 +157,22 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             { 
              //as an enry been double clicked
              case LBN_DBLCLK:
-             int lcount;
+             int signed lcount = 0;
              int gselected;
-             HWND plst=GetDlgItem(aDiag, IDC_LIST3);
+             HWND plst = GetDlgItem(aDiag, IDC_LIST3);
              lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-             gselected = SendMessage(plst, LB_GETCOUNT, 0, 0);
-             int  ynret = MessageBoxW(NULL, L"Delete selected entry?", L"Delete",0x00010001L);
+             if(lcount > 0 && lcount != -1)//Ensure on left double click there are entries to delete!
+             { 
+              gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
+              int  ynret = MessageBoxW(hwnd, L"Delete Selected Entry?", L"Delete", 0x00010001L); //looses focus ... :(
+              if (ynret == 1) {
+                 //Delete entry an redraw to update
+                 SendMessage(GetDlgItem(hwnd, IDC_LIST3), LB_DELETESTRING, gselected, 0);
+                 //trigger WM_PAINT              
+                 InvalidateRect(aDiag, NULL, TRUE);
+                 UpdateWindow(aDiag);
+              }
+             }
              break;
              //case LBN_SELCHANGE:
             }
