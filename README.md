@@ -1,10 +1,14 @@
 # ParseSNP
-Alpha code work in progress SNP viewer
+This program is a work in progress...
+The Project was build in Visual Studio 2022, and because of the C++ 17 settings you MUST load the Solution once you open the project ie: doulbe click the SLN file.
+Creating a Project will prompt for a project name this must be alphanumeic only. It in turn will become a folder under
+C:\Users\<username>\Documents\ParseSNP\Projects
+The current DNA file will be copied there and pjoject entries saved.
+To load a project go into that directory and load the ProjectManifest.ptxt
+Once a project is created only the ProjectManifest.ptxt file will be updated when you save.
 
-This program is primarily designed to allow users to load DNA SNP (single nucleotide polymorphisms) from Ancestory type raw files 23tome etc. and allow search by RSID number. It will also translate some of the array specific codes to RSIDs. 
+To delete a project entry double click it and you will be prompted to delete?
 
-Currently, the code is very much a work in progress and whilst it may work it also may be buggy and is incomplete.
+Have fune, remember it's Beta and I may not be online for a bit....
 
-Good luck have fun
-
-Robin
+thx Robin
