@@ -28,7 +28,7 @@ public:
 private:
 	struct ST;
 	wchar_t fileLoaded_[256];
-	std::string Pversion_ = "0.4 alpha"; //Progran Version
+	std::string Pversion_ = "0.1 Beta"; //Progran Version
 	unsigned int loadCount_ = 0;
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;

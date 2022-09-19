@@ -32,7 +32,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             loadCount_ = 0;
             snp.clear();
             snp.resize(10430639);
-            //END: reset loadcount_ and vecotr for next file for next file
+            //END: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_,fi_); //store latest filename
             while (!fs.eof())
             {
@@ -2073,7 +2073,7 @@ std::string  SnipParser::PVer(void)
 {
     return  Pversion_;
 }
-/*Major Work in porgrss*/
+/*Major Work in porgress*/
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
      std::fstream  fs;
