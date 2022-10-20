@@ -1,0 +1,2 @@
+﻿C:\Users\Robin\source\repos\BritRobin\ParseSNP\ParseSNP.vcxproj : warning  : The build tools for v143 cannot be found. Install v143 to build using the v143 build tools.
+

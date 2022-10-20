@@ -1,0 +1,10 @@
+Version Beta 0.1b Initial release
+Fixed chr number field to diabled true
+Adding Pathogenics file function
+
+
+
+
+
+
+Version Beta 0.1a Initial release

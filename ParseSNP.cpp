@@ -46,6 +46,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ProjectDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Deletemsg(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
@@ -643,7 +644,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     USES_CONVERSION_EX;
                                     LPWSTR lp = A2W_EX(s.c_str(), s.length());
                                     SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                    //Unpadate ramining disgarded VG code lines
+                                    //Update remaining disgarded VG code lines
                                     s = std::to_string(untranslated);
                                     lp = A2W_EX(s.c_str(), s.length());
                                     SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
@@ -654,6 +655,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -734,7 +736,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     loadedFiletype = 2;
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED); 
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -809,6 +812,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -957,6 +961,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
             break;
+        case ID_PATHOGENICS_CREATE: {
+            DialogBox(hInst, MAKEINTRESOURCE(136), aDiag, Pathogen);
+        }
+            break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), aDiag, About);
             break;
@@ -1102,7 +1110,34 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     }
     return (INT_PTR)FALSE;
 }
+INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    //Because we have created a form dialog after the menu
+    ShowWindow(hDlg, 5);
 
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        else
+            if (LOWORD(wParam) == IDCANCEL)
+            {
+                EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)FALSE;
+            }
+        break;
+
+    }
+    return (INT_PTR)FALSE;
+}
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1126,11 +1161,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-//Delte box
-INT_PTR CALLBACK Deletemsg (HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+//Delete box
+INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
-    //Because we have crEated a form dialog after the menu
+    //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
 
     switch (message)
@@ -1139,18 +1174,88 @@ INT_PTR CALLBACK Deletemsg (HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK)
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId)
         {
+
+        case IDCANCEL://fall tho to exit I'm sure this style is frowd upon
+        case IDC_EXITP: { 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
+            }
+        case IDC_ENTER: {//The main code, 
+            TCHAR buffer[260] = { 0 };
+            std::string s_rsid,s_chr,s_gene, s_riskalelle, s_oddsratio;
+            //get rsid number
+           if (GetWindowText(GetDlgItem(hDlg,IDC_RSIDP), buffer, 15)) 
+            {
+               std::string s;
+               //the dialog only allows numbers to be entered
+               CT2CA pszConvertedAnsiString(buffer);
+               s += pszConvertedAnsiString;
+               s_rsid = "RS" + s;
+
+            } else  break; //mandatory field
+
+           //Get chromosone number
+           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))
+            {
+               std::string s;
+               CT2CA pszConvertedAnsiString(buffer);
+               s += pszConvertedAnsiString;
+
+               if ((strtod(s.data(), NULL) > 0 && strtod(s.data(), NULL) < 23) || s == "X" || s == "Y" || s == "MT") {
+                   s_chr = s;
+               }
+               else break; //mandatory field
+           }
+               //Get Gene optional
+           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))
+            {
+               CT2CA pszConvertedAnsiString(buffer);
+               s_gene += pszConvertedAnsiString;
+            }
+               
+           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
+            {
+               std::string s;
+               CT2CA pszConvertedAnsiString(buffer);
+               s += pszConvertedAnsiString;
+               if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
+               s_riskalelle = s;
+            }
+
+           //Get Odds Ratio optional but should be inclued if available
+           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
+            {
+              CT2CA pszConvertedAnsiString(buffer);
+              s_oddsratio += pszConvertedAnsiString;
+            }
+
+           std::string s;
+           s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskalelle + "  " + s_oddsratio;
+           std::wstring str2(s.length(), L' '); // Make room for characters
+           int lcount,lindex=-1;
+
+
+         // Copy string to wstring.
+           std::copy(s.begin(), s.end(), str2.begin());
+           wcsncpy_s(global_s, str2.c_str(), 255);
+           lcount = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_GETCOUNT, 0, 0);
+           if (lcount > 0)   lindex = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
+           if (lindex == -1)  SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_ADDSTRING, 0, (LPARAM)global_s);
+           
         }
-        else
-        if (LOWORD(wParam) == IDCANCEL)
-        {
-        EndDialog(hDlg, LOWORD(wParam));
-        return (INT_PTR)FALSE;
+
+
+
+
         }
+
         break;
+
+
 
     }
     return (INT_PTR)FALSE;
