@@ -49,6 +49,9 @@
 #define IDC_EXITP                       1039
 #define IDC_RSIDP                       1040
 #define IDC_ENTER                       1041
+#define IDC_NCBIBuild                   1042
+#define IDC_BUILD                       1043
+#define IDC_NCBIref                     1044
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -68,7 +71,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        137
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1042
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

@@ -410,7 +410,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                             //Update count and path per normal
                                             count = x.SNPCount();
-                                            ScreenUpdate(hWnd, count, (PWSTR)str.c_str());
+                                            //New code Beta 0.2
+                                            std::string strx;
+                                            strx = x.NCBIBuild();
+                                            CA2CT pszConvertedAnsiString(strx.c_str());
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                            //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 1;
                                         }
@@ -434,7 +439,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             lp = A2W_EX(s.c_str(), s.length());
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                             //Update count and path per normal
-                                            ScreenUpdate(hWnd, count, (PWSTR)str.c_str());
+                                             //New code Beta 0.2
+                                            std::string strx;
+                                            strx = x.NCBIBuild();
+                                            CA2CT pszConvertedAnsiString(strx.c_str());
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                            //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 2;
                                         }
@@ -458,7 +468,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             lp = A2W_EX(s.c_str(), s.length());
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                             //Update count and path per normal
-                                            ScreenUpdate(hWnd, count, (PWSTR)str.c_str());
+                                            //New code Beta 0.2
+                                            std::string strx;
+                                            strx = x.NCBIBuild();
+                                            CA2CT pszConvertedAnsiString(strx.c_str());
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                            //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 3;
                                         }
@@ -649,7 +664,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     lp = A2W_EX(s.c_str(), s.length());
                                     SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
-                                    ScreenUpdate(hWnd, count, pszFilePath);
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                    //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 3;
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
@@ -731,7 +751,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     lp = A2W_EX(s.c_str(), s.length());
                                     SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
-                                    ScreenUpdate(hWnd, count, pszFilePath);
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                    //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 2;
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
@@ -806,7 +831,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
                                     count = x.SNPCount();
-                                    ScreenUpdate(hWnd, count, pszFilePath);
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
+                                    //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 1;
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
@@ -1024,7 +1054,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
  }
 //}
-void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath)
+void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build)
 {
     if (x > 0)
     {//Data loaded
@@ -1038,6 +1068,8 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath)
         SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fix 3/9/21
         //Show source path
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
+        //show NCBI BUILD
+        SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
         EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
         }
           else {
@@ -1178,6 +1210,131 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         // Parse the menu selections:
         switch (wmId)
         {
+            
+        case IDC_SAVE: {
+            TCHAR buffer[260] = { 0 };
+            std::string s_study,s_URL,s_ncbiref;
+            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_study = pszConvertedAnsiString;
+            }
+            else  break; //mandatory field
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_URL += pszConvertedAnsiString;
+            }else  break; //mandatory field
+            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_ncbiref += pszConvertedAnsiString;
+            }//optional
+            if (s_ncbiref.length() == 0) s_ncbiref = "--";
+
+            //name and write file
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileWrite;
+
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
+
+                if (SUCCEEDED(hr))
+                {
+
+                    LPCWSTR a = L"PPI Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.PPI"},
+                    };
+                    //set file type options
+                    hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                    // Show the Open dialog box.
+                    hr = pFileWrite->Show(NULL);
+
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileWrite->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath;
+                            WCHAR ext[5];
+                            WCHAR filename[260];
+
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                                ext[0] = '.';
+                                ext[1] = 'P';
+                                ext[2] = 'P';
+                                ext[3] = 'I';
+                                ext[4] = NULL;
+                                StrCpyW(filename, pszFilePath);//we know 
+                                wcscat_s(filename, ext);
+                                {//Write the file
+
+                                    //Open file for write 
+                                    std::fstream  fstrm;
+                                    if (!fstrm.bad())
+                                    {   //filestream 
+                                        //fstrm.open(pszFilePath, std::ios::out);
+                                        fstrm.open(filename, std::ios::out);
+                                        if (fstrm.is_open()) {
+                                            HWND plst = GetDlgItem(hDlg, IDC_LIST1);
+                                            int  lcount;
+                                            std::string  lbuffer;
+                                            //Write Overview
+                                            s_study += "\n";
+                                            const char* write_it = s_study.c_str();
+                                            fstrm.write(write_it, s_study.length());
+                                            //Write the URL to the study the file is based on
+                                            s_URL += "\n";
+                                            write_it = s_URL.c_str();
+                                            fstrm.write(write_it, s_URL.length());
+                                            //NCBI Ref model major revision
+                                            s_ncbiref += "\n";
+                                            write_it = s_ncbiref.c_str();
+                                            fstrm.write(write_it, s_ncbiref.length());
+                                            lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+                                            TCHAR text[256];
+                                            for (int x = 0, ln = 0; x <= lcount; x++)
+                                            {
+                                                ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
+                                                if (ln > 0 and ln < 256) {
+                                                    SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                                                    //checked: the returned text is Zero terminated at tchar[ln] !
+                                                    CT2CA pszConvertedAnsiString(text);
+                                                    lbuffer += pszConvertedAnsiString;
+                                                    lbuffer += "\n";
+                                                    const char* write_it = lbuffer.c_str();
+                                                    fstrm.write(write_it, lbuffer.length());
+
+                                                }
+                                            }
+                                            fstrm.close();
+                                        }
+                                    }
+                                }
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
+                                InvalidateRect(aDiag, NULL, TRUE);
+                                UpdateWindow(aDiag);
+                            }
+                        }
+                    }
+                    pFileWrite->Release();
+                }
+                CoUninitialize();
+            }
+         break;
+        }
 
         case IDCANCEL://fall tho to exit I'm sure this style is frowd upon
         case IDC_EXITP: { 
@@ -1193,7 +1350,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                std::string s;
                //the dialog only allows numbers to be entered
                CT2CA pszConvertedAnsiString(buffer);
-               s += pszConvertedAnsiString;
+               s = pszConvertedAnsiString;
                s_rsid = "RS" + s;
 
             } else  break; //mandatory field
@@ -1203,7 +1360,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
                std::string s;
                CT2CA pszConvertedAnsiString(buffer);
-               s += pszConvertedAnsiString;
+               s = pszConvertedAnsiString;
 
                if ((strtod(s.data(), NULL) > 0 && strtod(s.data(), NULL) < 23) || s == "X" || s == "Y" || s == "MT") {
                    s_chr = s;
@@ -1214,14 +1371,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))
             {
                CT2CA pszConvertedAnsiString(buffer);
-               s_gene += pszConvertedAnsiString;
+               s_gene = pszConvertedAnsiString;
             }
                
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
             {
                std::string s;
                CT2CA pszConvertedAnsiString(buffer);
-               s += pszConvertedAnsiString;
+               s = pszConvertedAnsiString;
                if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
                s_riskalelle = s;
             }
@@ -1230,8 +1387,11 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
             {
               CT2CA pszConvertedAnsiString(buffer);
-              s_oddsratio += pszConvertedAnsiString;
+              s_oddsratio = pszConvertedAnsiString;
             }
+           //NO Missing Fields for file read!
+           if (s_gene.length() == 0) s_gene = "----";
+           if (s_oddsratio.length() == 0) s_oddsratio = "-.--";
 
            std::string s;
            s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskalelle + "  " + s_oddsratio;

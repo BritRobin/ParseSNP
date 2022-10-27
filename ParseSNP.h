@@ -4,4 +4,4 @@
 
 	
 HWND aDiag;
-void ScreenUpdate(HWND hWnd,int unsigned x, PWSTR FilePath);
+void ScreenUpdate(HWND hWnd,int unsigned x, PWSTR FilePath, PWSTR build);

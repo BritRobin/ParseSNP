@@ -8,6 +8,7 @@
 #include <wchar.h>
 #include <ctime>
 #include <ctype.h>
+#include <windows.h>
 
 
 class SnipParser
@@ -16,6 +17,7 @@ class SnipParser
 public:
 	std::string fi_;
 	int SNPCount(void);
+	std::string NCBIBuild(void);
 	bool Ancestory(wchar_t* fi_);
 	bool FTDNA(wchar_t* fi_);
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
@@ -28,10 +30,11 @@ public:
 private:
 	struct ST;
 	wchar_t fileLoaded_[256];
-	std::string Pversion_ = "0.1 Beta"; //Progran Version
+	std::string Pversion_ = "0.2 Beta"; //Progran Version
+	std::string NCBIBuild_="--";
 	unsigned int loadCount_ = 0;
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;
 };
 
-#endif--------------
+#endif

@@ -1,4 +1,6 @@
 #include "SnipParser.h"
+
+
 //SNP in human genome 10430639. 
 struct ST
 {
@@ -28,7 +30,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         //Check file was opened  
         if (fs.is_open()) {
             int inx = 0;
-            //START: reset loadcount_ and vecotr for next file for next file
+            //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
             snp.clear();
             snp.resize(10430639);
@@ -118,6 +120,27 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     inx++;
                     //increment count of lines loaded
                     loadCount_++;
+                }
+                else 
+                {
+                    for (int indx = 0; indx < 255; indx++)
+                    {
+                        if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
+                        {
+                            for (int i = indx+3; i < indx + 12; i++)
+                            {
+                                if (isdigit((int)nbuffer[i]))
+                                {
+                                    char sub[3] = "";
+                                    sub[0]=nbuffer[i]; 
+                                    sub[1]=nbuffer[i + 1];
+                                    sub[2] = NULL;
+                                    NCBIBuild_ = sub;
+                                    break;
+                                }
+                            }
+                        }
+                     }
                 }
                 loopbreak++;
                 if (loopbreak == 2000) break;
@@ -537,7 +560,27 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     loadCount_++;
 
                 }
-            }
+            } else
+                   {
+                       for (int indx = 0; indx < 255; indx++)
+                       {
+                           if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
+                           {
+                               for (int i = indx + 3; i < indx + 12; i++)
+                               {
+                                   if (isdigit((int)nbuffer[i]))
+                                   {
+                                       char sub[3] = "";
+                                       sub[0] = nbuffer[i];
+                                       sub[1] = nbuffer[i + 1];
+                                       sub[2] = NULL;
+                                       NCBIBuild_ = sub;
+                                       break;
+                                   }
+                               }
+                           }
+                   }
+                }
                 loopbreak++;
                 if (loopbreak == 2000) break;
             }
@@ -1982,6 +2025,27 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                     }
                 }
+                else
+                   {
+                       for (int indx = 0; indx < 255; indx++)
+                       {
+                           if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
+                           {
+                               for (int i = indx + 3; i < indx + 12; i++)
+                               {
+                                   if (isdigit((int)nbuffer[i]))
+                                   {
+                                       char sub[3] = "";
+                                       sub[0] = nbuffer[i];
+                                       sub[1] = nbuffer[i + 1];
+                                       sub[2] = NULL;
+                                       NCBIBuild_ = sub;
+                                       break;
+                                   }
+                               }
+                           }
+                       }
+                }
                 loopbreak++;
                 if (loopbreak == 2000) break;
             }
@@ -2072,6 +2136,13 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
 std::string  SnipParser::PVer(void)
 {
     return  Pversion_;
+}
+
+/*return the NCBI Build the file was based on gives position a referance
+  as well as being a clue to the age of the files contents */
+std::string SnipParser::NCBIBuild(void)
+{
+    return NCBIBuild_;
 }
 /*Major Work in porgress*/
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
