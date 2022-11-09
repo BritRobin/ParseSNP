@@ -13,6 +13,7 @@
 #include <Winuser.h>
 #include <shlobj_core.h>
 #include <filesystem>
+#include <sstream>
 
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
@@ -109,7 +110,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PARSESNP));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW);//FIX Weird backgroud 0.2beta
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_PARSESNP);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -171,7 +172,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     switch (Message)
     {
     case WM_INITDIALOG:
-        return TRUE;
+         return TRUE;
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -539,7 +540,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             fs::create_directory(currentProject);
         }
         //Copy Source File
-        if (SourceFilePath.length() != wchar_t(""))
+        if (SourceFilePath.length() > 0)
         {   /* Derive the target path from source file and project path */
             std::wstring pathfilname;
             wchar_t filename[256];
@@ -580,7 +581,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     //Get Project window entry count
                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                     lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-
                     _itoa_s(lcount, tc, 10);
                     lbuffer += tc;
                     lbuffer += "\n";
@@ -926,7 +926,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -971,7 +970,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                 SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
                                                 //checked: the returned text is Zero terminated at tchar[ln] !
                                                 CT2CA pszConvertedAnsiString(text);
-                                                lbuffer += pszConvertedAnsiString;
+                                                lbuffer = pszConvertedAnsiString;
                                                 lbuffer += "\n";
                                                 const char* write_it = lbuffer.c_str();
                                                 fstrm.write(write_it, lbuffer.length());
@@ -992,9 +991,325 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PATHOGENICS_CREATE: {
-            DialogBox(hInst, MAKEINTRESOURCE(136), aDiag, Pathogen);
+             DialogBox(hInst, MAKEINTRESOURCE(136), aDiag, Pathogen);
         }
             break;
+        case ID_PATHOGENICS_LOAD: {
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileOpen;
+
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+                if (SUCCEEDED(hr))
+                {
+                    LPCWSTR a = L"Pathogenic Prediction Information";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.PPI"},
+                    };
+                    //set file type options
+                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    // Show the Open dialog box.
+                    hr = pFileOpen->Show(NULL);
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileOpen->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath;
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                                char lbuffer[260];
+                                /*open file*/
+                                std::fstream  fstrm;
+                                if (!fstrm.bad())
+                                {
+                                    //filestream 
+                                    fstrm.open(pszFilePath, std::ios::in);
+                                    //Check file was opened  
+                                    if (fstrm.is_open()) {
+                                        //reset display area
+                                        HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                        {
+                                            LOGFONT lf;
+                                            const HFONT font = (HFONT)SendDlgItemMessage(aDiag,
+                                                IDC_LIST2, WM_GETFONT, 0, 0);
+                                            LOGFONT fontAttributes = { 0 };
+                                            ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
+                                         
+                                            memset(&lf, 0, sizeof(LOGFONT));       // zero out structure
+                                            lf.lfHeight = 16;                      // request a 14 pixel-height font
+                                            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"),11);                    // request a face name "Arial"
+                                            HFONT x =CreateFontIndirect(&lf);
+                                            
+                                            SendDlgItemMessage(aDiag, IDC_LIST2, WM_SETFONT, (WPARAM)x, 1);
+                                        }
+                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        for (int i = 0; i < 257; i++) {
+                                            if (lbuffer[i] == '\n') {
+                                                lbuffer[i] = NULL;
+                                                break;
+                                            }
+                                        }
+                                        std::string s = "Title: ";
+                                        s += lbuffer;
+                                        std::wstring str2(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        for (int i = 0; i < 257; i++) {
+                                            if (lbuffer[i] == '\n') {
+                                                lbuffer[i] = NULL;
+                                                break;
+                                            }
+                                        }
+                                        s = "Source: ";
+                                        s += lbuffer;
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        for (int i = 0; i < 257; i++) {
+                                            if (lbuffer[i] == '\n') {
+                                                lbuffer[i] = NULL;
+                                                break;
+                                            }
+                                        }
+                                        s = "NCBI Reference: ";
+                                        s += lbuffer;
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        //init redraw
+                                        s = "-- Comparison With Loaded SNP Data --";
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        float* fp;
+                                        float  sumoddsratio = 0.0;
+                                        fp = &sumoddsratio;
+                                        EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
+
+                                        while (!fstrm.eof())
+                                        {
+                                            int rsid=0;
+                                            char riskalelle;
+                                            float oddsratio = 0.0;
+
+                                            //Read next line in
+                                            //Read first reference lines
+                                            fstrm.getline(lbuffer, 256);
+                                            for (int i = 0; i < 257;) {
+                                                //***Obtain RSid number***
+                                                if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S')
+                                                {
+                                                    char number[255];
+                                                    int n = 0;
+                                                    while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58)
+                                                    {
+                                                        number[n] = lbuffer[i];
+                                                        i++;
+                                                        n++;
+                                                    }
+                                                    number[n] = NULL;
+                                                    rsid = atoi(number);                                              
+                                                }
+
+                                                /*skip spaces, coulde be wrtten in one line but this is more readable*/
+                                                while (lbuffer[i] == ' ')
+                                                {
+                                                    i++;
+                                                }
+                                                /*skip Chromosone*/
+                                                while (lbuffer[i] != ' ')
+                                                {
+                                                    i++;
+                                                }
+                                                /*skip spaces, could be wrtten in one line but this is more readable*/
+                                                while (lbuffer[i] == ' ')
+                                                {
+                                                    i++;
+                                                }
+                                                /*Skip Gene*/
+                                                while (lbuffer[i] != ' ')
+                                                {
+                                                    i++;
+                                                }
+
+                                                /*skip spaces, could be wrtten in one line but this is more readable*/
+                                                while (lbuffer[i] == ' ' || lbuffer[i]=='[')
+                                                {
+                                                    i++;
+                                                }
+                                                //if thechar is ivalid it will do nothing so no need to check it
+                                                riskalelle=lbuffer[i];
+                                                i++;
+                                                /*skip spaces, could be wrtten in one line but this is more readable*/
+                                                while (lbuffer[i] == ' ' || lbuffer[i] == ']')
+                                                {
+                                                    i++;
+                                                }
+                                                /*Obtain Odds Ration if entered!*/
+                                                {
+                                                    char number[255];
+                                                    int n = 0;
+                                                    while (((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58) || lbuffer[i]=='.')
+                                                    {
+                                                        number[n] = lbuffer[i];
+                                                        i++;
+                                                        n++;
+                                                    }
+                                                    number[n] = NULL;
+                                                    if (strlen(number) > 0) oddsratio = atof(number);
+                                                    else oddsratio = 0.0;
+                                                }
+                                                while(lbuffer[i] != '\n') {
+                                                     i++;
+                                                }
+                                                //protect from drop through buffer overrun
+                                                if (lbuffer[i] != '\n') lbuffer[i] = NULL;
+                                                break;
+                                            }
+                                            std::string ret_result;
+                                            if (rsid > 0) {
+                                                ret_result = x.PathogenicCall(rsid, riskalelle, oddsratio, fp);
+                                                s = lbuffer;
+                                                s += "   " + ret_result;
+                                                str2.resize(s.length(), L' '); // Make room for characters
+                                                // Copy string to wstring.
+                                                std::copy(s.begin(), s.end(), str2.begin());
+                                                wcsncpy_s(global_s, str2.c_str(), 255);
+                                                SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                            }
+                                        }
+                                        s = " ";
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        std::ostringstream ss;
+                                        ss << sumoddsratio;
+                                        std::string sf(ss.str());
+                                        s = "Cumulative OR (?) " + sf;
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        InvalidateRect(aDiag, NULL, TRUE);
+                                        UpdateWindow(aDiag);
+                                    }
+
+                                }
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
+                            }
+                        }
+                        pFileOpen->Release();
+                    }
+                    CoUninitialize();
+                }
+            }
+            break;
+        }
+        case ID_PATHOGENICS_EXPORTRESULTSTO: {
+                HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                    COINIT_DISABLE_OLE1DDE);
+                if (SUCCEEDED(hr))
+                {
+                    IFileOpenDialog* pFileWrite;
+
+                    // Create the FileOpenDialog object.
+                    hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
+
+                    if (SUCCEEDED(hr))
+                    {
+                        LPCWSTR a = L"Text Files";
+                        LPCWSTR b = L"All Files";
+                        COMDLG_FILTERSPEC rgSpec[] =
+                        {
+                            {a, L"*.txt"},
+                            {b, L"*.*" },
+                        };
+                        //set file type options
+                        hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                        // Show the Open dialog box.
+                        hr = pFileWrite->Show(NULL);
+
+                        // Get the file name from the dialog box.
+                        if (SUCCEEDED(hr))
+                        {
+                            IShellItem* pItem;
+                            hr = pFileWrite->GetResult(&pItem);
+                            if (SUCCEEDED(hr))
+                            {
+                                PWSTR pszFilePath;
+                                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                                // Display the file name to the user.
+                                if (SUCCEEDED(hr))
+                                {//Open file for write 
+                                    std::fstream  fstrm;
+                                    if (!fstrm.bad())
+                                    {   //filestream 
+                                        fstrm.open(pszFilePath, std::ios::out);
+                                        if (fstrm.is_open()) {
+                                            //Get Pathagenic window entry count
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                            int  lcount;
+                                            std::string  lbuffer;
+                                            lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+                                            TCHAR text[260];
+                                            for (int x = 0, ln = 0; x <= lcount; x++)
+                                            {
+                                                ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
+                                                if (ln > 0 and ln < 256) {
+                                                    SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                                                    //checked: the returned text is Zero terminated at tchar[ln] !
+                                                    CT2CA pszConvertedAnsiString(text);
+                                                    lbuffer = pszConvertedAnsiString;
+                                                    lbuffer += "\n";
+                                                    const char* write_it = lbuffer.c_str();
+                                                    fstrm.write(write_it, lbuffer.length());
+                                                }
+                                            }
+                                            fstrm.close();
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        pFileWrite->Release();
+                    }
+                    CoUninitialize();
+                }
+            }
+                                           break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), aDiag, About);
             break;
@@ -1044,7 +1359,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hWnd, &ps);
       }
         break;
-
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -1107,7 +1421,7 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     switch (message)
     {
     case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK) {
@@ -1202,18 +1516,26 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: {
+        std::string s;
+        LPCWSTR lp;
+        USES_CONVERSION_EX;
+        s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nOD cannot be compared if data is from different studies.\nIf you share a .PPI file create an MD5 hash of it for verification.\nA .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic.\nIf you have genetic medical worries you should speak with a Dr or Genetic counselor!";
+        lp = A2W_EX(s.c_str(), s.length());
+        SetWindowTextW(GetDlgItem(hDlg, 1045), lp);
         return (INT_PTR)TRUE;
+    }
 
     case WM_COMMAND:
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId)
         {
-            
-        case IDC_SAVE: {
+        
+         case IDC_SAVE: {
             TCHAR buffer[260] = { 0 };
             std::string s_study,s_URL,s_ncbiref;
+
             if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
             {
                 CT2CA pszConvertedAnsiString(buffer);
@@ -1279,7 +1601,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 StrCpyW(filename, pszFilePath);//we know 
                                 wcscat_s(filename, ext);
                                 {//Write the file
-
                                     //Open file for write 
                                     std::fstream  fstrm;
                                     if (!fstrm.bad())
@@ -1311,11 +1632,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                     SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
                                                     //checked: the returned text is Zero terminated at tchar[ln] !
                                                     CT2CA pszConvertedAnsiString(text);
-                                                    lbuffer += pszConvertedAnsiString;
+                                                    lbuffer = pszConvertedAnsiString;
                                                     lbuffer += "\n";
                                                     const char* write_it = lbuffer.c_str();
                                                     fstrm.write(write_it, lbuffer.length());
-
                                                 }
                                             }
                                             fstrm.close();
@@ -1354,7 +1674,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                s_rsid = "RS" + s;
 
             } else  break; //mandatory field
-
+           
            //Get chromosone number
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))
             {
@@ -1373,16 +1693,16 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                CT2CA pszConvertedAnsiString(buffer);
                s_gene = pszConvertedAnsiString;
             }
-               
+
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
             {
                std::string s;
                CT2CA pszConvertedAnsiString(buffer);
                s = pszConvertedAnsiString;
                if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
-               s_riskalelle = s;
+               s_riskalelle = " [" + s +"] ";
             }
-
+ 
            //Get Odds Ratio optional but should be inclued if available
            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
             {
@@ -1393,6 +1713,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            if (s_gene.length() == 0) s_gene = "----";
            if (s_oddsratio.length() == 0) s_oddsratio = "-.--";
 
+           //format for display
+           if (s_rsid.length() < 10) {
+               int y = 10 - s_rsid.length();
+               for (int x = 0; x < y; x++) {
+                   s_rsid = s_rsid + " "; //add padding spaces
+               }
+           }
+           if (s_chr.length() < 2) s_chr = s_chr + " ";
            std::string s;
            s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskalelle + "  " + s_oddsratio;
            std::wstring str2(s.length(), L' '); // Make room for characters
@@ -1405,11 +1733,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            lcount = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_GETCOUNT, 0, 0);
            if (lcount > 0)   lindex = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
            if (lindex == -1)  SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_ADDSTRING, 0, (LPARAM)global_s);
-           
+           //clear entered data
+           LPWSTR lp=(const_cast < LPTSTR>(L""));
+           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT3), lp);
+           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_ALLES1), lp);
+           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT2), lp);
+           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
+           SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
         }
-
-
-
 
         }
 

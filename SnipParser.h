@@ -27,9 +27,11 @@ public:
 	unsigned int IllumUntransVG(void);
 	std::string PVer(void); //return program/class version
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
+	std::string PathogenicCall(int rsid, char riskalelle, float oddsratio, float* sumoddsratio);
+
 private:
 	struct ST;
-	wchar_t fileLoaded_[256];
+	wchar_t fileLoaded_[260];
 	std::string Pversion_ = "0.2 Beta"; //Progran Version
 	std::string NCBIBuild_="--";
 	unsigned int loadCount_ = 0;

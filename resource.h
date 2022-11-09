@@ -52,6 +52,7 @@
 #define IDC_NCBIBuild                   1042
 #define IDC_BUILD                       1043
 #define IDC_NCBIref                     1044
+#define IDC_INFOP                       1045
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -62,6 +63,7 @@
 #define ID_Menu32783                    32783
 #define ID_PATHOGENICS_LOAD             32784
 #define ID_PATHOGENICS_CREATE           32785
+#define ID_PATHOGENICS_EXPORTRESULTSTO  32786
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -69,9 +71,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        137
-#define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_COMMAND_VALUE         32787
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

@@ -1,4 +1,4 @@
-#include "SnipParser.h"
+﻿#include "SnipParser.h"
 
 
 //SNP in human genome 10430639. 
@@ -560,27 +560,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     loadCount_++;
 
                 }
-            } else
-                   {
-                       for (int indx = 0; indx < 255; indx++)
-                       {
-                           if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
-                           {
-                               for (int i = indx + 3; i < indx + 12; i++)
-                               {
-                                   if (isdigit((int)nbuffer[i]))
-                                   {
-                                       char sub[3] = "";
-                                       sub[0] = nbuffer[i];
-                                       sub[1] = nbuffer[i + 1];
-                                       sub[2] = NULL;
-                                       NCBIBuild_ = sub;
-                                       break;
-                                   }
-                               }
-                           }
-                   }
-                }
+            } //FTDNA do not ref NCBI build
                 loopbreak++;
                 if (loopbreak == 2000) break;
             }
@@ -594,7 +574,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
 //23andMe function
 
-//FTDNA has VG numbers that may corespond to RS numbers
+//has VG numbers that may corespond to RS numbers
 bool  SnipParser::f23andMe(wchar_t* fi_)
 {
 
@@ -2025,27 +2005,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                     }
                 }
-                else
-                   {
-                       for (int indx = 0; indx < 255; indx++)
-                       {
-                           if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
-                           {
-                               for (int i = indx + 3; i < indx + 12; i++)
-                               {
-                                   if (isdigit((int)nbuffer[i]))
-                                   {
-                                       char sub[3] = "";
-                                       sub[0] = nbuffer[i];
-                                       sub[1] = nbuffer[i + 1];
-                                       sub[2] = NULL;
-                                       NCBIBuild_ = sub;
-                                       break;
-                                   }
-                               }
-                           }
-                       }
-                }
+                //does not ref ncbi build
                 loopbreak++;
                 if (loopbreak == 2000) break;
             }
@@ -2334,3 +2294,56 @@ void  SnipParser::FConvert(void)
         fsOut.close();
     }
 }  
+/* Searches all loaded data for matching rsID then checks for risk alelle.
+If it is found it updates the odds ratio                       */
+std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsratio, float* sumoddsratio)
+{
+    std::string result_message = "N/A";
+
+    // Check you have SNP data loaded
+    if (loadCount_ > 0)
+    {
+        // Search for RS numer int rs
+        for (unsigned int i = 0; i <= loadCount_;)
+        {
+            if (snp[i].rs == rsid)
+            {    
+                char buffer[8];
+                buffer[0] = '[';
+                buffer[1] = (char)snp[i].a;
+                buffer[2] = '/';
+                buffer[3] = (char)snp[i].b;
+                buffer[4] = ']';
+                buffer[5] = ' ';
+                buffer[6] = NULL;
+                result_message = buffer;
+               
+                //Match of risk alelle on both chromosones!
+                if (snp[i].a == riskalelle && snp[i].b == riskalelle)
+                {
+                    result_message += "Risk Homozygous!";
+                    //from a post on statistics here https://stats.stackexchange.com/questions/187107/can-you-add-up-different-genes-odds-ratios-to-get-a-general-odds-ratio
+                    if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
+                    else  *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                    *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                    return result_message;
+                }
+                //Match in one chromosone
+                if (snp[i].a == riskalelle || snp[i].b == riskalelle)
+                {
+                    result_message += "Risk Heterozygous";
+                    if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
+                    else *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                    return result_message;
+                }
+
+                result_message += "No Risk";
+                return result_message;
+            }
+            //inceament loop
+            i++;
+        }
+
+    }
+    return result_message;
+}

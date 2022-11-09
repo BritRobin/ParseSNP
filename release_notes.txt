@@ -1,10 +1,12 @@
-Version Beta 0.1b Initial release
-Fixed chr number field to diabled true
-Adding Pathogenics file function
-
-
-
-
-
+Version Beta 0.2 Initial release
+Fixed chr number field set to diabled true
+Fixed incorrect background colour!
+Added NCBI build ref where obtainable
+Added Pathogenics file creation and usage! (function of OR values a work in progress)
+Added a couple of icons
 
 Version Beta 0.1a Initial release
+Saving of files and results as a project
+
+Version Alpha 0.4
+Allowed the loading and searching of ancestory raw dna files
