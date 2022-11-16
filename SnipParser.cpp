@@ -25,6 +25,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
     {
         char nbuffer[256];
         int loopbreak = 0;
+        int noreadcount = 0;
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -81,7 +82,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         strcpy_s(snp[inx].ch, num);
                     }
 
-                    //move past tab or spaces to next numeric data posotion number
+                    //move past tab or spaces to next numeric data position number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                     {//wrote whith braces for readablility
                         rdindex++;
@@ -116,6 +117,12 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                     //Is Char
                     snp[inx].b = nbuffer[rdindex];
+
+                    //Determine Sex
+                    if (snp[inx].ch == "24" && snp[inx].a == '0' && snp[inx].b == '0') noreadcount++;
+                    if (noreadcount > 15) sex_ = 'F';
+                    else sex_ = 'M';
+
                     //increment the primary index
                     inx++;
                     //increment count of lines loaded
@@ -173,6 +180,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             int fdind = 0; //ftdna-illumina
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
+            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
@@ -517,7 +525,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         snp[inx].ch[1] = NULL;
 
                     }
-
+                    if (snp[inx].ch[0] == 'Y') sex_ = 'M';
                     //move past tab or spaces to next numeric data posotion number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                     {//wrote whith braces for readablility
@@ -594,6 +602,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             singleAllele = false;
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
+            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
@@ -1954,7 +1963,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                                        }
 
                         }
-
+                        if (snp[inx].ch[0] == 'Y') sex_ = 'M';
                         //move past tab or spaces to next numeric data posotion number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {//wrote whith braces for readablility
@@ -2032,6 +2041,11 @@ unsigned int  SnipParser::IllumUntransVG(void)
 int SnipParser::SNPCount(void)
 {
     return loadCount_;
+}
+//return sex
+wchar_t SnipParser::sex(void)
+{
+    return sex_;
 }
 
 /*RS number search function passed the RS number to searcg for
@@ -2309,6 +2323,20 @@ std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsrati
             if (snp[i].rs == rsid)
             {    
                 char buffer[8];
+                char check_Y[4];
+                
+                if (!strcmp(snp[i].ch, "23"))
+                {
+                    check_Y[0] = 'X';
+                    check_Y[1] = NULL;
+                }
+                else
+                {
+                    check_Y[0] = snp[i].ch[0];
+                    check_Y[1] = snp[i].ch[1];
+                    check_Y[2] = snp[i].ch[2];
+                    check_Y[3] = snp[i].ch[3];
+                }
                 buffer[0] = '[';
                 buffer[1] = (char)snp[i].a;
                 buffer[2] = '/';
@@ -2321,6 +2349,15 @@ std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsrati
                 //Match of risk alelle on both chromosones!
                 if (snp[i].a == riskalelle && snp[i].b == riskalelle)
                 {
+                    if (check_Y[0] == 'X' && sex_ == 'M') 
+                    {
+                        buffer[3] = '-';
+                        result_message = buffer;
+                        result_message += "Risk Heterozygous";
+                        if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
+                        else *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                        return result_message;
+                    }
                     result_message += "Risk Homozygous!";
                     //from a post on statistics here https://stats.stackexchange.com/questions/187107/can-you-add-up-different-genes-odds-ratios-to-get-a-general-odds-ratio
                     if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
@@ -2336,8 +2373,8 @@ std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsrati
                     else *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
                     return result_message;
                 }
-
-                result_message += "No Risk";
+                if (snp[i].a == '0' && snp[i].b == '0')  result_message += "N/A (No Read)";
+                else result_message += "No Risk";
                 return result_message;
             }
             //inceament loop

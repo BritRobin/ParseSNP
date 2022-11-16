@@ -179,8 +179,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
         case IDC_LIST3:
         {
-            
-            switch (HIWORD(wParam))
+          switch (HIWORD(wParam))
             { 
              //as an enry been double clicked
              case LBN_DBLCLK:
@@ -232,6 +231,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                       s = allele1;
                       lp = A2W_EX(s.c_str(), s.length());
                       SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                      //Fix 'X' chromosone in men as ancestoy dna files populate both alelles as it make searches easier?
+                      if (chromosome[0] == 'X' && x.sex() == 'M') allele2 = '-';
                       s = allele2;
                       lp = A2W_EX(s.c_str(), s.length());
                       SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
@@ -302,8 +303,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         
     }
-
-}
+ }
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -415,6 +415,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             std::string strx;
                                             strx = x.NCBIBuild();
                                             CA2CT pszConvertedAnsiString(strx.c_str());
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                             //New code Beta 0.2
                                             SourceFilePath = str;
@@ -444,6 +446,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             std::string strx;
                                             strx = x.NCBIBuild();
                                             CA2CT pszConvertedAnsiString(strx.c_str());
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                             //New code Beta 0.2
                                             SourceFilePath = str;
@@ -473,6 +477,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             std::string strx;
                                             strx = x.NCBIBuild();
                                             CA2CT pszConvertedAnsiString(strx.c_str());
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2); 
+                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                             //New code Beta 0.2
                                             SourceFilePath = str;
@@ -676,6 +682,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
+                                    plst = GetDlgItem(aDiag, IDC_LIST2);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -763,6 +771,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED); 
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
+                                    plst = GetDlgItem(aDiag, IDC_LIST2);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -843,6 +853,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
+                                    plst = GetDlgItem(aDiag, IDC_LIST2);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -1311,7 +1323,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
                                            break;
         case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), aDiag, About);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
@@ -1494,8 +1506,15 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
   
     switch (message)
     {
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: {
+        std::string s = "ParseSNP Version: ";
+        s = s.c_str() + x.PVer();
+        USES_CONVERSION_EX;
+        LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
+
         return (INT_PTR)TRUE;
+    }
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)

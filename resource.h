@@ -53,6 +53,7 @@
 #define IDC_BUILD                       1043
 #define IDC_NCBIref                     1044
 #define IDC_INFOP                       1045
+#define IDC_STATICVER                   1047
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -73,7 +74,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         32787
-#define _APS_NEXT_CONTROL_VALUE         1046
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

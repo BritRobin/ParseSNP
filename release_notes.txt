@@ -1,3 +1,10 @@
+Version Beta 0.25
+Fixes for raw data files populating both alelles of X for males!
+Fix clear results window on file or project load
+Fixed indicion of 'no read' in pathogenics result display
+About about ver dynamiclly created now
+ 
+
 Version Beta 0.2 Initial release
 Fixed chr number field set to diabled true
 Fixed incorrect background colour!
