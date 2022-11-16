@@ -6,10 +6,12 @@ C:\Users\<username>\Documents\ParseSNP\Projects
 The current DNA file will be copied there and project entries saved.
 To load a project go into that directory and load the ProjectManifest.ptxt
 Once a project is created only the ProjectManifest.ptxt file will be updated when you save.
-
 To delete a project entry double click it and you will be prompted to delete?
 
-Have fun, remember it's Beta and I may not be online for a bit....
+Pathogenics files can now be created loaded and the results exported. I included and example for European Type 2 diabetes.
+MD5 Hash:31d571c6c3df9260e04ac81916bbb5f8
+
+Have fun, remember it's a Beta...
 
 
 thx Robin
