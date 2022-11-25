@@ -422,7 +422,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         snp[inx].ch[1] = NULL;
 
                     }
-                    if (snp[inx].ch[0] == 'Y') sex_ = 'M';
+                    
                     //move past tab or spaces to next numeric data posotion number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                     {//wrote whith braces for readablility
@@ -450,6 +450,8 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         rdindex++;
                     }
                     snp[inx].a = nbuffer[rdindex];
+                    //make '0' our standard for noread
+                    if (snp[inx].a == '-') snp[inx].a = '0';
                     rdindex++;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
@@ -459,7 +461,13 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                     //Is Char
                     snp[inx].b = nbuffer[rdindex];
+                    //make '0' our standard for noread
+                    if (snp[inx].b == '-') snp[inx].b = '0';
                     //increment the primary index
+                     //Move Sex check here
+                    if (snp[inx].ch[0] == 'Y' && snp[inx].a != '0') {
+                        sex_ = 'M';
+                    }
                     inx++;
                     //increment count of lines loaded
                     loadCount_++;
@@ -590,7 +598,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                                        }
 
                         }
-                        if (snp[inx].ch[0] == 'Y') sex_ = 'M';
+
                         //move past tab or spaces to next numeric data posotion number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {//wrote whith braces for readablility
@@ -618,6 +626,8 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             rdindex++;
                         }
                         snp[inx].a = nbuffer[rdindex];
+                        //make '0' our standard for noread
+                        if (snp[inx].a == '-') snp[inx].a = '0';
                         rdindex++;
                         if (singleAllele)
                         {
@@ -633,6 +643,12 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             }
                             //Is Char
                             snp[inx].b = nbuffer[rdindex];
+                            //make '0' our standard for noread
+                            if (snp[inx].b == '-') snp[inx].b = '0';
+                        }
+                        //Move Sex check here
+                        if (snp[inx].ch[0] == 'Y' && snp[inx].a != '0') {
+                            sex_ = 'M';
                         }
                         //increment the primary index
                         inx++;
