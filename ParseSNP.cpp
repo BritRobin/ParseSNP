@@ -26,9 +26,10 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 //Global class instance
 SnipParser x;
 //START:Global returned values
-int rs_number = 0; //RS Number 
-int position = 0; //relative position
+int rs_number = 0;      // RS Number 
+int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
+int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
 char chromosome[4] = { NULL,NULL,NULL,NULL };//chromosome number
 char allele1 = NULL, allele2 = NULL;
 wchar_t global_s[256];
@@ -51,6 +52,7 @@ INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -405,7 +407,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         int unsigned count;
                                         if (x.Ancestory((PWSTR)str.c_str()))
                                         {
-
                                             LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
@@ -417,10 +418,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             CA2CT pszConvertedAnsiString(strx.c_str());
                                             HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                                             SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                             //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 1;
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
                                     }
                                     else  if (xsw == 2) {
@@ -448,10 +449,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             CA2CT pszConvertedAnsiString(strx.c_str());
                                             HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                                             SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                             //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 2;
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
                                     }
                                     else if (xsw == 3) {
@@ -477,12 +478,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             std::string strx;
                                             strx = x.NCBIBuild();
                                             CA2CT pszConvertedAnsiString(strx.c_str());
-                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2); 
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                                             SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
-                                            //New code Beta 0.2
+                                             //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 3;
+                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
 
                                     }
@@ -674,16 +675,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     std::string strx;
                                     strx = x.NCBIBuild();
                                     CA2CT pszConvertedAnsiString(strx.c_str());
-                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 3;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
-                                    plst = GetDlgItem(aDiag, IDC_LIST2);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -763,16 +761,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     std::string strx;
                                     strx = x.NCBIBuild();
                                     CA2CT pszConvertedAnsiString(strx.c_str());
-                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 2;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED); 
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
-                                    plst = GetDlgItem(aDiag, IDC_LIST2);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -845,16 +840,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     std::string strx;
                                     strx = x.NCBIBuild();
                                     CA2CT pszConvertedAnsiString(strx.c_str());
-                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString);
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 1;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
-                                    plst = GetDlgItem(aDiag, IDC_LIST2);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
                                     InvalidateRect(aDiag, NULL, TRUE);
                                     UpdateWindow(aDiag);
                                 }
@@ -866,14 +858,80 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                     CoUninitialize();
                 }
-
-
             }
-            break;
         }
+        break;
+        case ID_FILE_MERGEANCESTORYDNATXTFILE: {
+            //TEST Code
+            //x.FConvert();
+            //TEST Code
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileOpen;
 
-        case ID_FILE_EXPORT:
-        {
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+                if (SUCCEEDED(hr))
+                {
+
+                    LPCWSTR a = L"Text Files";
+                    LPCWSTR b = L"All Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.txt"},
+                        {b, L"*.*" },
+                    };
+                    //set file type options
+                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                    // Show the Open dialog box.
+                    hr = pFileOpen->Show(NULL);
+
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileOpen->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath;
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                                int unsigned count;
+                                if (x.MergeAncestory(pszFilePath))
+                                {
+                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    //Update count and path per normal
+                                    count = x.SNPCount();
+                                    mergeLoad = mergeLoad | 1;
+                                    ScreenUpdate(hWnd, count, (PWSTR)&SourceFilePath, NULL, x.sex());
+                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    InvalidateRect(aDiag, NULL, TRUE);
+                                    UpdateWindow(aDiag);
+                                }
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
+                            }
+                        }
+                        pFileOpen->Release();
+                    }
+                    CoUninitialize();
+                }
+            }
+        }
+            break;
+        case ID_FILE_EXPORT:{
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -885,7 +943,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -924,8 +981,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 CoUninitialize();
             }
-            break;
         }
+            break;
         case ID_PROJEX: {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                 COINIT_DISABLE_OLE1DDE);
@@ -1245,8 +1302,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     CoUninitialize();
                 }
             }
-            break;
         }
+            break;
         case ID_PATHOGENICS_EXPORTRESULTSTO: {
                 HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                     COINIT_DISABLE_OLE1DDE);
@@ -1321,7 +1378,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     CoUninitialize();
                 }
             }
-                                           break;
+            break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
@@ -1379,14 +1436,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
  }
-//}
-void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build)
+
+void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char sx)
 {
     if (x > 0)
     {//Data loaded
         std::string s = std::to_string(x);
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        LPWSTR fp = A2W_EX("Female", 6);
+        LPWSTR mp = A2W_EX("Male", 4);
         SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
         EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), TRUE);
         EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH), TRUE);
@@ -1396,9 +1455,25 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build)
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
         //show NCBI BUILD
         SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
+        if (sx == 'F') SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp);
+        else SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp);
         EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
-        }
-          else {
+        //optimized ver 0.3 beta
+        HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+        SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
+        EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
+        //*** Merge code menu ***
+        if (loadedFiletype == 1) {
+            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
+            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
+         } else if (loadedFiletype == 2) {
+             EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
+             EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
+         } else if (loadedFiletype == 3) {
+            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
+            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
+           }
+        } else {
                  std::string s = "0";
                  USES_CONVERSION_EX;
                  LPWSTR lp = A2W_EX(s.c_str(), s.length());
@@ -1408,9 +1483,11 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build)
                  //Set a limit on rs field
                  SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
                  //Show source path
-                 SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL);  
+                 SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL); 
+                 SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), NULL);
                  EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_GRAYED);  //ensure export is deactivated
-                 }
+                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_GRAYED);
+    }
     //Covert RS number for display
     std::string s = "";
     USES_CONVERSION_EX;
@@ -1770,3 +1847,4 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+

@@ -1,3 +1,8 @@
+Version Beta 0.30
+Fixes omitted enable for pathogenics in project load!
+above fix reduces code redundancy 
+Added Sex field for loaded file
+
 Version Beta 0.25
 Fixes for raw data files populating both alelles of X for males!
 Fix clear results window on file or project load
