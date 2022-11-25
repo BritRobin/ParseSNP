@@ -1475,6 +1475,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
            }
         } else {
                  std::string s = "0";
+                 mergeLoad = 0;
                  USES_CONVERSION_EX;
                  LPWSTR lp = A2W_EX(s.c_str(), s.length());
                  SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
