@@ -49,6 +49,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ProjectDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Deletemsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
@@ -862,9 +863,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         case ID_FILE_MERGEANCESTORYDNATXTFILE: {
-            //TEST Code
-            //x.FConvert();
-            //TEST Code
+
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -877,7 +876,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -898,12 +896,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath,src;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
+                                DialogBox(hInst, MAKEINTRESOURCE(138/*IDD_MERWAR*/), aDiag, MergeWarnmsg);
                                 int unsigned count;
                                 if (x.MergeAncestory(pszFilePath))
                                 {
@@ -913,7 +912,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     //Update count and path per normal
                                     count = x.SNPCount();
                                     mergeLoad = mergeLoad | 1;
-                                    ScreenUpdate(hWnd, count, (PWSTR)&SourceFilePath, NULL, x.sex());
+                                    PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
+                                    ScreenUpdate(hWnd, count, src, NULL, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
@@ -1464,14 +1464,20 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_ENABLED);
         //*** Merge code menu ***
         if (loadedFiletype == 1) {
-            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
-            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
+            if (mergeLoad & 4) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_DISABLED);
+            else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
+            if (mergeLoad & 2) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_DISABLED);
+            else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
          } else if (loadedFiletype == 2) {
-             EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
-             EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
+             if (mergeLoad & 4) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_DISABLED);
+             else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGE23TOMETXTFILE, MF_BYCOMMAND | MF_ENABLED);
+             if(mergeLoad & 1) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_DISABLED);
+             else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
          } else if (loadedFiletype == 3) {
-            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
-            EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
+             if (mergeLoad & 1) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_DISABLED);
+             else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEANCESTORYDNATXTFILE, MF_BYCOMMAND | MF_ENABLED);
+             if (mergeLoad & 2) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_DISABLED);
+             else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
            }
         } else {
                  std::string s = "0";
@@ -1574,7 +1580,34 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     }
     return (INT_PTR)FALSE;
 }
+INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    //Because we have created a form dialog after the menu
+    ShowWindow(hDlg, 5);
 
+    switch (message)
+    {
+    case WM_INITDIALOG: {
+        std::string s = "**You Have Initiated a Merge!**\n\nNote: There is a lot of data to compare and the program may become unresposive for several minutes.\nAlso be aware that the function is indended to be used to merge two files of the same person, if two different subject's files are merged the code will detect the many differences and abort the merge.\n\nClick OK to proceed!";
+        USES_CONVERSION_EX;
+        LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        SetWindowTextW(GetDlgItem(hDlg, 1049/*IDC_STATICMR1*/), lp);
+
+        return (INT_PTR)TRUE;
+    }
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+
+}
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
