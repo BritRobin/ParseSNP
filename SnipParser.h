@@ -34,6 +34,7 @@ public:
 
 private:
 	struct ST;
+	bool abortMerge_ = false;
 	wchar_t fileLoaded_[260];
 	wchar_t sex_ = '?';
 	std::string Pversion_ = "0.3 Beta"; //Progran Version
@@ -46,6 +47,7 @@ private:
 	unsigned int illuminaT_ = 0;
 	unsigned int mergered_  = 0;
 	unsigned int failcheck_ = 0;
+	unsigned int allcecked_ = 0;
 	unsigned int mergefile_ = 0;
 	int FTDNADecode(std::string code);
 	int f23andMeDecode(std::string code);

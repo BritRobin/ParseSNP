@@ -176,24 +176,20 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         end_index_ = origloadcount_ = loadCount_;
         //Open file for read 
         fs.open(fi_, std::ios::in);
-        
-
         //Check file was opened  
         if (fs.is_open()) {
-            int inx = loadCount_ + 1,rst;
+            int inx = loadCount_ + 1,rst, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             nbuffer[257] = NULL;        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
-            while (!fs.eof())
+            while (!fs.eof() && !abortMerge_)
             {
                 //read a line into a temorary buffer
                 fs.getline(nbuffer, 256);
-                
                 vercheck = nbuffer;
-                int rdindex = 0;
-
+                rdindex = 0;
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's' && isdigit((int)nbuffer[rdindex + 2])) {
                     char num[20];
@@ -308,7 +304,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         else false;
     }
     return true;
-};
+}
 
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::FTDNA(wchar_t* fi_)
@@ -388,7 +384,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             nmindex++;
                         }
                         num[nmindex] = NULL;
-                        rdindex =fdind;  //set read index
+                        rdindex =fdind;                  //set read index
                         snp[inx].rs = FTDNADecode(num); //ver 0.3 beta separate decode function!
                     }
                  if (snp[inx].rs > 0) //stop line load of uniterpreted VG codes
@@ -516,11 +512,9 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                 //read a line into a temorary buffer
                 fs.getline(nbuffer, 256);
                 int rdindex = 0;
-
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]) )) && isdigit((int)nbuffer[rdindex + 2]))
                 {//ftdna-illumina
-                   
                     char num[20];
                     int  nmindex = 0;
                     loopbreak = 0;
@@ -665,7 +659,6 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
         }
         else false;
     }
-
     return true;
 };
 
@@ -679,7 +672,6 @@ unsigned int  SnipParser::IllumUntransVG(void)
 {
     return illuminaU_;
 }
-
 //return the number of lines loaded
 int SnipParser::SNPCount(void)
 {
@@ -694,6 +686,7 @@ int SnipParser::merged(void)
 {
     return mergered_;
 }
+
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
@@ -709,7 +702,7 @@ void SnipParser::initMergeCopy(void)
 }
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Enen though this is the most effiecent self resizing inlined loop I could write
-the shear amount of comparisons involved in unsorted date makes this a slow job!!*/
+the shear amount of comparisons involved in unsorted date makes this a slow job!! */
 __forceinline bool SnipParser::mergeRs(int code,std::string line)
 {
     for (unsigned int i = 0; i <= end_index_;)
@@ -729,6 +722,11 @@ __forceinline bool SnipParser::mergeRs(int code,std::string line)
                   found = line.find(snpM[i].b);
                   if (found == std::string::npos) failcheck_++;
                  }
+            allcecked_++;
+            if (allcecked_ > 1200)
+            { //if all matches are less that 1/2 of the total check the files are way to different and merge is aborted
+                if ((allcecked_ >> 1) < failcheck_) abortMerge_ = true;
+            }
             return false;
         }
         //inceament loop
@@ -741,7 +739,6 @@ __forceinline bool SnipParser::mergeRs(int code,std::string line)
 and a structure of type s to place the data in if a match is found */
 bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr4, int *pos, char *a, char *b)
 {
-
     // Check you have SNP data loaded
     if (loadCount_ > 0)
     { 
@@ -890,8 +887,8 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                  else break;
                  if (over22)
                  { //ancestory's wierd to bases for X Y and MT where there is only 1
-                     
-                     if (snp[inx].a == '-')
+                   // '-' as been converted on load but I am leaving the '-' option for any future code that the conversion is omitted  
+                     if (snp[inx].a == '-' || snp[inx].a == '0')
                      {
                          allele1 = allele2 = (std::string)"0";
                      }
@@ -901,9 +898,9 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                      }
                  }
                  else {
-                        if (snp[inx].a == '-') allele1 = (std::string)"0";
+                        if (snp[inx].a == '-' || snp[inx].a == '0') allele1 = (std::string)"0";
                              else allele1 = snp[inx].a + NULL;
-                        if (snp[inx].b == '-') allele2 = (std::string)"0";
+                        if (snp[inx].b == '-' || snp[inx].a == '0') allele2 = (std::string)"0";
                              else allele2 = snp[inx].b + NULL;
                       }
 
