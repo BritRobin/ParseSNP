@@ -26,6 +26,7 @@ public:
 	void FConvert(void);  //<- One off code generator
 	wchar_t sex(void);
 	int merged(void);
+	bool MergeState(void);
 	unsigned int IllumTransVG(void);
 	unsigned int IllumUntransVG(void);
 	std::string PVer(void); //return program/class version
@@ -53,6 +54,7 @@ private:
 	int f23andMeDecode(std::string code);
 	__forceinline bool mergeRs(int code, std::string nbuffer);
 	void initMergeCopy(void);
+	void revertMerge(void);
 };
 
 #endif

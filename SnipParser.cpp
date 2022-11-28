@@ -185,8 +185,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             while (!fs.eof() && !abortMerge_)
-            {
-                //read a line into a temorary buffer
+            {   //read a line into a temorary buffer
                 fs.getline(nbuffer, 256);
                 vercheck = nbuffer;
                 rdindex = 0;
@@ -303,6 +302,12 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         }
         else false;
     }
+    //merge failed
+    if (abortMerge_) {
+        revertMerge();
+        return false;
+    }
+    
     return true;
 }
 
@@ -700,9 +705,28 @@ void SnipParser::initMergeCopy(void)
     snpM.resize(loadCount_ + 16); //add 16 for paranoia
     return;
 }
+//returns if merge failed
+bool SnipParser::MergeState(void)
+{
+    return abortMerge_;
+}
+/*Revert a failed merge*/
+void SnipParser::revertMerge(void)
+{
+    //Reset rsid to null
+    for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
+    {
+        snp[i].rs = NULL;
+    }
+    //reset load count
+    loadCount_ = origloadcount_;
+
+}
+
+
 /*Check the subject is the same to prevent the generation of garbage genetic files
-Enen though this is the most effiecent self resizing inlined loop I could write
-the shear amount of comparisons involved in unsorted date makes this a slow job!! */
+Even though this is the most effiecent self resizing inlined loop I could write
+the shear amount of comparisons involved in unsorted data makes this a slow job!! */
 __forceinline bool SnipParser::mergeRs(int code,std::string line)
 {
     for (unsigned int i = 0; i <= end_index_;)
