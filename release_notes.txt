@@ -5,6 +5,7 @@ above fix reduces code redundancy
 Added Sex field for loaded file
 fix sex determination for 23toMe and FTDNA
 fix no read to '0' from 23toMe's and FTDNA's '-' as a standard
+fix spelling mistakes
 
 
 Version Beta 0.25

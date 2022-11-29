@@ -31,7 +31,7 @@ public:
 	unsigned int IllumUntransVG(void);
 	std::string PVer(void); //return program/class version
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
-	std::string PathogenicCall(int rsid, char riskalelle, float oddsratio, float* sumoddsratio);
+	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 
 private:
 	struct ST;

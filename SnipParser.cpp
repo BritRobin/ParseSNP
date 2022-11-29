@@ -1018,9 +1018,9 @@ void  SnipParser::FConvert(void)
         fsOut.close();
     }
 }  
-/* Searches all loaded data for matching rsID then checks for risk alelle.
+/* Searches all loaded data for matching rsID then checks for risk  allele.
 If it is found it updates the odds ratio                       */
-std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsratio, float* sumoddsratio)
+std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
 {
     std::string result_message = "N/A";
 
@@ -1056,8 +1056,8 @@ std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsrati
                 buffer[6] = NULL;
                 result_message = buffer;
                
-                //Match of risk alelle on both chromosones!
-                if (snp[i].a == riskalelle && snp[i].b == riskalelle)
+                //Match of risk  allele on both chromosones!
+                if (snp[i].a == riskallele && snp[i].b == riskallele)
                 {
                     if (check_Y[0] == 'X' && sex_ == 'M') 
                     {
@@ -1076,7 +1076,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskalelle, float oddsrati
                     return result_message;
                 }
                 //Match in one chromosone
-                if (snp[i].a == riskalelle || snp[i].b == riskalelle)
+                if (snp[i].a == riskallele || snp[i].b == riskallele)
                 {
                     result_message += "Risk Heterozygous";
                     if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;

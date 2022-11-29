@@ -16,6 +16,7 @@
 #define IDD_DIALOG2                     135
 #define IDD_PATHOGENICS                 136
 #define IDD_MERWAR                      138
+#define IDD_MERGABORT                   139
 #define IDC_STATIC_RS                   1001
 #define IDC_STATIC_SEARCHGROUP          1002
 #define IDC_EDIT_SEARCH                 1003
@@ -57,6 +58,7 @@
 #define IDC_STATICVER                   1047
 #define IDC_SEX                         1048
 #define IDC_STATICMR                    1049
+#define IDC_STATICAB                    1050
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -78,9 +80,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        139
+#define _APS_NEXT_RESOURCE_VALUE        140
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1050
+#define _APS_NEXT_CONTROL_VALUE         1051
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

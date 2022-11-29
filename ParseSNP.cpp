@@ -50,6 +50,7 @@ INT_PTR CALLBACK    ProjectDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Deletemsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
@@ -234,7 +235,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                       s = allele1;
                       lp = A2W_EX(s.c_str(), s.length());
                       SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
-                      //Fix 'X' chromosone in men as ancestoy dna files populate both alelles as it make searches easier?
+                      //Fix 'X' chromosone in men as ancestoy dna files populate both  alleles as it make searches easier?
                       if (chromosome[0] == 'X' && x.sex() == 'M') allele2 = '-';
                       s = allele2;
                       lp = A2W_EX(s.c_str(), s.length());
@@ -902,24 +903,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
-                                DialogBox(hInst, MAKEINTRESOURCE(138/*IDD_MERWAR*/), aDiag, MergeWarnmsg);
+                                DialogBox(hInst, MAKEINTRESOURCE(IDD_MERWAR), aDiag, MergeWarnmsg);
                                 int unsigned count;
-                                if (x.MergeAncestory(pszFilePath))
-                                {
-                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                    //Update count and path per normal
-                                    count = x.SNPCount();
-                                    mergeLoad = mergeLoad | 1;
-                                    PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
-                                    ScreenUpdate(hWnd, count, src, NULL, x.sex());
-                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    InvalidateRect(aDiag, NULL, TRUE);
-                                    UpdateWindow(aDiag);
-                                }
+                                x.MergeAncestory(pszFilePath);
+                               
+                                  if (x.MergeState())
+                                    {
+                                      DialogBox(hInst, MAKEINTRESOURCE(IDD_MERGABORT), aDiag, MergeAbortmsg);
+                                    }
+                                  else {
+                                     
+                                      //merge successfull
+                                      DialogBox(hInst, MAKEINTRESOURCE(IDD_MERWAR), aDiag, MergeWarnmsg);
+                                      mergeLoad = mergeLoad | 1;
+                                  }
+                                  LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                  SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                  SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                  //Update count and path per normal
+                                  count = x.SNPCount();
+                                  PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
+                                  ScreenUpdate(hWnd, count, src, NULL, x.sex());
+                                  HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                  SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                  EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                  InvalidateRect(aDiag, NULL, TRUE);
+                                  UpdateWindow(aDiag);
+                                
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
@@ -1184,7 +1194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         while (!fstrm.eof())
                                         {
                                             int rsid=0;
-                                            char riskalelle;
+                                            char riskallele;
                                             float oddsratio = 0.0;
 
                                             //Read next line in
@@ -1233,7 +1243,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     i++;
                                                 }
                                                 //if thechar is ivalid it will do nothing so no need to check it
-                                                riskalelle=lbuffer[i];
+                                                riskallele=lbuffer[i];
                                                 i++;
                                                 /*skip spaces, could be wrtten in one line but this is more readable*/
                                                 while (lbuffer[i] == ' ' || lbuffer[i] == ']')
@@ -1263,7 +1273,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             }
                                             std::string ret_result;
                                             if (rsid > 0) {
-                                                ret_result = x.PathogenicCall(rsid, riskalelle, oddsratio, fp);
+                                                ret_result = x.PathogenicCall(rsid, riskallele, oddsratio, fp);
                                                 s = lbuffer;
                                                 s += "   " + ret_result;
                                                 str2.resize(s.length(), L' '); // Make room for characters
@@ -1580,6 +1590,34 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     }
     return (INT_PTR)FALSE;
 }
+
+INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    //Because we have created a form dialog after the menu
+    ShowWindow(hDlg, 5);
+
+    switch (message)
+    {
+    case WM_INITDIALOG: {
+        std::string s = "The Merge operation was aborted due to too many differences between existing SNP alleles.\nNo changes have been made.";
+        USES_CONVERSION_EX;
+        LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
+
+        return (INT_PTR)TRUE;
+    }
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
 INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -1592,7 +1630,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
         std::string s = "**You Have Initiated a Merge!**\n\nNote: There is a lot of data to compare and the program may become unresposive for several minutes.\nAlso be aware that the function is indended to be used to merge two files of the same person, if two different subject's files are merged the code will detect the many differences and abort the merge.\n\nClick OK to proceed!";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, 1049/*IDC_STATICMR1*/), lp);
+        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
 
         return (INT_PTR)TRUE;
     }
@@ -1792,7 +1830,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
         case IDC_ENTER: {//The main code, 
             TCHAR buffer[260] = { 0 };
-            std::string s_rsid,s_chr,s_gene, s_riskalelle, s_oddsratio;
+            std::string s_rsid,s_chr,s_gene, s_riskallele, s_oddsratio;
             //get rsid number
            if (GetWindowText(GetDlgItem(hDlg,IDC_RSIDP), buffer, 15)) 
             {
@@ -1829,7 +1867,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                CT2CA pszConvertedAnsiString(buffer);
                s = pszConvertedAnsiString;
                if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
-               s_riskalelle = " [" + s +"] ";
+               s_riskallele = " [" + s +"] ";
             }
  
            //Get Odds Ratio optional but should be inclued if available
@@ -1851,7 +1889,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            }
            if (s_chr.length() < 2) s_chr = s_chr + " ";
            std::string s;
-           s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskalelle + "  " + s_oddsratio;
+           s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskallele + "  " + s_oddsratio;
            std::wstring str2(s.length(), L' '); // Make room for characters
            int lcount,lindex=-1;
 
