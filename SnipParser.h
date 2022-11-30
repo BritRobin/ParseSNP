@@ -25,10 +25,12 @@ public:
 	bool f23andMe(wchar_t* fi_);
 	void FConvert(void);  //<- One off code generator
 	wchar_t sex(void);
-	int merged(void);
+	unsigned int merged(void);
 	bool MergeState(void);
 	unsigned int IllumTransVG(void);
 	unsigned int IllumUntransVG(void);
+	unsigned int MergeProcessed(void);
+	
 	std::string PVer(void); //return program/class version
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);

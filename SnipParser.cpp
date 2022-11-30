@@ -173,6 +173,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         char nbuffer[260];
         int loopbreak = 0;
         mergefile_ = 0;
+        mergered_ = allcecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
         //Open file for read 
         fs.open(fi_, std::ios::in);
@@ -185,7 +186,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             while (!fs.eof() && !abortMerge_)
-            {   //read a line into a temorary buffer
+            {   //read a line into a temporary buffer
                 fs.getline(nbuffer, 256);
                 vercheck = nbuffer;
                 rdindex = 0;
@@ -687,7 +688,7 @@ wchar_t SnipParser::sex(void)
 {
     return sex_;
 }
-int SnipParser::merged(void)
+unsigned int SnipParser::merged(void)
 {
     return mergered_;
 }
@@ -722,7 +723,10 @@ void SnipParser::revertMerge(void)
     loadCount_ = origloadcount_;
 
 }
-
+unsigned int SnipParser::MergeProcessed(void)
+{
+    return(allcecked_ + mergered_);
+}
 
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Even though this is the most effiecent self resizing inlined loop I could write
@@ -733,20 +737,20 @@ __forceinline bool SnipParser::mergeRs(int code,std::string line)
     { //merge if code is a no read or not found
         if (snpM[i].rs == code)
         {           
-            //shorten the loop with every match we can move data aroud as its a subset copy!
-            snpM[i].rs = snpM[end_index_].rs;
-            snpM[i].a = snpM[end_index_].a;
-            snpM[i].b = snpM[end_index_].b;
-            end_index_--;
+            allcecked_++;
             //special case replace noread value
-            if (snpM[i].a != '0') return true;
+            if (snpM[i].a == '0') return true;
             std::size_t found = line.find(snpM[i].a);
             if (found == std::string::npos) failcheck_++;
             else { 
                   found = line.find(snpM[i].b);
                   if (found == std::string::npos) failcheck_++;
                  }
-            allcecked_++;
+            //shorten the loop with every match we can move data aroud as its a subset copy!
+            snpM[i].rs = snpM[end_index_].rs;
+            snpM[i].a = snpM[end_index_].a;
+            snpM[i].b = snpM[end_index_].b;
+            end_index_--;
             if (allcecked_ > 1200)
             { //if all matches are less that 1/2 of the total check the files are way to different and merge is aborted
                 if ((allcecked_ >> 1) < failcheck_) abortMerge_ = true;

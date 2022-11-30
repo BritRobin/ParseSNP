@@ -51,6 +51,7 @@ INT_PTR CALLBACK    Deletemsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
@@ -914,7 +915,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   else {
                                      
                                       //merge successfull
-                                      DialogBox(hInst, MAKEINTRESOURCE(IDD_MERWAR), aDiag, MergeWarnmsg);
+                                      DialogBox(hInst, MAKEINTRESOURCE(IDD_MERREPORT), aDiag, MergeReportmsg);
                                       mergeLoad = mergeLoad | 1;
                                   }
                                   LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
@@ -1521,7 +1522,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
 INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
-    //Because we have crated a form dialog after the menu
+    //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
 
     switch (message)
@@ -1605,6 +1606,46 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
 
+        return (INT_PTR)TRUE;
+    }
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+
+INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    //Because we have created a form dialog after the menu
+    ShowWindow(hDlg, 5);
+
+    switch (message)
+    {
+    case WM_INITDIALOG: {
+        std::string s = "Merge Completed Successfully!\n\n\The Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
+        USES_CONVERSION_EX;
+        LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
+        
+        std::ostringstream ss;
+        ss << x.MergeProcessed();
+        std::string sf(ss.str());
+        lp = A2W_EX(sf.c_str(), sf.length());
+        SetWindowTextW(GetDlgItem(hDlg, IDC_EDITTOTAL), lp);
+        
+        std::ostringstream sx;
+        sx << x.merged();
+        std::string se(sx.str());
+        lp = A2W_EX(se.c_str(), se.length());
+        SetWindowTextW(GetDlgItem(hDlg, IDC_MERGED), lp);
         return (INT_PTR)TRUE;
     }
 
