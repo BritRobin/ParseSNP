@@ -32,6 +32,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         char nbuffer[260];
         int loopbreak = 0;
         int noreadcount = 0;
+        bool noY = true;
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -126,7 +127,8 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
                     //Determine Sex
                     if (snp[inx].ch == "24" && snp[inx].a == '0' && snp[inx].b == '0') noreadcount++;
-                    if (noreadcount > 15) sex_ = 'F';
+                    if (noY == true && snp[inx].ch == "24") noY = false;
+                    if (noreadcount > 15 || noY == true) sex_ = 'F';
                     else sex_ = 'M';
 
                     //increment the primary index
@@ -172,9 +174,11 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
     {
         char nbuffer[260];
         int loopbreak = 0;
+        //merge variables
         mergefile_ = 0;
         mergered_ = allcecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
+        //merge variables
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -188,7 +192,9 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             while (!fs.eof() && !abortMerge_)
             {   //read a line into a temporary buffer
                 fs.getline(nbuffer, 256);
+                //Merge code
                 vercheck = nbuffer;
+                //Merge code
                 rdindex = 0;
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's' && isdigit((int)nbuffer[rdindex + 2])) {
@@ -667,6 +673,191 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
     }
     return true;
 };
+//Merge 23toMe
+//23andMe function
+//has VG numbers that may corespond to RS numbers
+bool  SnipParser::Mergef23andMe(wchar_t* fi_)
+{
+    std::fstream  fs;
+    if (!fs.bad())
+    {
+        char nbuffer[260];
+        int loopbreak = 0;
+        //merge variables
+        mergefile_ = 0;
+        mergered_ = allcecked_ = 0;
+        end_index_ = origloadcount_ = loadCount_;
+        //merge variables
+        bool singleAllele;
+        //Open file for read 
+        fs.open(fi_, std::ios::in);
+        //Check file was opened  
+        if (fs.is_open()) {
+            singleAllele = false;
+            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+            //Illumina unloaded count
+            illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
+            snp.resize(10430639);
+            //NO!!!: reset loadcount_ and vector for next file for next file
+            int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
+            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            nbuffer[257] = NULL;        //more efficient
+            std::string vercheck;       //more efficient
+            initMergeCopy();            //create merge subset
+            //END:
+            while (!fs.eof() && !abortMerge_)
+            {
+                //read a line into a temorary buffer
+                fs.getline(nbuffer, 256);
+                //Merge code
+                vercheck = nbuffer;
+                //Merge code
+                int rdindex = 0;
+                //GET RS Number numeric part only 
+                if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]))) && isdigit((int)nbuffer[rdindex + 2]))
+                {//ftdna-illumina
+                    char num[20];
+                    int  nmindex = 0;
+                    loopbreak = 0;
+                    num[0] = NULL;
+
+                    if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
+                    {
+                        rdindex += 2;
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        {
+                            num[nmindex] = nbuffer[rdindex];
+                            rdindex++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+                        //First in the line is the RS number
+                         rst = atoi(num);
+
+                    }
+                    else
+                    {
+                        //23toMe ixxxx codes ro rsxxx codes
+                        int isw = 0;
+                        nmindex = 0;
+                        rdindex += 1; //Skip i
+
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        {
+                            num[nmindex] = nbuffer[rdindex];
+                            rdindex++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+
+                        rst = f23andMeDecode(num);//in example  VG01S1077 ftdna will equal numeric 11007
+                    }
+
+                    if (rst > 0 && mergeRs(rst, vercheck)) //stop line load of uniterpreted i codes
+                    {
+                        snp[inx].rs = rst;
+                        //move past tab or spaces to next numeric data chromosone number below bug fix 3/11/21
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
+                        {//wrote whith braces for readablility
+                            rdindex++;
+                        }
+                        //re-init 
+                        nmindex = 0;
+                        num[0] = NULL;
+
+                        if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
+                        {
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            {
+                                num[nmindex] = nbuffer[rdindex];
+                                rdindex++;
+                                nmindex++;
+                            }
+                            //second in the line is the chromosone number
+                            num[nmindex] = NULL;
+                            strcpy_s(snp[inx].ch, num);
+                        }
+                        else {//Bug fix 3/10/21
+                            if ((nbuffer[rdindex] == 'M' && nbuffer[rdindex + 1] == 'T') || (nbuffer[rdindex] == 'm' && nbuffer[rdindex + 1] == 't'))
+                            {//know its uppercase but others use the format
+                                snp[inx].ch[0] = 'M';
+                                snp[inx].ch[1] = 'T';
+                                snp[inx].ch[2] = NULL;  //Bug fix 3/11/21
+                                singleAllele = true;
+                            }
+                            else
+                            {
+                                snp[inx].ch[0] = nbuffer[rdindex];
+                                if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
+                                if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                                snp[inx].ch[1] = NULL;
+                                singleAllele = true;
+                            }
+
+                        }
+
+                        //move past tab or spaces to next numeric data posotion number
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        {//wrote whith braces for readablility
+                            rdindex++;
+                        }
+                        //read position
+                        //re-init 
+                        nmindex = 0;
+                        num[0] = NULL;
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        {
+                            num[nmindex] = nbuffer[rdindex];
+                            rdindex++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+                        //second in the line is the chromosone number
+                        snp[inx].pos = atoi(num);
+
+                        //As the last two values are not numeric we have to rely on the file still being TAB delimited
+                        while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        {
+                            rdindex++;
+                        }
+                        snp[inx].a = nbuffer[rdindex];
+                        //make '0' our standard for noread
+                        if (snp[inx].a == '-') snp[inx].a = '0';
+                        rdindex++;
+                        if (singleAllele)
+                        {
+                            snp[inx].b = NULL;
+                        }
+                        else
+                        {
+                            //As the last two values are not numeric we have to rely on the file still being TAB delimited
+                            while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
+                                && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            {
+                                rdindex++;
+                            }
+                            //Is Char
+                            snp[inx].b = nbuffer[rdindex];
+                            //make '0' our standard for noread
+                            if (snp[inx].b == '-') snp[inx].b = '0';
+                        }
+                        //increment the primary index
+                        inx++;
+                        //increment count of lines loaded
+                        loadCount_++;
+                    }
+                }
+                //does not ref ncbi build
+                loopbreak++;
+                if (loopbreak == 2000) break;
+            }
+            fs.close();
+        }
+        else false;
+    }
+    return true;
+};
 
 //Return the number of translated VG codes
 unsigned int  SnipParser::IllumTransVG(void)
@@ -751,9 +942,9 @@ __forceinline bool SnipParser::mergeRs(int code,std::string line)
             snpM[i].a = snpM[end_index_].a;
             snpM[i].b = snpM[end_index_].b;
             end_index_--;
-            if (allcecked_ > 1200)
-            { //if all matches are less that 1/2 of the total check the files are way to different and merge is aborted
-                if ((allcecked_ >> 1) < failcheck_) abortMerge_ = true;
+            if (allcecked_ > 1250)
+            { //if all matches are less that 1/4 of the total check the files are way to different and merge is aborted
+                if ((allcecked_ >> 2) < failcheck_) abortMerge_ = true;
             }
             return false;
         }
@@ -928,7 +1119,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                  else {
                         if (snp[inx].a == '-' || snp[inx].a == '0') allele1 = (std::string)"0";
                              else allele1 = snp[inx].a + NULL;
-                        if (snp[inx].b == '-' || snp[inx].a == '0') allele2 = (std::string)"0";
+                        if (snp[inx].b == '-' || snp[inx].b == '0') allele2 = (std::string)"0";
                              else allele2 = snp[inx].b + NULL;
                       }
 

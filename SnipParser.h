@@ -23,6 +23,7 @@ public:
 	bool FTDNA(wchar_t* fi_);
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
 	bool f23andMe(wchar_t* fi_);
+	bool Mergef23andMe(wchar_t* fi_);
 	void FConvert(void);  //<- One off code generator
 	wchar_t sex(void);
 	unsigned int merged(void);
