@@ -1020,6 +1020,83 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
          break;
+        case ID_FILE_MERGEFTDNA: {
+
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileOpen;
+
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+                if (SUCCEEDED(hr))
+                {
+                    LPCWSTR a = L"Text Files";
+                    LPCWSTR b = L"All Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.txt"},
+                        {b, L"*.*" },
+                    };
+                    //set file type options
+                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                    // Show the Open dialog box.
+                    hr = pFileOpen->Show(NULL);
+
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileOpen->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath, src;
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                                DialogBox(hInst, MAKEINTRESOURCE(IDD_MERWAR), aDiag, MergeWarnmsg);
+                                int unsigned count;
+                                x.MergeFTDNA(pszFilePath);
+
+                                if (x.MergeState())
+                                {
+                                    DialogBox(hInst, MAKEINTRESOURCE(IDD_MERGABORT), aDiag, MergeAbortmsg);
+                                }
+                                else {
+                                      //merge successfull
+                                      DialogBox(hInst, MAKEINTRESOURCE(IDD_MERREPORT), aDiag, MergeReportmsg);
+                                      mergeLoad = mergeLoad | 4;
+                                }
+                                LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                //Update count and path per normal
+                                count = x.SNPCount();
+                                PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
+                                ScreenUpdate(hWnd, count, src, NULL, x.sex());
+                                HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                InvalidateRect(aDiag, NULL, TRUE);
+                                UpdateWindow(aDiag);
+
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
+                            }
+                        }
+                        pFileOpen->Release();
+                    }
+                    CoUninitialize();
+                }
+            }
+        }
+        break;
         case ID_FILE_EXPORT:{
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
                 COINIT_DISABLE_OLE1DDE);

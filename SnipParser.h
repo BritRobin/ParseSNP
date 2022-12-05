@@ -21,6 +21,7 @@ public:
 	bool Ancestory(wchar_t* fi_);
 	bool MergeAncestory(wchar_t* fi_);
 	bool FTDNA(wchar_t* fi_);
+	bool MergeFTDNA(wchar_t* fi_);
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
 	bool f23andMe(wchar_t* fi_);
 	bool Mergef23andMe(wchar_t* fi_);

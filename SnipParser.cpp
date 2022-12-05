@@ -325,7 +325,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
     std::fstream  fs;
     if (!fs.bad())
     {
-        char nbuffer[256];
+        char nbuffer[260];
         int loopbreak = 0;
         int VG = 0; //illumina
         //Open file for read 
@@ -492,6 +492,185 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
     return true;
 };
+//MergeFTDNA
+//FTDNA has VG numbers that may corespond to RS numbers
+bool  SnipParser::MergeFTDNA(wchar_t* fi_)
+{
+    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
+    std::fstream  fs;
+    if (!fs.bad())
+    {
+        char nbuffer[260];
+        int loopbreak = 0;
+        int VG = 0; //illumina
+        //Open file for read 
+        fs.open(fi_, std::ios::in);
+        if (fs.is_open()) {
+        //Check file was opened  
+            int fdind = 0; //ftdna-illumina
+            //merge variables
+            mergefile_ = 0;
+            mergered_ = allcecked_ = 0;
+            end_index_ = origloadcount_ = loadCount_;
+            abortMerge_ = false;
+            //merge variables
+            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+            //Illumina unloaded count
+            illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
+            snp.resize(10430639);
+            int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
+            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            nbuffer[257] = NULL;        //more efficient
+            std::string vercheck;       //more efficient
+            initMergeCopy();            //create merge subset
+            //END:
+            while (!fs.eof() && !abortMerge_)
+            {
+                fdind = 0;
+                //read a line into a temorary buffer
+                fs.getline(nbuffer, 256);
+                //Merge code
+                vercheck = nbuffer;
+                //Merge code
+                int rdindex = 2;
+                if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
+                //GET RS Number numeric part only 
+
+                if (((nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's') || (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')) && isdigit((int)nbuffer[fdind + 2]))
+                {//ftdna-illumina
+                    int ftdna = 0;
+                    char num[20];
+                    int  nmindex = 0;
+                    loopbreak = 0;
+                    rdindex += fdind;//ftdna-illumina
+                    num[0] = NULL;
+
+                    if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
+                    {
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        {
+                            num[nmindex] = nbuffer[rdindex];
+                            rdindex++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+                        //First in the line is the RS number
+                        rst = atoi(num);
+
+                    }
+                    else
+                    {
+                        //FTDNA MyHeritage name : VG01S1077  VG Chromosone number S numeric  rs77931234
+                        nmindex = 0;
+                        if (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')
+                        {
+                            fdind += 2; //Get first chromosone digit
+                            num[nmindex] = nbuffer[fdind];
+                            nmindex++;
+                            fdind++; //Get second chromosone digit
+                            num[nmindex] = nbuffer[fdind];
+                            nmindex++;
+                            fdind++;
+                            fdind++; //Skip Alpha char
+                        }
+                        while (isdigit((int)nbuffer[fdind]) && fdind < 24)
+                        {
+                            num[nmindex] = nbuffer[fdind];
+                            fdind++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+                        rdindex = fdind;                  //set read index
+                        rst = FTDNADecode(num); //ver 0.3 beta separate decode function!
+                    }
+                    if (rst > 0 && mergeRs(rst, vercheck)) //stop line load of uniterpreted VG codes
+                    {
+                        snp[inx].rs = rst;
+                        //move past tab or spaces to next numeric data chromosone number
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
+                        {//wrote whith braces for readablility
+                            rdindex++;
+                        }
+                        //re-init 
+                        nmindex = 0;
+                        num[0] = NULL;
+
+                        if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
+                        {
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            {
+                                num[nmindex] = nbuffer[rdindex];
+                                rdindex++;
+                                nmindex++;
+                            }
+                            //second in the line is the chromosone number
+                            num[nmindex] = NULL;
+                            strcpy_s(snp[inx].ch, num);
+                        }
+                        else {
+                            snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
+                            if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
+                            if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                            snp[inx].ch[1] = NULL;
+
+                        }
+
+                        //move past tab or spaces to next numeric data posotion number
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        {//wrote whith braces for readablility
+                            rdindex++;
+                        }
+                        //read position
+                            //re-init 
+                        nmindex = 0;
+                        num[0] = NULL;
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        {
+                            num[nmindex] = nbuffer[rdindex];
+                            rdindex++;
+                            nmindex++;
+                        }
+                        num[nmindex] = NULL;
+                        //second in the line is the chromosone number
+                        snp[inx].pos = atoi(num);
+
+                        //As the last two values are not numeric we have to rely on the file still being TAB delimited
+                        while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        {
+                            rdindex++;
+                        }
+                        snp[inx].a = nbuffer[rdindex];
+                        //make '0' our standard for noread
+                        if (snp[inx].a == '-') snp[inx].a = '0';
+                        rdindex++;
+                        //As the last two values are not numeric we have to rely on the file still being TAB delimited
+                        while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        {
+                            rdindex++;
+                        }
+                        //Is Char
+                        snp[inx].b = nbuffer[rdindex];
+                        //make '0' our standard for noread
+                        if (snp[inx].b == '-') snp[inx].b = '0';
+                        //increment the primary index
+                        inx++;
+                        //increment count of lines loaded
+                        loadCount_++;
+
+                    }
+                } //FTDNA do not ref NCBI build
+                loopbreak++;
+                if (loopbreak == 2000) break;
+            }
+            fs.close();
+        }
+        else false;
+    }
+
+    return true;
+};
 
 //23andMe function
 //has VG numbers that may corespond to RS numbers
@@ -501,7 +680,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
     std::fstream  fs;
     if (!fs.bad())
     {
-        char nbuffer[256];
+        char nbuffer[260];
         int loopbreak = 0;
         bool singleAllele;
         //Open file for read 
@@ -1150,7 +1329,7 @@ void  SnipParser::FConvert(void)
     std::fstream  fsOut;
     if (!fs.bad() && !fsOut.bad())
     {
-        char nbuffer[256];
+        char nbuffer[260];
         std::string  lbuffer;
         char num[100];
         int loopbreak = 0;
