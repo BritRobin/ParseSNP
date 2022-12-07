@@ -47,10 +47,9 @@ private:
 	unsigned int loadCount_ = 0;
 	unsigned int origloadcount_ = 0; //for reversion and checking
 	unsigned int end_index_ = 0;
-	unsigned int speedup_ = 0;
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;
-	unsigned int mergered_  = 0;
+	unsigned int merged_  = 0;
 	unsigned int failcheck_ = 0;
 	unsigned int allcecked_ = 0;
 	unsigned int mergefile_ = 0;

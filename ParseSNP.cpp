@@ -30,6 +30,7 @@ int rs_number = 0;      // RS Number
 int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
 int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
+int mergeTotal = 0;
 char chromosome[4] = { NULL,NULL,NULL,NULL };//chromosome number
 char allele1 = NULL, allele2 = NULL;
 wchar_t global_s[256];
@@ -374,7 +375,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         {
                             CString temp = "ProjectManifest.ptxt";
                             std::wstring str;
-                            std::string   linebuffer;
+                            std::string  linebuffer;
                             char lbuffer[260];
                             //configPath = currentProject.c_str() + temp;
                             Target = pszFilePath;
@@ -424,6 +425,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 1;
+                                            mergeLoad = mergeTotal = 0;
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
                                     }
@@ -455,6 +457,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 2;
+                                            mergeLoad = mergeTotal = 0;
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
                                     }
@@ -486,6 +489,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                              //New code Beta 0.2
                                             SourceFilePath = str;
                                             loadedFiletype = 3;
+                                            mergeLoad = mergeTotal = 0;
                                             ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                         }
 
@@ -565,7 +569,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //Copy the original DNA file retaining its original name to the project folder
             LPCWSTR Source = SourceFilePath.c_str();
             LPCWSTR Target = pathfilname.c_str();
-            CopyFile(Source, Target, TRUE);
+            if(mergeTotal==0)  //new for ver 0.3 beta write merged files as exported ancestory files with original name
+             { 
+               CopyFile(Source, Target, TRUE);
+              } else {
+                       x.AncestoryWriter((PWSTR)Target);
+                       loadedFiletype = 1;
+                      }
             //Write Project configuration files
             //Open file for write 
             std::fstream  fstrm;
@@ -681,6 +691,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 3;
+                                    mergeLoad = mergeTotal = 0;
                                     ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
@@ -767,6 +778,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 2;
+                                    mergeLoad = mergeTotal = 0;
                                     ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
@@ -846,6 +858,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     //New code Beta 0.2
                                     SourceFilePath = pszFilePath;
                                     loadedFiletype = 1;
+                                    mergeLoad = mergeTotal = 0;
                                     ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
@@ -925,8 +938,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   count = x.SNPCount();
                                   PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                   ScreenUpdate(hWnd, count, src, NULL, x.sex());
-                                  HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                  SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                   EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                   InvalidateRect(aDiag, NULL, TRUE);
                                   UpdateWindow(aDiag);
@@ -994,7 +1005,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                                     //merge successfull
                                     DialogBox(hInst, MAKEINTRESOURCE(IDD_MERREPORT), aDiag, MergeReportmsg);
-                                    mergeLoad = mergeLoad | 2;
+                                    mergeLoad = mergeLoad | 4;
                                 }
                                 LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
                                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
@@ -1003,12 +1014,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 count = x.SNPCount();
                                 PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                 ScreenUpdate(hWnd, count, src, NULL, x.sex());
-                                HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, TRUE);
                                 UpdateWindow(aDiag);
-
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
@@ -1071,7 +1079,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 else {
                                       //merge successfull
                                       DialogBox(hInst, MAKEINTRESOURCE(IDD_MERREPORT), aDiag, MergeReportmsg);
-                                      mergeLoad = mergeLoad | 4;
+                                      mergeLoad = mergeLoad | 2;
                                 }
                                 LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
                                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
@@ -1080,12 +1088,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 count = x.SNPCount();
                                 PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                 ScreenUpdate(hWnd, count, src, NULL, x.sex());
-                                HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, TRUE);
                                 UpdateWindow(aDiag);
-
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
@@ -1647,7 +1652,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
            }
         } else {
                  std::string s = "0";
-                 mergeLoad = 0;
+                 mergeLoad = mergeTotal = 0;
                  USES_CONVERSION_EX;
                  LPWSTR lp = A2W_EX(s.c_str(), s.length());
                  SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
@@ -1795,7 +1800,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         std::string sf(ss.str());
         lp = A2W_EX(sf.c_str(), sf.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_EDITTOTAL), lp);
-        
+        mergeTotal += x.merged();
         std::ostringstream sx;
         sx << x.merged();
         std::string se(sx.str());

@@ -168,7 +168,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
     return true;
 };
 bool  SnipParser::MergeAncestory(wchar_t* fi_)
-{
+{ 
     std::fstream  fs;
     if (!fs.bad())
     {
@@ -176,7 +176,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
-        mergered_ = allcecked_ = 0;
+        merged_ = allcecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
         //merge variables
         //Open file for read 
@@ -495,8 +495,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 //MergeFTDNA
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::MergeFTDNA(wchar_t* fi_)
-{
-    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
+{  
     std::fstream  fs;
     if (!fs.bad())
     {
@@ -510,7 +509,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             int fdind = 0; //ftdna-illumina
             //merge variables
             mergefile_ = 0;
-            mergered_ = allcecked_ = 0;
+            merged_ = allcecked_ = 0;
             end_index_ = origloadcount_ = loadCount_;
             abortMerge_ = false;
             //merge variables
@@ -864,7 +863,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
-        mergered_ = allcecked_ = 0;
+        merged_ = allcecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
         //merge variables
         bool singleAllele;
@@ -1060,7 +1059,7 @@ wchar_t SnipParser::sex(void)
 }
 unsigned int SnipParser::merged(void)
 {
-    return mergered_;
+    return merged_;
 }
 
 //make merge copy
@@ -1095,7 +1094,7 @@ void SnipParser::revertMerge(void)
 }
 unsigned int SnipParser::MergeProcessed(void)
 {
-    return(allcecked_ + mergered_);
+    return(allcecked_ + merged_);
 }
 
 /*Check the subject is the same to prevent the generation of garbage genetic files
@@ -1130,7 +1129,7 @@ __forceinline bool SnipParser::mergeRs(int code,std::string line)
         //inceament loop
         i++;
     }
-    mergered_++;
+    merged_++;
     return true;
 }
 /*RS number search function passed the RS number to searcg for
