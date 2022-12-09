@@ -13,6 +13,7 @@
 #include <Winuser.h>
 #include <shlobj_core.h>
 #include <filesystem>
+#include <shellapi.h>
 #include <sstream>
 
 #define MAX_LOADSTRING 100
@@ -1846,6 +1847,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     }
     return (INT_PTR)FALSE;
 }
+
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -1861,17 +1863,30 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
-
+        const HFONT font = (HFONT)SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_GETFONT, 0, 0);
+        LOGFONT fontAttributes = { 0 };
+        ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
+        fontAttributes.lfUnderline = TRUE;
+        HFONT x = CreateFontIndirect(&fontAttributes);
+        SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_SETFONT, (WPARAM)x, 1);
         return (INT_PTR)TRUE;
     }
-
+  
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId) {
+        case IDOK:
+        case IDCANCEL:
         {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
-        break;
+        case IDC_STATIC_LNK: {
+            ShellExecute(NULL, TEXT("open"), TEXT("https://github.com/BritRobin/ParseSNP"), NULL, NULL, SW_SHOWNORMAL);
+            return (INT_PTR)TRUE;
+        }
+        }
     }
     return (INT_PTR)FALSE;
 }
