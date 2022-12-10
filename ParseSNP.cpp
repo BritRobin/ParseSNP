@@ -912,7 +912,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath,src;
+                            PWSTR pszFilePath;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -988,7 +988,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath, src;
+                            PWSTR pszFilePath;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1063,7 +1063,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath, src;
+                            PWSTR pszFilePath;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1280,21 +1280,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     if (fstrm.is_open()) {
                                         //reset display area
                                         HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                        {
+                                        { //Ver 3.0 Beta - re-written so it make sense! 
                                             LOGFONT lf;
-                                            const HFONT font = (HFONT)SendDlgItemMessage(aDiag,
-                                                IDC_LIST2, WM_GETFONT, 0, 0);
                                             LOGFONT fontAttributes = { 0 };
+                                            const HFONT font = (HFONT)SendDlgItemMessage(aDiag, IDC_LIST2, WM_GETFONT, 0, 0);
                                             ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
-                                         
-                                            memset(&lf, 0, sizeof(LOGFONT));       // zero out structure
-                                            lf.lfHeight = 16;                      // request a 14 pixel-height font
-                                            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"),11);                    // request a face name "Arial"
-                                            HFONT x =CreateFontIndirect(&lf);
-                                            
+                                            memcpy_s(&lf, sizeof(fontAttributes), &fontAttributes, sizeof(lf));
+                                            lf.lfHeight = 16;                      // request a 16 pixel-height font
+                                            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
+                                            HFONT x = CreateFontIndirect(&lf);
                                             SendDlgItemMessage(aDiag, IDC_LIST2, WM_SETFONT, (WPARAM)x, 1);
-                                        }
-                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                        } //Ver 3.0 Beta - re-written so it make sense! 
+                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
                                         for (int i = 0; i < 257; i++) {
@@ -1791,7 +1788,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     switch (message)
     {
     case WM_INITDIALOG: {
-        std::string s = "Merge Completed Successfully!\n\n\The Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
+        std::string s = "Merge Completed Successfully!\n\nThe Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
@@ -1890,7 +1887,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-//Delete box
+
 INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -1906,6 +1903,17 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nOD cannot be compared if data is from different studies.\nIf you share a .PPI file create an MD5 hash of it for verification.\nA .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic.\nIf you have genetic medical worries you should speak with a Dr or Genetic counselor!";
         lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, 1045), lp);
+        { //Ver 3.0 Beta - re-written so it make sense! 
+            LOGFONT lf;
+            LOGFONT fontAttributes = { 0 };
+            const HFONT font = (HFONT)SendDlgItemMessage(aDiag, IDC_LIST1, WM_GETFONT, 0, 0);
+            ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
+            memcpy_s(&lf, sizeof(fontAttributes), &fontAttributes, sizeof(lf));
+            lf.lfHeight = 16;                      // request a 16 pixel-height font
+            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
+            HFONT x = CreateFontIndirect(&lf);
+            SendDlgItemMessage(aDiag, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1);
+        } //Ver 3.0 Beta - re-written so it make sense! 
         return (INT_PTR)TRUE;
     }
 
@@ -1914,7 +1922,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         // Parse the menu selections:
         switch (wmId)
         {
-        
          case IDC_SAVE: {
             TCHAR buffer[260] = { 0 };
             std::string s_study,s_URL,s_ncbiref;
@@ -1925,11 +1932,13 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 s_study = pszConvertedAnsiString;
             }
             else  break; //mandatory field
+
             if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, 255))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_URL += pszConvertedAnsiString;
             }else  break; //mandatory field
+
             if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
             {
                 CT2CA pszConvertedAnsiString(buffer);

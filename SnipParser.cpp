@@ -675,8 +675,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 //has VG numbers that may corespond to RS numbers
 bool  SnipParser::f23andMe(wchar_t* fi_)
 {
-    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
-    std::fstream  fs;
+     std::fstream  fs;
     if (!fs.bad())
     {
         char nbuffer[260];
