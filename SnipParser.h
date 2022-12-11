@@ -43,7 +43,7 @@ private:
 	wchar_t fileLoaded_[260];
 	wchar_t sex_ = '?';
 	std::string Pversion_ = "0.3 Beta"; //Progran Version
-	std::string NCBIBuild_="--";
+	std::string NCBIBuild_= "--";
 	unsigned int loadCount_ = 0;
 	unsigned int origloadcount_ = 0; //for reversion and checking
 	unsigned int end_index_ = 0;

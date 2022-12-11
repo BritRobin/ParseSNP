@@ -4,8 +4,13 @@ Fixes omitted enable for pathogenics in project load!
 above fix reduces code redundancy 
 Added Sex field for loaded file
 fix sex determination for 23toMe and FTDNA
-fix no read to '0' from 23toMe's and FTDNA's '-' as a standard
-fix spelling mistakes
+fix no read to '0' from 23toMe's and FTDNA's '-' ; '0' as a standard
+fix spelling mistakes in comments and code
+fixed typos and spelling mistakes on GUI main form
+fixed main form layout
+fixed font altering code
+Added hyperlink in about box without MFC
+
 
 
 Version Beta 0.25
