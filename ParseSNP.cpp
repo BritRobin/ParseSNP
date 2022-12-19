@@ -15,7 +15,7 @@
 #include <filesystem>
 #include <shellapi.h>
 #include <sstream>
-
+#include "MD5.h"
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
 
@@ -1265,10 +1265,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         if (SUCCEEDED(hr))
                         {
                             PWSTR pszFilePath;
+
+
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
+                                size_t dest;
+                                size_t srce;
+                                size_t charsConverted = 0;
+                                srce = wcslen(pszFilePath);
+                                dest = srce + 1;
+                                
+                                    
+                                char filename[260];
+                             
+                                wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
                                 char lbuffer[260];
                                 /*open file*/
                                 std::fstream  fstrm;
@@ -1452,6 +1464,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         ss << sumoddsratio;
                                         std::string sf(ss.str());
                                         s = "Cumulative OR (?) " + sf;
+                                        str2.resize(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                        std::string hash;
+                                        MD5 md5;
+                                        hash = md5.digestFile(filename);
+                                        std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
+                                        s = "PPI File's MD5 = ";
+                                        s = s + hash;
                                         str2.resize(s.length(), L' '); // Make room for characters
                                         // Copy string to wstring.
                                         std::copy(s.begin(), s.end(), str2.begin());

@@ -124,13 +124,15 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                     //Is Char
                     snp[inx].b = nbuffer[rdindex];
-
                     //Determine Sex
-                    if (snp[inx].ch == "24" && snp[inx].a == '0' && snp[inx].b == '0') noreadcount++;
-                    if (noY == true && snp[inx].ch == "24") noY = false;
+                    if ((snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4') && snp[inx].a == '0' && snp[inx].b == '0') noreadcount++;
+                    if (noY == true && (snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4'))
+                    {
+                        noY = false;
+                    }
                     if (noreadcount > 15 || noY == true) sex_ = 'F';
                     else sex_ = 'M';
-
+                    //Determine Sex
                     //increment the primary index
                     inx++;
                     //increment count of lines loaded

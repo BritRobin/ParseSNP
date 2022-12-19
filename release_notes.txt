@@ -1,3 +1,7 @@
+Version Beta 0.31
+Fixed Bug for Ancestory male determination
+Added MD5 file hash display to pathogenics results
+
 Version Beta 0.30
 Added file merge of not present rsids a lot of new code :)
 Fixes omitted enable for pathogenics in project load!

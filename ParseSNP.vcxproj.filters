@@ -30,6 +30,9 @@
     <ClInclude Include="SnipParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MD5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ParseSNP.cpp">
