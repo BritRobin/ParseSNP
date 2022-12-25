@@ -40,7 +40,7 @@ public:
 private:
 	struct ST;
 	bool abortMerge_ = false;
-	wchar_t fileLoaded_[260];
+	wchar_t fileLoaded_[260] = { 0 };
 	wchar_t sex_ = '?';
 	std::string Pversion_ = "0.31 Beta"; //Progran Version
 	std::string NCBIBuild_= "--";

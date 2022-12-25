@@ -1320,10 +1320,9 @@ void  SnipParser::FConvert(void)
 {
    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
    /* wchar_t* fiIn_;
-    wchar_t* fiOut_; */
+      wchar_t* fiOut_; */
     wchar_t  codeIn_[] = L"f:\\icode.txt";
     wchar_t  codeOut_[] = L"f:\\ccode.txt";
-
 
     std::fstream  fs;
     std::fstream  fsOut;

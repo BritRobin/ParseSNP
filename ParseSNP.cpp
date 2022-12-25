@@ -390,21 +390,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 {
                                     //read a line into a temorary buffer
                                     fstrm.getline(lbuffer, 256);//DNA file to open
-                                    for (int i = 0; i < 257; i++) {
-                                        if (lbuffer[i] == '\n') {
-                                            lbuffer[i] = NULL;
-                                            break;
-                                        }
-                                    }
                                     //file name and path wide                         
                                     str = A2T(lbuffer);
                                     fstrm.getline(lbuffer, 256);//DNA file type to open
-                                    for (int i = 0; i < 257; i++) {
-                                        if (lbuffer[i] == '\n') {
-                                            lbuffer[i] = NULL;
-                                            break;
-                                        }
-                                    }
                                     int xsw = atoi(lbuffer);
 
                                     // 1=Ancestory 2=FTNDA 3=23toM3
@@ -497,12 +485,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     }
 
                                     fstrm.getline(lbuffer, 256);
-                                    for (int i = 0; i < 257; i++) {
-                                        if (lbuffer[i] == '\n') {
-                                            lbuffer[i] = NULL;
-                                            break;
-                                        }
-                                    }
                                     xsw = atoi(lbuffer);
                                     if (xsw == 0) {
                                         fstrm.close();
@@ -514,12 +496,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     for (int lst = 0; lst < xsw; lst++) {
                                         fstrm.getline(lbuffer, 256);//read project line
                                         int i = 0; // moved outside loop scope
-                                        for (; i < 257; i++) {
-                                            if (lbuffer[i] == '\n') {
-                                                lbuffer[i] = NULL;
-                                                break;
-                                            }
-                                        }
                                         std::string s = lbuffer;
                                         std::wstring str2(s.length(), L' '); // Make room for characters
                                         // Copy string to wstring.
@@ -541,9 +517,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
         }
-
-
-            break;
+        break;
         }
      
         case ID_FILE_SAVEPROJECT:
@@ -1306,12 +1280,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
-                                        for (int i = 0; i < 257; i++) {
-                                            if (lbuffer[i] == '\n') {
-                                                lbuffer[i] = NULL;
-                                                break;
-                                            }
-                                        }
                                         std::string s = "Title: ";
                                         s += lbuffer;
                                         std::wstring str2(s.length(), L' '); // Make room for characters
@@ -1321,12 +1289,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
-                                        for (int i = 0; i < 257; i++) {
-                                            if (lbuffer[i] == '\n') {
-                                                lbuffer[i] = NULL;
-                                                break;
-                                            }
-                                        }
                                         s = "Source: ";
                                         s += lbuffer;
                                         str2.resize(s.length(), L' '); // Make room for characters
@@ -1337,12 +1299,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
-                                        for (int i = 0; i < 257; i++) {
-                                            if (lbuffer[i] == '\n') {
-                                                lbuffer[i] = NULL;
-                                                break;
-                                            }
-                                        }
                                         s = "NCBI Reference: ";
                                         s += lbuffer;
                                         str2.resize(s.length(), L' '); // Make room for characters
@@ -1945,7 +1901,8 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         // Parse the menu selections:
         switch (wmId)
         {
-         case IDC_SAVE: {
+        case IDC_SAVE: {
+
             TCHAR buffer[260] = { 0 };
             std::string s_study,s_URL,s_ncbiref;
 
@@ -2000,10 +1957,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
-                            WCHAR ext[5];
+                            PWSTR pszFilePath;           
                             WCHAR filename[260];
-
+                            WCHAR ext[5];
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -2054,13 +2010,41 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 }
                                             }
                                             fstrm.close();
+                                            //Open file for write 
+                                            std::fstream  fstrmd5;
+                                            if (!fstrmd5.bad())
+                                            {   //filestream 
+                                                MD5 md5;
+                                                ext[0] = '.';
+                                                ext[1] = 'M';
+                                                ext[2] = 'D';
+                                                ext[3] = '5';
+                                                ext[4] = NULL;
+                                                std::string hash;
+                                                size_t dest;
+                                                size_t srce;
+                                                size_t charsConverted = 0;
+                                                srce = wcslen(filename);
+                                                dest = srce + 1;
+                                                char file[260];
+
+                                                wcstombs_s(&charsConverted, file, dest, (wchar_t const*)filename, srce);
+                                                hash = md5.digestFile(file);
+                                                std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
+                                                
+                                                StrCpyW(filename, pszFilePath);//we know 
+                                                wcscat_s(filename, ext);
+                                                fstrmd5.open(filename, std::ios::out);
+                                                if (fstrmd5.is_open()) {
+                                                    fstrmd5.write(hash.c_str(), hash.length());
+                                                    fstrmd5.close();
+                                                }
+                                            }
                                         }
                                     }
                                 }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
-                                InvalidateRect(aDiag, NULL, TRUE);
-                                UpdateWindow(aDiag);
                             }
                         }
                     }
@@ -2070,7 +2054,225 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
          break;
         }
+        case IDC_SAVE_DRAFT: {
+            TCHAR buffer[260] = { 0 };
+            std::string s_study, s_URL, s_ncbiref;
 
+            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_study = pszConvertedAnsiString;
+            }
+
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_URL += pszConvertedAnsiString;
+            }
+
+            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_ncbiref += pszConvertedAnsiString;
+            }
+            if (s_ncbiref.length() == 0) s_ncbiref = "--";
+
+            //name and write file
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileWrite;
+
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
+
+                if (SUCCEEDED(hr))
+                {
+
+                    LPCWSTR a = L"DRFT Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.DRFT"},
+                    };
+                    //set file type options
+                    hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
+                    // Show the Open dialog box.
+                    hr = pFileWrite->Show(NULL);
+
+                    // Get the file name from the dialog box.
+                    if (SUCCEEDED(hr))
+                    {
+                        IShellItem* pItem;
+                        hr = pFileWrite->GetResult(&pItem);
+                        if (SUCCEEDED(hr))
+                        {
+                            PWSTR pszFilePath;
+                            WCHAR ext[6];
+                            WCHAR filename[260];
+
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                            // Display the file name to the user.
+                            if (SUCCEEDED(hr))
+                            {
+                                ext[0] = '.';
+                                ext[1] = 'D';
+                                ext[2] = 'R';
+                                ext[3] = 'F';
+                                ext[4] = 'T';
+                                ext[5] = NULL;
+                                StrCpyW(filename, pszFilePath);//we know 
+                                wcscat_s(filename, ext);
+                                {//Write the file
+                                    //Open file for write 
+                                    std::fstream  fstrm;
+                                    if (!fstrm.bad())
+                                    {   //filestream 
+                                        //fstrm.open(pszFilePath, std::ios::out);
+                                        fstrm.open(filename, std::ios::out);
+                                        if (fstrm.is_open()) {
+                                            HWND plst = GetDlgItem(hDlg, IDC_LIST1);
+                                            int  lcount;
+                                            std::string  lbuffer;
+                                            //Write Overview
+                                            s_study += "\n";
+                                            const char* write_it = s_study.c_str();
+                                            fstrm.write(write_it, s_study.length());
+                                            //Write the URL to the study the file is based on
+                                            s_URL += "\n";
+                                            write_it = s_URL.c_str();
+                                            fstrm.write(write_it, s_URL.length());
+                                            //NCBI Ref model major revision
+                                            s_ncbiref += "\n";
+                                            write_it = s_ncbiref.c_str();
+                                            fstrm.write(write_it, s_ncbiref.length());
+                                            lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+                                            TCHAR text[256];
+                                            for (int x = 0, ln = 0; x <= lcount; x++)
+                                            {
+                                                ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
+                                                if (ln > 0 and ln < 256) {
+                                                    SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                                                    //checked: the returned text is Zero terminated at tchar[ln] !
+                                                    CT2CA pszConvertedAnsiString(text);
+                                                    lbuffer = pszConvertedAnsiString;
+                                                    lbuffer += "\n";
+                                                    const char* write_it = lbuffer.c_str();
+                                                    fstrm.write(write_it, lbuffer.length());
+                                                }
+                                            }
+                                            fstrm.close();
+                                        }
+                                    }
+                                }
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
+                            }
+                        }
+                    }
+                    pFileWrite->Release();
+                }
+                CoUninitialize();
+            }
+            break;
+        }
+        case IDC_LOAD_DRAFT: {
+                HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                    COINIT_DISABLE_OLE1DDE);
+                if (SUCCEEDED(hr))
+                {
+                    IFileOpenDialog* pFileOpen;
+
+                    // Create the FileOpenDialog object.
+                    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                        IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+                    if (SUCCEEDED(hr))
+                    {
+                        LPCWSTR a = L"DRFT Files";
+                        COMDLG_FILTERSPEC rgSpec[] =
+                        {
+                            {a, L"*.DRFT"},
+                        };
+                        //set file type options
+                        hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                        // Show the Open dialog box.
+                        hr = pFileOpen->Show(NULL);
+                        // Get the file name from the dialog box.
+                        if (SUCCEEDED(hr))
+                        {
+                            IShellItem* pItem;
+                            hr = pFileOpen->GetResult(&pItem);
+                            if (SUCCEEDED(hr))
+                            {
+                                PWSTR pszFilePath;
+
+                                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                                // Display the file name to the user.
+                                if (SUCCEEDED(hr))
+                                {
+                                    char lbuffer[260];
+                                    /*open file*/
+                                    std::fstream  fstrm;
+                                    if (!fstrm.bad())
+                                    {
+                                        //filestream 
+                                        fstrm.open(pszFilePath, std::ios::in);
+                                        //Check file was opened  
+                                        if (fstrm.is_open()) {
+                                            //reset display area
+                                            HWND plst = GetDlgItem(hDlg, IDC_LIST1);
+                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
+                                            //Read first reference lines
+                                            fstrm.getline(lbuffer, 256);
+                                            std::string s;
+                                            s = lbuffer;
+                                            std::wstring str2(s.length(), L' '); // Make room for characters
+                                            // Copy string to wstring.
+                                            std::copy(s.begin(), s.end(), str2.begin());
+                                            wcsncpy_s(global_s, str2.c_str(), 255);
+                                            SetWindowText(GetDlgItem(hDlg, IDC_STUDY), global_s);
+                                            
+                                            //Read first reference lines
+                                            fstrm.getline(lbuffer, 256);
+                                            s = lbuffer;
+                                            str2.resize(s.length(), L' '); // Make room for characters                  // Copy string to wstring.
+                                            std::copy(s.begin(), s.end(), str2.begin());
+                                            wcsncpy_s(global_s, str2.c_str(), 255);
+                                            SetWindowText(GetDlgItem(hDlg, IDC_EDIT5), global_s);
+
+                                            //Read first reference lines
+                                            fstrm.getline(lbuffer, 256);
+                                            s = lbuffer;
+                                            str2.resize(s.length(), L' '); // Make room for characters                                            // Copy string to wstring.
+                                            std::copy(s.begin(), s.end(), str2.begin());
+                                            wcsncpy_s(global_s, str2.c_str(), 255);
+                                            SetWindowText(GetDlgItem(hDlg, IDC_NCBIref), global_s);
+                                            while (!fstrm.eof())
+                                            {
+                                                fstrm.getline(lbuffer, 256);
+                                                s = lbuffer;
+                                                if (s.length() > 5) {
+                                                    str2.resize(s.length(), L' '); // Make room for characters
+                                                    // Copy string to wstring.
+                                                    std::copy(s.begin(), s.end(), str2.begin());
+                                                    wcsncpy_s(global_s, str2.c_str(), 255);
+                                                    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    CoTaskMemFree(pszFilePath);
+                                    pItem->Release();
+                                }
+                            }
+                            pFileOpen->Release();
+                        }
+                        CoUninitialize();
+                    }
+                }
+            }
+            break;
         case IDCANCEL://fall tho to exit I'm sure this style is frowd upon
         case IDC_EXITP: { 
             EndDialog(hDlg, LOWORD(wParam));
@@ -2156,13 +2358,36 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
            SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
         }
-
-        }
+ 
 
         break;
+        case IDC_LIST1:
+        {
+            switch (HIWORD(wParam))
+            {
+                //as an enry been double clicked
+            case LBN_DBLCLK:
+                int signed lcount = 0;
+                int gselected;
+                HWND plst = GetDlgItem(hDlg, IDC_LIST1);
+                lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
+                if (lcount > 0 && lcount != -1)//Ensure on left double click there are entries to delete!
+                {
+                    if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hDlg, Deletemsg) == TRUE) {
+                        gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
+                        //Delete entry an redraw to update
+                        SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_DELETESTRING, gselected, 0);
+                      } //trigger WM_PAINT  
+                    InvalidateRect(hDlg, NULL, TRUE);
+                    UpdateWindow(hDlg);
+                    return TRUE;
+                }
 
-
-
+            }
+            return TRUE;
+        }
+        break;
+        }
     }
     return (INT_PTR)FALSE;
 }
