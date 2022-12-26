@@ -464,7 +464,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             USES_CONVERSION_EX;
                                             LPWSTR lp = A2W_EX(s.c_str(), s.length());
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                            //Unpadate ramining disgarded VG code lines
+                                            //Undate remaining disgarded VG code lines
                                             s = std::to_string(untranslated);
                                             lp = A2W_EX(s.c_str(), s.length());
                                             SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
@@ -1240,7 +1240,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         {
                             PWSTR pszFilePath;
 
-
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -1250,8 +1249,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 size_t charsConverted = 0;
                                 srce = wcslen(pszFilePath);
                                 dest = srce + 1;
-                                
-                                    
+
                                 char filename[260];
                              
                                 wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
@@ -1879,7 +1877,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         std::string s;
         LPCWSTR lp;
         USES_CONVERSION_EX;
-        s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nOD cannot be compared if data is from different studies.\nIf you share a .PPI file create an MD5 hash of it for verification.\nA .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic.\nIf you have genetic medical worries you should speak with a Dr or Genetic counselor!";
+        s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
         lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, 1045), lp);
         { //Ver 3.0 Beta - re-written so it make sense! 
@@ -2052,7 +2050,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 CoUninitialize();
             }
-         break;
+        break;
         }
         case IDC_SAVE_DRAFT: {
             TCHAR buffer[260] = { 0 };
@@ -2272,7 +2270,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
             }
-            break;
+        break;
         case IDCANCEL://fall tho to exit I'm sure this style is frowd upon
         case IDC_EXITP: { 
             EndDialog(hDlg, LOWORD(wParam));
@@ -2358,8 +2356,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
            SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
         }
- 
-
         break;
         case IDC_LIST1:
         {

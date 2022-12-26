@@ -10,7 +10,6 @@
 #include <ctype.h>
 #include <windows.h>
 
-
 class SnipParser
 {
  
@@ -25,7 +24,7 @@ public:
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
 	bool f23andMe(wchar_t* fi_);
 	bool Mergef23andMe(wchar_t* fi_);
-	void FConvert(void);  //<- One off code generator
+	void FConvert(void);  //<- One off internal development code generator
 	wchar_t sex(void);
 	unsigned int merged(void);
 	bool MergeState(void);
@@ -42,14 +41,14 @@ private:
 	bool abortMerge_ = false;
 	wchar_t fileLoaded_[260] = { 0 };
 	wchar_t sex_ = '?';
-	std::string Pversion_ = "0.31 Beta"; //Progran Version
+	std::string Pversion_ = "0.4 Beta"; //Program Version
 	std::string NCBIBuild_= "--";
 	unsigned int loadCount_ = 0;
 	unsigned int origloadcount_ = 0; //for reversion and checking
 	unsigned int end_index_ = 0;
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;
-	unsigned int merged_  = 0;
+	unsigned int merged_    = 0;
 	unsigned int failcheck_ = 0;
 	unsigned int allcecked_ = 0;
 	unsigned int mergefile_ = 0;

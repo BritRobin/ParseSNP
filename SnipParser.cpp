@@ -767,7 +767,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             strcpy_s(snp[inx].ch, num);
                         }
                         else {//Bug fix 3/10/21
-                               if((nbuffer[rdindex]=='M' && nbuffer[rdindex + 1] == 'T') || (nbuffer[rdindex] == 'm' && nbuffer[rdindex + 1] == 't'))
+                               if((nbuffer[rdindex] == 'M' && nbuffer[rdindex + 1] == 'T') || (nbuffer[rdindex] == 'm' && nbuffer[rdindex + 1] == 't'))
                                  {//know its uppercase but others use the format
                                   snp[inx].ch[0] = 'M';
                                   snp[inx].ch[1] = 'T';
