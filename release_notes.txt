@@ -1,3 +1,15 @@
+Version Beta 0.45
+Fixed pathogenics list to unsorted!
+Added WM_MOVE: redraw!
+Added SNPedia lookup button for found SNPs
+
+Version Beta 0.40
+Adds save/load draft to pathogenics creation
+Adds delete from list to pathogenics creation
+Cleaned up pathogenics creation dialog
+Added .MD5 file creation to pathogenics creation .PPI save
+Removed some redundant code
+
 Version Beta 0.31
 Fixed Bug for Ancestory male determination
 Added MD5 file hash display to pathogenics results

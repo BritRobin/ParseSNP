@@ -162,6 +162,7 @@
     <ResourceCompile Include="ParseSNP.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\Desktop\SNPedia_logo.bmp" />
     <Image Include="bitmap1.bmp" />
     <Image Include="ParseSNP.ico" />
     <Image Include="small.ico" />

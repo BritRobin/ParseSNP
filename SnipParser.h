@@ -41,7 +41,7 @@ private:
 	bool abortMerge_ = false;
 	wchar_t fileLoaded_[260] = { 0 };
 	wchar_t sex_ = '?';
-	std::string Pversion_ = "0.4 Beta"; //Program Version
+	std::string Pversion_ = "0.45 Beta"; //Program Version
 	std::string NCBIBuild_= "--";
 	unsigned int loadCount_ = 0;
 	unsigned int origloadcount_ = 0; //for reversion and checking

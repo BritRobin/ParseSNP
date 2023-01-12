@@ -16,6 +16,7 @@
 #include <shellapi.h>
 #include <sstream>
 #include "MD5.h"
+
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
 
@@ -34,7 +35,7 @@ int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
 int mergeTotal = 0;
 char chromosome[4] = { NULL,NULL,NULL,NULL };//chromosome number
 char allele1 = NULL, allele2 = NULL;
-wchar_t global_s[256];
+wchar_t global_s[260];
 std::wstring currentProject;
 std::wstring myPath;
 std::wstring SourceFilePath;
@@ -176,14 +177,33 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //Form Control Message Handler
 INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
+    HANDLE hBmp;
     switch (Message)
     {
     case WM_INITDIALOG:
+         hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2),IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
+         SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
          return TRUE;
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
+        
+        case IDC_BUTTON1: {
+            TCHAR buffer[15] = { 0 };
 
+            if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
+            {
+                int rs_number;
+                rs_number = _wtoi(buffer);
+                if (rs_number > 0) {
+                    std::wstring urlsnp = L"https://www.snpedia.com/index.php/RS";
+                    urlsnp += (buffer);
+                    //Try to find SNP on SNPedia               
+                    ShellExecute(NULL, TEXT("open"), urlsnp.c_str(), NULL, NULL, SW_SHOWNORMAL);
+                }
+            }   
+        }
+        break;
         case IDC_LIST3:
         {
           switch (HIWORD(wParam))
@@ -1574,6 +1594,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hWnd, &ps);
       }
         break;
+    case WM_MOVE:
+        RECT rc;
+        GetWindowRect(hWnd, &rc);
+        RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -1703,7 +1728,10 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-
+    //Set Icon
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+    //Set Icon
     switch (message)
     {
     case WM_INITDIALOG:
@@ -1732,7 +1760,10 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-
+    //Set Icon
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+    //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
@@ -1761,7 +1792,10 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-
+    //Set Icon
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+    //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
@@ -1799,7 +1833,10 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-
+    //Set Icon
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+    //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
@@ -1834,6 +1871,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG: {
         std::string s = "ParseSNP Version: ";
         s = s.c_str() + x.PVer();
+        //Set Icon
+        HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        //Set Icon
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
@@ -1876,21 +1917,25 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG: {
         std::string s;
         LPCWSTR lp;
+        //Set Icon
+        HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        //Set Icon
         USES_CONVERSION_EX;
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
         lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, 1045), lp);
-        { //Ver 3.0 Beta - re-written so it make sense! 
+        SetWindowTextW(GetDlgItem(hDlg, IDC_INFOP), lp);
+        { //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
             LOGFONT lf;
             LOGFONT fontAttributes = { 0 };
-            const HFONT font = (HFONT)SendDlgItemMessage(aDiag, IDC_LIST1, WM_GETFONT, 0, 0);
+            const HFONT font = (HFONT)SendDlgItemMessage(hDlg, IDC_LIST1, WM_GETFONT, 0, 0);
             ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
             memcpy_s(&lf, sizeof(fontAttributes), &fontAttributes, sizeof(lf));
             lf.lfHeight = 16;                      // request a 16 pixel-height font
             _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
             HFONT x = CreateFontIndirect(&lf);
-            SendDlgItemMessage(aDiag, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1);
-        } //Ver 3.0 Beta - re-written so it make sense! 
+            SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1);
+        } //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
         return (INT_PTR)TRUE;
     }
 
