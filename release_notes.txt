@@ -2,6 +2,8 @@ Version Beta 0.45
 Fixed pathogenics list to unsorted!
 Added WM_MOVE: redraw!
 Added SNPedia lookup button for found SNPs
+Added icon on all dialogs
+
 
 Version Beta 0.40
 Adds save/load draft to pathogenics creation
