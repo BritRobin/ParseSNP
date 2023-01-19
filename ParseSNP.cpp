@@ -204,6 +204,79 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             }   
         }
         break;
+        case IDC_LIST2:
+        {
+            switch (HIWORD(wParam))
+            {
+                //as an enry been double clicked
+            case LBN_DBLCLK:
+                int signed lcount = 0;
+                int gselected;
+                HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
+                if (lcount > 0 && lcount != -1)//Ensure on left double click there are to lookup
+                {
+                    TCHAR buffer[256];
+                    gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
+                    //get selected text
+                    SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
+                    if (buffer[0] == L'R' && buffer[1] == L'S') {
+                        //selected is an RS nummber
+                        char lookup[15] = { 0 },lbuffer[15] = { 0 };
+                        CT2CA pszConvertedAnsiString(buffer);
+                        //if the rsid is not in our dataset don't search for it again!
+                       // if(StrStrA(pszConvertedAnsiString,"N/A") == NULL) break;
+                        memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
+                        for (int i = 2; i < 18; i++)
+                        {
+                            if (lbuffer[i] == L' ') break;
+                            if (isdigit(lbuffer[i])) {
+                                lookup[i - 2] = lbuffer[i];
+                            }
+                        }
+                        rs_number = atoi(lookup);
+                        //if we have a number perform search!
+                        if (rs_number > 0)
+                        {
+                            //populate global values
+                            if (x.RsSearch(&rs_number, &chromosome[0], &chromosome[1], &chromosome[2], &chromosome[3], &position, &allele1, &allele2))
+                            {
+                                //Covert RS number for display
+                                std::string s = std::to_string(rs_number);
+                                USES_CONVERSION_EX;
+                                LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+                                //Covert chromosome for display
+                                s = chromosome;
+                                lp = A2W_EX(s.c_str(), s.length());
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+                                //covert poistion for display
+                                s = std::to_string(position);
+                                lp = A2W_EX(s.c_str(), s.length());
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+                                s = allele1;
+                                lp = A2W_EX(s.c_str(), s.length());
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                                //Fix 'X' chromosone in men as ancestoy dna files populate both  alleles as it make searches easier?
+                                if (chromosome[0] == 'X' && x.sex() == 'M') allele2 = '-';
+                                s = allele2;
+                                lp = A2W_EX(s.c_str(), s.length());
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                                EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), TRUE);
+                                EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), TRUE);
+                                //trigger WM_PAINT              
+                                InvalidateRect(aDiag, NULL, TRUE);
+                                UpdateWindow(aDiag);
+                            }
+                        }
+                    }
+                }
+             return TRUE;
+            }
+            return TRUE;
+        }
+
+
         case IDC_LIST3:
         {
           switch (HIWORD(wParam))
@@ -1754,7 +1827,6 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     }
     return (INT_PTR)FALSE;
 }
-
 INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -1785,8 +1857,6 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     }
     return (INT_PTR)FALSE;
 }
-
-
 INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -1858,7 +1928,6 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     }
     return (INT_PTR)FALSE;
 }
-
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -1905,7 +1974,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
-
 INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
