@@ -222,10 +222,15 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                     SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
                     if (buffer[0] == L'R' && buffer[1] == L'S') {
                         //selected is an RS nummber
-                        char lookup[15] = { 0 },lbuffer[15] = { 0 };
+                        char lookup[15] = { 0 }, lbuffer[15] = { 0 };
                         CT2CA pszConvertedAnsiString(buffer);
+                        PSTR a;
+                        a = StrStrA(pszConvertedAnsiString, "N/A");
                         //if the rsid is not in our dataset don't search for it again!
-                       // if(StrStrA(pszConvertedAnsiString,"N/A") == NULL) break;
+                        if(a != (PSTR)0) {
+                            break;
+                         }
+
                         memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
                         for (int i = 2; i < 18; i++)
                         {
