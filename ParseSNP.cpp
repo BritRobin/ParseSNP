@@ -222,7 +222,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                     SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
                     if (buffer[0] == L'R' && buffer[1] == L'S') {
                         //selected is an RS nummber
-                        char lookup[15] = { 0 }, lbuffer[15] = { 0 };
+                        char lookup[16] = { 0 }, lbuffer[16] = { 0 };
                         CT2CA pszConvertedAnsiString(buffer);
                         PSTR a;
                         a = StrStrA(pszConvertedAnsiString, "N/A");
@@ -230,7 +230,6 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         if(a != (PSTR)0) {
                             break;
                          }
-
                         memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
                         for (int i = 2; i < 18; i++)
                         {
