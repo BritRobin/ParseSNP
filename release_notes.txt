@@ -2,6 +2,7 @@ Version Beta 0.45
 Fixed pathogenics list to unsorted!
 Added WM_MOVE: redraw!
 Added SNPedia lookup button for found SNPs
+Added double click on pathogics load RSID into search
 Added icon on all dialogs
 
 
