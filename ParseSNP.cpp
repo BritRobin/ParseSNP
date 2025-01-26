@@ -208,7 +208,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         {
             switch (HIWORD(wParam))
             {
-                //as an enry been double clicked
+                //as an entry been double clicked
             case LBN_DBLCLK:
                 int signed lcount = 0;
                 int gselected;
@@ -314,8 +314,25 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
               if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, 15))
                {
-            
-                  rs_number = _wtoi(buffer);
+                  //new in ver 4.6
+                  TCHAR cleanbuffer[15] = { 0 };
+                  //Ctrl+V can paste alpha 
+                  for (int pos = 0,cln=0; pos < 15; pos++)
+                  {
+                   
+                      if (isdigit(buffer[pos]))
+                        {
+                         cleanbuffer[cln] = buffer[pos];
+                         cln++;
+                         cleanbuffer[cln] = NULL;//terminate the string
+                        }
+                  }
+                  //re-write the correct numeric part back to the search box
+                  LPWSTR clnd = cleanbuffer;
+                  SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), clnd);
+
+                  rs_number = _wtoi(cleanbuffer);//now search sanitized input
+
                   //populate global values
                   if (x.RsSearch(&rs_number, &chromosome[0], &chromosome[1], &chromosome[2], &chromosome[3], &position, &allele1, &allele2))
                   {
