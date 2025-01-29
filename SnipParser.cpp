@@ -1252,7 +1252,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
              const char* write_it = lbuffer.c_str();
              fs.write(write_it, lbuffer.length());
              //End:Write Header
-             char c_num[50];
+             char c_num[50] = {'0'};//Added 0 padding as NULL terminator
              bool over22;
              std::string rsID, Position, Chromosome,allele1,allele2;
              while (inx < loadCount_)

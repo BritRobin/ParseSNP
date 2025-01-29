@@ -1336,7 +1336,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-                    LPCWSTR a = L"Pathogenic Prediction Information";
+                    LPCWSTR a = L"PPI file";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
                         {a, L"*.PPI"},
@@ -1368,7 +1368,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                              
                                 wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
                                 char lbuffer[260];
-                                /*open file*/
+                                /*open file*/ //2025
                                 std::fstream  fstrm;
                                 if (!fstrm.bad())
                                 {
@@ -2070,7 +2070,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"PPI Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
