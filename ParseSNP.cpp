@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <Winuser.h>
 #include <shlobj_core.h>
+#include <shtypes.h>
 #include <filesystem>
 #include <shellapi.h>
 #include <sstream>
@@ -1819,16 +1820,17 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 }
 INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    UNREFERENCED_PARAMETER(lParam);
+     UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-    //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
-    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
-    //Set Icon
     switch (message)
     {
     case WM_INITDIALOG:
+        //Set Icon
+        //Moved here to fix crash!
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        //Set Icon
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
@@ -1855,11 +1857,11 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     ShowWindow(hDlg, 5);
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
-    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
     //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "The Merge operation was aborted due to too many differences between existing SNP alleles.\nNo changes have been made.";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
@@ -1885,11 +1887,11 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     ShowWindow(hDlg, 5);
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
-    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
     //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "Merge Completed Successfully!\n\nThe Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
@@ -1926,11 +1928,11 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     ShowWindow(hDlg, 5);
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
-    SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
     //Set Icon
     switch (message)
     {
     case WM_INITDIALOG: {
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "**You Have Initiated a Merge!**\n\nNote: There is a lot of data to compare and the program may become unresposive for several minutes.\nAlso be aware that the function is indended to be used to merge two files of the same person, if two different subject's files are merged the code will detect the many differences and abort the merge.\n\nClick OK to proceed!";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
@@ -2212,7 +2214,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileWrite;
+                IFileOpenDialog* pFileWrite = NULL;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
@@ -2226,7 +2228,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         {a, L"*.DRFT"},
                     };
                     //set file type options
-                    hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
 
                     // Show the Open dialog box.
                     hr = pFileWrite->Show(NULL);
@@ -2404,7 +2406,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
         break;
-        case IDCANCEL://fall tho to exit I'm sure this style is frowd upon
+        case IDCANCEL://fall tho to exit I'm sure this style is fround upon
         case IDC_EXITP: { 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -2494,10 +2496,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         {
             switch (HIWORD(wParam))
             {
-                //as an enry been double clicked
+                //as an entry been double clicked
             case LBN_DBLCLK:
                 int signed lcount = 0;
-                int gselected;
+                int gselected = -1;
                 HWND plst = GetDlgItem(hDlg, IDC_LIST1);
                 lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
                 if (lcount > 0 && lcount != -1)//Ensure on left double click there are entries to delete!
@@ -2505,7 +2507,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hDlg, Deletemsg) == TRUE) {
                         gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
                         //Delete entry an redraw to update
-                        SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_DELETESTRING, gselected, 0);
+                        if(gselected != -1 ) SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_DELETESTRING, gselected, 0);
                       } //trigger WM_PAINT  
                     InvalidateRect(hDlg, NULL, TRUE);
                     UpdateWindow(hDlg);
