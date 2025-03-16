@@ -448,7 +448,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wmId)
         {
         case ID_FILE_LOADPROJECT:
-        {   HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+        {   HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
             COINIT_DISABLE_OLE1DDE);
         PWSTR pszFilePath;
         if (SUCCEEDED(hr))
@@ -718,7 +718,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -805,7 +805,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case ID_FILE_OPENFTDNA:
         {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -894,7 +894,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //TEST Code
             //x.FConvert();
             //TEST Code
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -969,7 +969,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
         case ID_FILE_MERGEANCESTORYDNATXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1045,7 +1045,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case ID_FILE_MERGE23TOMETXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1120,7 +1120,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
          break;
         case ID_FILE_MERGEFTDNA: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1193,7 +1193,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         case ID_FILE_EXPORT:{
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1245,7 +1245,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PROJEX: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1325,7 +1325,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PATHOGENICS_LOAD: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -1566,7 +1566,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PATHOGENICS_EXPORTRESULTSTO: {
-                HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                     COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
                 {
@@ -2061,7 +2061,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (s_ncbiref.length() == 0) s_ncbiref = "--";
 
             //name and write file
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                 COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
@@ -2211,7 +2211,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (s_ncbiref.length() == 0) s_ncbiref = "--";
 
             //name and write file
-            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileWrite = NULL;
@@ -2310,7 +2310,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         case IDC_LOAD_DRAFT: {
-                HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
                     COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
                 {
