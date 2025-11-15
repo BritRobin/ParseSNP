@@ -1,6 +1,14 @@
 ﻿#include "SnipParser.h"
+// Define a macro for force inline
+#ifdef _MSC_VER
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+#define FORCE_INLINE inline
+#endif
 
-//SNP in human genome 10430639. 
+//SNP in human genome DNA_SNP_BUFFER_SIZE. 
 struct ST
 {
     int rs;       // RS number
@@ -9,6 +17,7 @@ struct ST
     char a;       // first nucleotide
     char b;       // second nucleotide
 } sname;
+ST x = { 0,"",0,'0','0' };//default empty SNP
 
 struct SM
 {
@@ -16,9 +25,10 @@ struct SM
     char a;       // first nucleotide
     char b;       // second nucleotide
 } smerge;
+SM y = { 0,'0','0' };//default empty SNP merge
 
-std::vector<ST> snp(10430639);
-std::vector<SM> snpM(10430639);
+std::vector<ST> snp(SnipParser::DNA_SNP_BUFFER_SIZE);
+std::vector<SM> snpM(SnipParser::DNA_SNP_BUFFER_SIZE);
 
 // Use 'variant::index' to know the type strored in variant (zero-based index). 
 //Read an Ancestory.com/23t0me and FtDNA RAW DNA file and create a 'standard array'
@@ -41,7 +51,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
             snp.clear();
-            snp.resize(10430639);
+            snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_,fi_); //store latest filename
             while (!fs.eof())
@@ -52,7 +62,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                 
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex +1] == 's' && isdigit((int)nbuffer[rdindex +2])) {
-                    char num[20];
+					char num[24];//fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = NULL;
@@ -164,7 +174,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             }
             fs.close();
         }
-        else false;
+        else return false;
     }
 
     return true;
@@ -200,7 +210,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                 rdindex = 0;
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's' && isdigit((int)nbuffer[rdindex + 2])) {
-                    char num[20];
+					char num[24]; //fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = NULL;
@@ -309,7 +319,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             fs.close();
          
         }
-        else false;
+        else return false;
     }
     //merge failed
     if (abortMerge_) {
@@ -342,7 +352,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
-            snp.resize(10430639);
+            snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vecotr for next file for next file
             while (!fs.eof())
@@ -357,7 +367,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                 if (((nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's') || (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')) && isdigit((int)nbuffer[fdind + 2]))
                 {//ftdna-illumina
                     int ftdna = 0;
-                    char num[20];
+					char num[25];//fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
                     rdindex += fdind;//ftdna-illumina
@@ -489,7 +499,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             }
             fs.close();
         }
-        else false;
+        else return false;
     }
 
     return true;
@@ -518,7 +528,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             sex_ = 'F'; //Set sex to female will change if 'Y' is found!
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
-            snp.resize(10430639);
+            snp.resize(DNA_SNP_BUFFER_SIZE);
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             nbuffer[257] = NULL;        //more efficient
@@ -667,7 +677,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             }
             fs.close();
         }
-        else false;
+        else return false;
     }
 
     return true;
@@ -695,7 +705,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
-            snp.resize(10430639);
+            snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vector for next file for next file
             while (!fs.eof())
@@ -848,7 +858,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             }
             fs.close();
         }
-        else false;
+        else return false;
     }
     return true;
 };
@@ -876,7 +886,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             sex_ = 'F'; //Set sex to female will change if 'Y' is found!
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
-            snp.resize(10430639);
+            snp.resize(DNA_SNP_BUFFER_SIZE);
             //NO!!!: reset loadcount_ and vector for next file for next file
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, fi_); //store latest filename
@@ -1033,7 +1043,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             }
             fs.close();
         }
-        else false;
+        else return false;
     }
     return true;
 };
@@ -1101,7 +1111,7 @@ unsigned int SnipParser::MergeProcessed(void)
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!! */
-__forceinline bool SnipParser::mergeRs(int code,std::string line)
+FORCE_INLINE bool SnipParser::mergeRs(int code,std::string line)
 {
     for (unsigned int i = 0; i <= end_index_;)
     { //merge if code is a no read or not found
@@ -1221,8 +1231,11 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
          char strConcat[] = " (char *)";
          size_t strConcatsize = (strlen(strConcat) + 1) * 2;
          const size_t newsize = origsize * 2;
-         char* nstring = new char[newsize + strConcatsize];
-         wcstombs_s(&convertedChars, nstring, newsize, fileLoaded_, _TRUNCATE);
+		 char* nstring = new char[newsize + strConcatsize](); //Wasn't being deleted 11/12/2025 delete[] nstring
+         if(wcstombs_s(&convertedChars, nstring, newsize, fileLoaded_, _TRUNCATE) != 0) {
+             delete[] nstring;
+             return false;
+            }
           //Open file for write 
          fs.open(fi_, std::ios::out);
          //Check file was opened  
@@ -1308,19 +1321,21 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                  fs.write(write_it, lbuffer.length());
                  inx++; //increment inx to the next values / line
              }
+			 delete[] nstring;//11/12/2025
              fs.close();
              //got through the loop assuming file wrote correctly
              return true;
-         }
+		 }
+		 else {//Delete allocated memory
+                 delete[] nstring;//11/12/2025
+                 return false;
+                }
      }
      return false;
 }
 //INTERNAL code generator not of use 
 void  SnipParser::FConvert(void)
 {
-   //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
-   /* wchar_t* fiIn_;
-      wchar_t* fiOut_; */
     wchar_t  codeIn_[] = L"f:\\icode.txt";
     wchar_t  codeOut_[] = L"f:\\ccode.txt";
 
@@ -1348,7 +1363,7 @@ void  SnipParser::FConvert(void)
                 fs.getline(nbuffer, 256);
                 //move past tab or spaces to next numeric data posotion number
                 while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
-                {//wrote whith braces for readablility
+                {//wrote with braces for readablility
                     rdindex++;
                 }
                 //read position

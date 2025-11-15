@@ -12,7 +12,6 @@
 
 class SnipParser
 {
- 
 public:
 	std::string fi_;
 	int SNPCount(void);
@@ -36,22 +35,26 @@ public:
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 
+	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
+	static const int DNA_SNP_BUFFER_SIZE = 1600000;
+
 private:
 	struct ST;
+	struct SM;
 	bool abortMerge_ = false;
 	wchar_t fileLoaded_[260] = { 0 };
 	wchar_t sex_ = '?';
-	std::string Pversion_ = "0.46 Beta"; //Program Version
-	std::string NCBIBuild_= "--";
-	unsigned int loadCount_ = 0;
+	std::string Pversion_		= "0.9 Final Beta"; //Program Version
+	std::string NCBIBuild_		= "--";
+	unsigned int loadCount_		= 0;
 	unsigned int origloadcount_ = 0; //for reversion and checking
-	unsigned int end_index_ = 0;
-	unsigned int illuminaU_ = 0;
-	unsigned int illuminaT_ = 0;
-	unsigned int merged_    = 0;
-	unsigned int failcheck_ = 0;
-	unsigned int allcecked_ = 0;
-	unsigned int mergefile_ = 0;
+	unsigned int end_index_		= 0;
+	unsigned int illuminaU_		= 0;
+	unsigned int illuminaT_		= 0;
+	unsigned int merged_		= 0;
+	unsigned int failcheck_		= 0;
+	unsigned int allcecked_		= 0;
+	unsigned int mergefile_		= 0;
 	int FTDNADecode(std::string code);
 	int f23andMeDecode(std::string code);
 	__forceinline bool mergeRs(int code, std::string nbuffer);

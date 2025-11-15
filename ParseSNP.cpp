@@ -16,7 +16,10 @@
 #include <filesystem>
 #include <shellapi.h>
 #include <sstream>
+#include <commdlg.h>
 #include "MD5.h"
+#include <winspool.h>
+#pragma comment(lib, "winspool.lib")
 
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
@@ -29,6 +32,8 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 //Global class instance
 SnipParser x;
 //START:Global returned values
+HWND ghWnd;
+HWND aDiag;
 int rs_number = 0;      // RS Number 
 int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
@@ -40,9 +45,6 @@ wchar_t global_s[260];
 std::wstring currentProject;
 std::wstring myPath;
 std::wstring SourceFilePath;
-
-
-HWND ghWnd;
 //END:Global returned values
 
 // Forward declarations of functions included in this code module:
@@ -59,7 +61,10 @@ INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
 HRESULT OnSize(HWND hwndTab, LPARAM lParam);
 BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
 HWND DoCreateTabControl(HWND hwndParent);
-
+// Overloaded version - same name, different parameters
+bool PrintWithDialog(const std::vector<std::string>& lines);
+bool PrintWithDialogFixed(const std::string& text);
+bool RawTextToPrinter(const std::string& text);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -181,22 +186,40 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     HANDLE hBmp;
     switch (Message)
     {
+
     case WM_INITDIALOG:
-         hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2),IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
-         SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
-         return TRUE;
+    {   
+        HBITMAP hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
+        SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+        
+        // Store the bitmap handle so we can delete it later
+        SetProp(hwnd, L"BUTTONBITMAP", hBmp);
+
+        LOGFONT lf = { 0 };
+        GetObject(GetStockObject(DEFAULT_GUI_FONT), sizeof(LOGFONT), &lf);
+        lf.lfHeight = 16;
+        _tcscpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"));
+        HFONT hFont = CreateFontIndirect(&lf);
+
+        if (hFont) {
+            // Store font in window property
+            SetProp(hwnd, L"LIST2FONT", hFont);
+            SendDlgItemMessage(hwnd, IDC_LIST2, WM_SETFONT, (WPARAM)hFont, TRUE);
+        }
+        return TRUE;
+    }
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
         
         case IDC_BUTTON1: {
-            TCHAR buffer[15] = { 0 };
+            TCHAR buffer[16] = { 0 };
 
             if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
             {
-                int rs_number;
-                rs_number = _wtoi(buffer);
-                if (rs_number > 0) {
+                int local_rs_number;
+                local_rs_number = _wtoi(buffer);
+                if (local_rs_number > 0) {
                     std::wstring urlsnp = L"https://www.snpedia.com/index.php/RS";
                     urlsnp += (buffer);
                     //Try to find SNP on SNPedia               
@@ -213,6 +236,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             case LBN_DBLCLK:
                 int signed lcount = 0;
                 int gselected;
+                int local_rs_number = 0;
                 HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                 lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
                 if (lcount > 0 && lcount != -1)//Ensure on left double click there are to lookup
@@ -227,10 +251,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         CT2CA pszConvertedAnsiString(buffer);
                         PSTR a;
                         a = StrStrA(pszConvertedAnsiString, "N/A");
-                        //if the rsid is not in our dataset don't search for it again!
-                        if(a != (PSTR)0) {
-                            break;
-                         }
+                        //Moved up for none available data
                         memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
                         for (int i = 2; i < 18; i++)
                         {
@@ -239,7 +260,31 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                                 lookup[i - 2] = lbuffer[i];
                             }
                         }
-                        rs_number = atoi(lookup);
+                        local_rs_number = atoi(lookup);
+                        //if the rsid is not in our dataset don't search for it again!
+                        if(a != (PSTR)0) {//11-13-2025 This could be confusing if a previous result is left loaded!
+                            //Covert RS number for display
+                            std::string s = std::to_string(local_rs_number);
+                            USES_CONVERSION_EX;
+                            LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+                            s = (std::string)"--";
+                            lp = A2W_EX(s.c_str(), s.length());
+                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+                            s = (std::string)"0";
+                            lp = A2W_EX(s.c_str(), s.length());
+                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+                            s = (std::string)"-";
+                            lp = A2W_EX(s.c_str(), s.length());
+                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                            SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                            //trigger WM_PAINT              
+                            InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                            UpdateWindow(aDiag);
+                            break;
+                         }
+                        //RSID IS in our dataset copy the local variable to the global!
+                        rs_number = local_rs_number; //Local to Global
                         //if we have a number perform search!
                         if (rs_number > 0)
                         {
@@ -270,8 +315,9 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                                 EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), TRUE);
                                 EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), TRUE);
                                 //trigger WM_PAINT              
-                                InvalidateRect(aDiag, NULL, TRUE);
+                                InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
+                                
                             }
                         }
                     }
@@ -299,9 +345,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                  //Delete entry an redraw to update
                  SendMessage(GetDlgItem(hwnd, IDC_LIST3), LB_DELETESTRING, gselected, 0);
                  if (gselected == 0) EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-
                 } //trigger WM_PAINT  
-             InvalidateRect(aDiag, NULL, TRUE);
+             InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
              UpdateWindow(aDiag);
              return TRUE;
              }
@@ -361,7 +406,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                       EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), TRUE);
                       EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), TRUE);
                       //trigger WM_PAINT              
-                      InvalidateRect(aDiag, NULL, TRUE);
+                      InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                       UpdateWindow(aDiag);
                   }
                   else
@@ -373,6 +418,14 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         case IDC_COPYPROJ:
         {
+         TCHAR buffer[16] = { 0 };
+		 //Stop non found references from pathogenics being added
+         if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
+         {
+             int local_rs_number;
+             local_rs_number = _wtoi(buffer);
+             if (local_rs_number != rs_number) return FALSE;
+         }
          int lindex = -1;
          int lcount = -1;
          //Character allign chr numver and letters
@@ -380,7 +433,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
          if (atoi(chromosome) < 9 && chr_s != "MT") chr_s = " " + chr_s;
 
-         std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Postion: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
+         std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Position: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
          std::wstring str2(s.length(), L' '); // Make room for characters
 
          // Copy string to wstring.
@@ -393,13 +446,21 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          if(lcount == 0) EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
 
             //trigger WM_PAINT              
-         InvalidateRect(aDiag, NULL, TRUE);
+         InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
          UpdateWindow(aDiag);
          return TRUE;
         }
         
         case IDC_COPYCLIP:
         {
+             TCHAR buffer[16] = { 0 };
+             //Stop non found references from pathogenics being added
+             if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
+              {
+               int local_rs_number;
+               local_rs_number = _wtoi(buffer);
+               if (local_rs_number != rs_number) return FALSE;
+              }
             if(OpenClipboard(hwnd))
              { 
              std::string s = "RS";
@@ -419,7 +480,21 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
              }
             return FALSE;
         }
-        
+        case WM_DESTROY:
+        {
+            // Clean up the font
+            HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
+            if (hFont) {
+                DeleteObject(hFont);
+            }
+
+            // Clean up the bitmap
+            HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
+            if (hBmp) {
+                DeleteObject(hBmp);
+            }
+            return TRUE;
+        }
         default:
             return DefWindowProc(hwnd, Message, wParam, lParam);
         }
@@ -448,8 +523,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wmId)
         {
         case ID_FILE_LOADPROJECT:
-        {   HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-            COINIT_DISABLE_OLE1DDE);
+        {   
+        HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
         PWSTR pszFilePath;
         if (SUCCEEDED(hr))
         {
@@ -605,6 +680,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         fstrm.close();
                                         break;
                                     }
+
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox                          
 
@@ -620,7 +696,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         if(lst==1)EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
                                     }
                                     fstrm.close();
-                                    InvalidateRect(aDiag, NULL, TRUE);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                     break;
                                 }
@@ -631,6 +707,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
             }
+            CoUninitialize();//Was Missing
         }
         break;
         }
@@ -717,9 +794,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
-
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -786,7 +861,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    InvalidateRect(aDiag, NULL, TRUE);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
                                 CoTaskMemFree(pszFilePath);
@@ -795,18 +870,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
-
-
+				CoUninitialize(); //Needed to be moved here
             }
             break;
         }
         case ID_FILE_OPENFTDNA:
         {
-
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -814,7 +885,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
                     IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
                 if (SUCCEEDED(hr))
                 {
                     LPCWSTR a = L"Text Files";
@@ -873,7 +943,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED); 
-                                    InvalidateRect(aDiag, NULL, TRUE);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
                                 CoTaskMemFree(pszFilePath);
@@ -882,20 +952,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
-
+				CoUninitialize();//needed to be moved here
             }
             break;
         }
 
         case ID_OPENFILE:
         {
-            //TEST Code
-            //x.FConvert();
-            //TEST Code
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -906,7 +971,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
@@ -953,8 +1017,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     HWND plst = GetDlgItem(aDiag, IDC_LIST3);
                                     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
                                     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    InvalidateRect(aDiag, NULL, TRUE);
-                                    UpdateWindow(aDiag);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                    UpdateWindow(aDiag);                                    
                                 }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -962,15 +1026,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
+                CoUninitialize(); //was in the wrong place
             }
         }
         break;
         case ID_FILE_MERGEANCESTORYDNATXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -1029,24 +1092,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                   ScreenUpdate(hWnd, count, src, NULL, x.sex());
                                   EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                  InvalidateRect(aDiag, NULL, TRUE);
+                                  InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                   UpdateWindow(aDiag);
-                                
-                                CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                  CoTaskMemFree(pszFilePath);
+                                  pItem->Release();
                             }
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
+                CoUninitialize(); //needed to be moved here
             }
         }
             break;
         case ID_FILE_MERGE23TOMETXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -1105,7 +1166,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                 ScreenUpdate(hWnd, count, src, NULL, x.sex());
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                InvalidateRect(aDiag, NULL, TRUE);
+                                InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -1113,15 +1174,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
+				CoUninitialize(); //needed to be moved here
             }
         }
          break;
         case ID_FILE_MERGEFTDNA: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -1179,7 +1239,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
                                 ScreenUpdate(hWnd, count, src, NULL, x.sex());
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                InvalidateRect(aDiag, NULL, TRUE);
+                                InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -1187,14 +1247,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
+				CoUninitialize(); //needed to be moved here
             }
         }
         break;
         case ID_FILE_EXPORT:{
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileWrite;
@@ -1233,7 +1292,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 x.AncestoryWriter((pszFilePath));
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
-                                InvalidateRect(aDiag, NULL, TRUE);
+                                InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
                             }
                         }
@@ -1245,8 +1304,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PROJEX: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileWrite;
@@ -1325,8 +1383,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
             break;
         case ID_PATHOGENICS_LOAD: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen;
@@ -1364,11 +1421,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 size_t charsConverted = 0;
                                 srce = wcslen(pszFilePath);
                                 dest = srce + 1;
-
                                 char filename[260];
-                             
-                                wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
                                 char lbuffer[260];
+                                wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
+
                                 /*open file*/ //2025
                                 std::fstream  fstrm;
                                 if (!fstrm.bad())
@@ -1379,17 +1435,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     if (fstrm.is_open()) {
                                         //reset display area
                                         HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                        { //Ver 3.0 Beta - re-written so it make sense! 
-                                            LOGFONT lf;
-                                            LOGFONT fontAttributes = { 0 };
-                                            const HFONT font = (HFONT)SendDlgItemMessage(aDiag, IDC_LIST2, WM_GETFONT, 0, 0);
-                                            ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
-                                            memcpy_s(&lf, sizeof(fontAttributes), &fontAttributes, sizeof(lf));
-                                            lf.lfHeight = 16;                      // request a 16 pixel-height font
-                                            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
-                                            HFONT x = CreateFontIndirect(&lf);
-                                            SendDlgItemMessage(aDiag, IDC_LIST2, WM_SETFONT, (WPARAM)x, 1);
-                                        } //Ver 3.0 Beta - re-written so it make sense! 
+										//REMOVED Resource leaking Font creation each load!
                                         SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
@@ -1455,8 +1501,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     number[n] = NULL;
                                                     rsid = atoi(number);                                              
                                                 }
-
-                                                /*skip spaces, coulde be wrtten in one line but this is more readable*/
+                                                /*skip spaces, could be wrtten in one line but this is more readable*/
                                                 while (lbuffer[i] == ' ')
                                                 {
                                                     i++;
@@ -1549,10 +1594,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         std::copy(s.begin(), s.end(), str2.begin());
                                         wcsncpy_s(global_s, str2.c_str(), 255);
                                         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-                                        InvalidateRect(aDiag, NULL, TRUE);
+										InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background 
                                         UpdateWindow(aDiag);
+                                        RECT rc;
+                                        GetWindowRect(plst, &rc);
+                                        RedrawWindow(plst, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
                                     }
-
                                 }
                                 CoTaskMemFree(pszFilePath);
                                 pItem->Release();
@@ -1560,14 +1607,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                         pFileOpen->Release();
                     }
-                    CoUninitialize();
                 }
+				CoUninitialize(); //needed to be moved here
             }
         }
             break;
         case ID_PATHOGENICS_EXPORTRESULTSTO: {
-                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                    COINIT_DISABLE_OLE1DDE);
+                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
                 {
                     IFileOpenDialog* pFileWrite;
@@ -1611,6 +1657,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             //Get Pathagenic window entry count
                                             HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                                             int  lcount;
+                                            bool beginFormating = false;
                                             std::string  lbuffer;
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                             TCHAR text[260];
@@ -1625,6 +1672,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     lbuffer += "\n";
                                                     const char* write_it = lbuffer.c_str();
                                                     fstrm.write(write_it, lbuffer.length());
+                                                    if (lbuffer._Starts_with("NCBI")) {
+                                                        beginFormating = true;
+                                                        fstrm.write("\n", 1);
+                                                    }
                                                 }
                                             }
                                             fstrm.close();
@@ -1640,6 +1691,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
             break;
+        case ID_PRINT_RESULTS:
+            //DialogBox(hInst, MAKEINTRESOURCE(IDD_PRINT), aDiag, PrintSetup);
+            PathoPrint();
+			break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
@@ -1652,44 +1707,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      } 
      break; 
     case WM_SIZE:
-            InvalidateRect(aDiag, NULL, TRUE);
-            UpdateWindow(aDiag);
+            InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+           // UpdateWindow(aDiag);            
             break;
+    case WM_CREATE:  //fixed up using DeepSeek code anaylysis
+        // Create the dialog
+        aDiag = CreateDialog(hInst, MAKEINTRESOURCE(IDD_FORMVIEW), hWnd, (DLGPROC)FormDlgProc);
+        if (aDiag != NULL)
+        {
+            // Position and show the dialog
+            RECT Rect;
+            GetWindowRect(aDiag, &Rect);
+            SetWindowPos(aDiag, HWND_TOP, 0, 0, Rect.right - Rect.left, Rect.bottom - Rect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_SHOWWINDOW);
+            ShowWindow(aDiag, SW_SHOW);
+            std::string s = "0";
+            USES_CONVERSION_EX;
+            LPWSTR lp = A2W_EX(s.c_str(), s.length());
+            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
+            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+        }
+        break;
+  
+    case WM_ERASEBKGND:
+        return 1; // We handle background in WM_PAINT
 
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
-        if (aDiag == NULL) //added to stop recreate on redraw
-        {
-            //Start Based off Drake Wu - MSFT code on Stackoverflow
-            RECT cRect;
-            RECT Rect = { 0 };
-            aDiag = CreateDialog(hInst, MAKEINTRESOURCE(IDD_FORMVIEW), hWnd, (DLGPROC)FormDlgProc);
-            if (aDiag != NULL)
-            {
-                GetWindowRect(aDiag, &Rect);
-                GetWindowRect(hWnd, &cRect);
-                Rect.right = max(Rect.right, cRect.right + 7);//Windows 10 has thin invisible borders on left, right, and bottom
-                Rect.bottom = max(Rect.bottom, cRect.bottom + 7);
-                SetWindowPos(aDiag, HWND_TOP, 0, 0, Rect.right - Rect.left, Rect.bottom - Rect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_SHOWWINDOW);
-                ShowWindow(aDiag, SW_SHOW);
-                std::string s = "0";
-                USES_CONVERSION_EX;
-                LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
-                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-               }
+        // Fill background
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW));
 
-            //End Based off Drake Wu - MSFT code on Stackoverflow
-        }
-        // TODO: Add any drawing code that uses hdc here...
         EndPaint(hWnd, &ps);
-      }
-        break;
-    case WM_MOVE:
+    }
+    break;
+    break;
+ case WM_MOVE:
         RECT rc;
         GetWindowRect(hWnd, &rc);
         RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
@@ -1773,6 +1830,83 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
     EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), FALSE);
     EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), FALSE);
 }
+
+void PathoPrint()
+{
+    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+    
+
+    if (!plst) {
+        MessageBox(NULL, TEXT("List box not found"), TEXT("Error"), MB_OK);
+        return;
+    }
+    int lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+    if (lcount == LB_ERR) {
+        MessageBox(NULL, TEXT("Failed to get list box count"), TEXT("Error"), MB_OK);
+        return;
+    }
+
+    if (lcount < 1) {
+        MessageBox(NULL, TEXT("List box is empty"), TEXT("Error"), MB_OK);
+        return;
+    }
+
+
+
+    // Build the text as one big string with line breaks
+    std::string text = "Pathogenic SNP Report\n\n";
+
+    for (int x = 0; x < lcount; x++)
+    {
+        int len = SendMessage(plst, LB_GETTEXTLEN, x, 0);
+        if (len <= 0 || len > 1000) continue;
+
+        std::vector<TCHAR> buffer(len + 1);
+        if (SendMessage(plst, LB_GETTEXT, x, (LPARAM)buffer.data()) != LB_ERR)
+        {
+            CT2CA converted(buffer.data());
+            text += converted;
+            text += "\n";
+        }
+    }
+
+    // Simple raw text printing
+    RawTextToPrinter(text);
+}
+bool RawTextToPrinter(const std::string& text)
+{
+    TCHAR printerName[256];
+    DWORD size = ARRAYSIZE(printerName);
+
+    if (!GetDefaultPrinter(printerName, &size)) {
+        return false;
+    }
+
+    HANDLE hPrinter = nullptr;
+    if (!OpenPrinter(printerName, &hPrinter, NULL)) {
+        return false;
+    }
+
+    DOC_INFO_1 docInfo = { 0 };
+    docInfo.pDocName = const_cast<LPTSTR>(TEXT("SNP Report"));
+    docInfo.pOutputFile = NULL;
+    docInfo.pDatatype = const_cast<LPTSTR>(TEXT("RAW"));
+
+    if (StartDocPrinter(hPrinter, 1, (LPBYTE)&docInfo) == 0) {
+        ClosePrinter(hPrinter);
+        return false;
+    }
+
+    DWORD bytesWritten = 0;
+    BOOL success = WritePrinter(hPrinter, (LPVOID)text.c_str(), (DWORD)text.size(), &bytesWritten);
+
+    EndDocPrinter(hPrinter);
+    ClosePrinter(hPrinter);
+
+    return (success && bytesWritten == text.size());
+}
+
+
 // Message handler for new project box.
 INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -1963,10 +2097,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG: {
         std::string s = "ParseSNP Version: ";
         s = s.c_str() + x.PVer();
-        //Set Icon
-        HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+        //Updated Icon code to prevent resource leaks
+        HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
-        //Set Icon
+        //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
@@ -2005,13 +2139,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
+  
     case WM_INITDIALOG: {
         std::string s;
         LPCWSTR lp;
-        //Set Icon
-        HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+        //Updated Icon code to prevent resource leaks
+        HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
-        //Set Icon
+        //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
         lp = A2W_EX(s.c_str(), s.length());
@@ -2061,8 +2196,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (s_ncbiref.length() == 0) s_ncbiref = "--";
 
             //name and write file
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileWrite;
@@ -2160,12 +2294,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 srce = wcslen(filename);
                                                 dest = srce + 1;
                                                 char file[260];
-
                                                 wcstombs_s(&charsConverted, file, dest, (wchar_t const*)filename, srce);
                                                 hash = md5.digestFile(file);
                                                 std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
-                                                
-                                                StrCpyW(filename, pszFilePath);//we know 
+                                                StrCpyW(filename, pszFilePath); //we know 
                                                 wcscat_s(filename, ext);
                                                 fstrmd5.open(filename, std::ios::out);
                                                 if (fstrmd5.is_open()) {
@@ -2310,8 +2442,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         case IDC_LOAD_DRAFT: {
-                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED |
-                    COINIT_DISABLE_OLE1DDE);
+                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
                 {
                     IFileOpenDialog* pFileOpen;
@@ -2401,8 +2532,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                             }
                             pFileOpen->Release();
                         }
-                        CoUninitialize();
+
                     }
+                    CoUninitialize(); //needed to be moved here
                 }
             }
         break;
