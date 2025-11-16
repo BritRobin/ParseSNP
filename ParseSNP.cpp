@@ -1981,6 +1981,15 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         break;
 
+    case WM_DESTROY: //Thanks DeepSeek for this fix!
+        // Clean up the icon
+        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
+        if (hicon) {
+            DestroyIcon(hicon);
+            RemoveProp(hDlg, L"DIALOG_ICON");
+        }
+        break;
+
     }
     return (INT_PTR)FALSE;
 }
@@ -2011,6 +2020,15 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             return (INT_PTR)TRUE;
         }
         break;
+
+    case WM_DESTROY: //Thanks DeepSeek for this fix!
+        // Clean up the icon
+        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
+        if (hicon) {
+            DestroyIcon(hicon);
+            RemoveProp(hDlg, L"DIALOG_ICON");
+        }
+        break;
     }
     return (INT_PTR)FALSE;
 }
@@ -2030,7 +2048,6 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
-        
         std::ostringstream ss;
         ss << x.MergeProcessed();
         std::string sf(ss.str());
@@ -2050,6 +2067,15 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
+        }
+        break;
+
+    case WM_DESTROY: //Thanks DeepSeek for this fix!
+        // Clean up the icon
+        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
+        if (hicon) {
+            DestroyIcon(hicon);
+            RemoveProp(hDlg, L"DIALOG_ICON");
         }
         break;
     }
@@ -2082,6 +2108,15 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             return (INT_PTR)TRUE;
         }
         break;
+
+    case WM_DESTROY: //Thanks DeepSeek for this fix!
+        // Clean up the icon
+        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
+        if (hicon) {
+            DestroyIcon(hicon);
+            RemoveProp(hDlg, L"DIALOG_ICON");
+        }
+        break;
     }
     return (INT_PTR)FALSE;
 }
@@ -2098,8 +2133,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         std::string s = "ParseSNP Version: ";
         s = s.c_str() + x.PVer();
         //Updated Icon code to prevent resource leaks
-        HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
-        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
+        if (hIcon) {
+            SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+            SetProp(hDlg, L"DIALOG_ICON", hIcon);
+        }
+
         //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
@@ -2110,10 +2149,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         fontAttributes.lfUnderline = TRUE;
         HFONT x = CreateFontIndirect(&fontAttributes);
         SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_SETFONT, (WPARAM)x, 1);
+        SetProp(hDlg, L"UNDERLINE_FONT", x);
         return (INT_PTR)TRUE;
     }
   
     case WM_COMMAND:
+    {
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId) {
@@ -2128,6 +2169,25 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
         }
         }
+        break;
+    }
+    case WM_DESTROY:
+    {
+        // Clean up the icon
+        HICON hIcon = (HICON)RemoveProp(hDlg, L"DIALOG_ICON");
+        if (hIcon) {
+            DestroyIcon(hIcon);
+        }
+
+        // Clean up the created font
+        HFONT hUnderlineFont = (HFONT)RemoveProp(hDlg, L"UNDERLINE_FONT");
+        if (hUnderlineFont) {
+            DeleteObject(hUnderlineFont);
+        }
+        return TRUE;
+    }
+
+
     }
     return (INT_PTR)FALSE;
 }
@@ -2651,6 +2711,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         }
+		break;
     }
     return (INT_PTR)FALSE;
 }
