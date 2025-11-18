@@ -58,12 +58,6 @@ INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
-HRESULT OnSize(HWND hwndTab, LPARAM lParam);
-BOOL OnNotify(HWND hwndTab, HWND hwndDisplay, LPARAM lParam);
-HWND DoCreateTabControl(HWND hwndParent);
-// Overloaded version - same name, different parameters
-bool PrintWithDialog(const std::vector<std::string>& lines);
-bool PrintWithDialogFixed(const std::string& text);
 bool RawTextToPrinter(const std::string& text);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -2226,6 +2220,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
 
     case WM_COMMAND:
+    {
         int wmId = LOWORD(wParam);
         // Parse the menu selections:
         switch (wmId)
@@ -2233,7 +2228,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         case IDC_SAVE: {
 
             TCHAR buffer[260] = { 0 };
-            std::string s_study,s_URL,s_ncbiref;
+            std::string s_study, s_URL, s_ncbiref;
 
             if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
             {
@@ -2246,7 +2241,8 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_URL += pszConvertedAnsiString;
-            }else  break; //mandatory field
+            }
+            else  break; //mandatory field
 
             if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
             {
@@ -2284,7 +2280,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;           
+                            PWSTR pszFilePath;
                             WCHAR filename[260];
                             WCHAR ext[5];
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
@@ -2377,7 +2373,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 CoUninitialize();
             }
-        break;
+            break;
         }
         case IDC_SAVE_DRAFT: {
             TCHAR buffer[260] = { 0 };
@@ -2502,188 +2498,189 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         case IDC_LOAD_DRAFT: {
-                HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            if (SUCCEEDED(hr))
+            {
+                IFileOpenDialog* pFileOpen;
+
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
                 if (SUCCEEDED(hr))
                 {
-                    IFileOpenDialog* pFileOpen;
-
-                    // Create the FileOpenDialog object.
-                    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                        IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
+                    LPCWSTR a = L"DRFT Files";
+                    COMDLG_FILTERSPEC rgSpec[] =
+                    {
+                        {a, L"*.DRFT"},
+                    };
+                    //set file type options
+                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    // Show the Open dialog box.
+                    hr = pFileOpen->Show(NULL);
+                    // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        LPCWSTR a = L"DRFT Files";
-                        COMDLG_FILTERSPEC rgSpec[] =
-                        {
-                            {a, L"*.DRFT"},
-                        };
-                        //set file type options
-                        hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-                        // Show the Open dialog box.
-                        hr = pFileOpen->Show(NULL);
-                        // Get the file name from the dialog box.
+                        IShellItem* pItem;
+                        hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            IShellItem* pItem;
-                            hr = pFileOpen->GetResult(&pItem);
+                            PWSTR pszFilePath;
+
+                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                            // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
-                                PWSTR pszFilePath;
-
-                                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-                                // Display the file name to the user.
-                                if (SUCCEEDED(hr))
+                                char lbuffer[260];
+                                /*open file*/
+                                std::fstream  fstrm;
+                                if (!fstrm.bad())
                                 {
-                                    char lbuffer[260];
-                                    /*open file*/
-                                    std::fstream  fstrm;
-                                    if (!fstrm.bad())
-                                    {
-                                        //filestream 
-                                        fstrm.open(pszFilePath, std::ios::in);
-                                        //Check file was opened  
-                                        if (fstrm.is_open()) {
-                                            //reset display area
-                                            HWND plst = GetDlgItem(hDlg, IDC_LIST1);
-                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
-                                            //Read first reference lines
-                                            fstrm.getline(lbuffer, 256);
-                                            std::string s;
-                                            s = lbuffer;
-                                            std::wstring str2(s.length(), L' '); // Make room for characters
-                                            // Copy string to wstring.
-                                            std::copy(s.begin(), s.end(), str2.begin());
-                                            wcsncpy_s(global_s, str2.c_str(), 255);
-                                            SetWindowText(GetDlgItem(hDlg, IDC_STUDY), global_s);
-                                            
-                                            //Read first reference lines
-                                            fstrm.getline(lbuffer, 256);
-                                            s = lbuffer;
-                                            str2.resize(s.length(), L' '); // Make room for characters                  // Copy string to wstring.
-                                            std::copy(s.begin(), s.end(), str2.begin());
-                                            wcsncpy_s(global_s, str2.c_str(), 255);
-                                            SetWindowText(GetDlgItem(hDlg, IDC_EDIT5), global_s);
+                                    //filestream 
+                                    fstrm.open(pszFilePath, std::ios::in);
+                                    //Check file was opened  
+                                    if (fstrm.is_open()) {
+                                        //reset display area
+                                        HWND plst = GetDlgItem(hDlg, IDC_LIST1);
+                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        std::string s;
+                                        s = lbuffer;
+                                        std::wstring str2(s.length(), L' '); // Make room for characters
+                                        // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SetWindowText(GetDlgItem(hDlg, IDC_STUDY), global_s);
 
-                                            //Read first reference lines
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        s = lbuffer;
+                                        str2.resize(s.length(), L' '); // Make room for characters                  // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SetWindowText(GetDlgItem(hDlg, IDC_EDIT5), global_s);
+
+                                        //Read first reference lines
+                                        fstrm.getline(lbuffer, 256);
+                                        s = lbuffer;
+                                        str2.resize(s.length(), L' '); // Make room for characters                                            // Copy string to wstring.
+                                        std::copy(s.begin(), s.end(), str2.begin());
+                                        wcsncpy_s(global_s, str2.c_str(), 255);
+                                        SetWindowText(GetDlgItem(hDlg, IDC_NCBIref), global_s);
+                                        while (!fstrm.eof())
+                                        {
                                             fstrm.getline(lbuffer, 256);
                                             s = lbuffer;
-                                            str2.resize(s.length(), L' '); // Make room for characters                                            // Copy string to wstring.
-                                            std::copy(s.begin(), s.end(), str2.begin());
-                                            wcsncpy_s(global_s, str2.c_str(), 255);
-                                            SetWindowText(GetDlgItem(hDlg, IDC_NCBIref), global_s);
-                                            while (!fstrm.eof())
-                                            {
-                                                fstrm.getline(lbuffer, 256);
-                                                s = lbuffer;
-                                                if (s.length() > 5) {
-                                                    str2.resize(s.length(), L' '); // Make room for characters
-                                                    // Copy string to wstring.
-                                                    std::copy(s.begin(), s.end(), str2.begin());
-                                                    wcsncpy_s(global_s, str2.c_str(), 255);
-                                                    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-                                                }
+                                            if (s.length() > 5) {
+                                                str2.resize(s.length(), L' '); // Make room for characters
+                                                // Copy string to wstring.
+                                                std::copy(s.begin(), s.end(), str2.begin());
+                                                wcsncpy_s(global_s, str2.c_str(), 255);
+                                                SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
                                             }
                                         }
                                     }
-                                    CoTaskMemFree(pszFilePath);
-                                    pItem->Release();
                                 }
+                                CoTaskMemFree(pszFilePath);
+                                pItem->Release();
                             }
-                            pFileOpen->Release();
                         }
-
+                        pFileOpen->Release();
                     }
-                    CoUninitialize(); //needed to be moved here
+
                 }
+                CoUninitialize(); //needed to be moved here
             }
-        break;
+        }
+                           break;
         case IDCANCEL://fall tho to exit I'm sure this style is fround upon
-        case IDC_EXITP: { 
+        case IDC_EXITP: {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
-            }
+        }
         case IDC_ENTER: {//The main code, 
             TCHAR buffer[260] = { 0 };
-            std::string s_rsid,s_chr,s_gene, s_riskallele, s_oddsratio;
+            std::string s_rsid, s_chr, s_gene, s_riskallele, s_oddsratio;
             //get rsid number
-           if (GetWindowText(GetDlgItem(hDlg,IDC_RSIDP), buffer, 15)) 
+            if (GetWindowText(GetDlgItem(hDlg, IDC_RSIDP), buffer, 15))
             {
-               std::string s;
-               //the dialog only allows numbers to be entered
-               CT2CA pszConvertedAnsiString(buffer);
-               s = pszConvertedAnsiString;
-               s_rsid = "RS" + s;
+                std::string s;
+                //the dialog only allows numbers to be entered
+                CT2CA pszConvertedAnsiString(buffer);
+                s = pszConvertedAnsiString;
+                s_rsid = "RS" + s;
 
-            } else  break; //mandatory field
-           
-           //Get chromosone number
-           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))
-            {
-               std::string s;
-               CT2CA pszConvertedAnsiString(buffer);
-               s = pszConvertedAnsiString;
+            }
+            else  break; //mandatory field
 
-               if ((strtod(s.data(), NULL) > 0 && strtod(s.data(), NULL) < 23) || s == "X" || s == "Y" || s == "MT") {
-                   s_chr = s;
-               }
-               else break; //mandatory field
-           }
-               //Get Gene optional
-           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))
+            //Get chromosone number
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))
             {
-               CT2CA pszConvertedAnsiString(buffer);
-               s_gene = pszConvertedAnsiString;
+                std::string s;
+                CT2CA pszConvertedAnsiString(buffer);
+                s = pszConvertedAnsiString;
+
+                if ((strtod(s.data(), NULL) > 0 && strtod(s.data(), NULL) < 23) || s == "X" || s == "Y" || s == "MT") {
+                    s_chr = s;
+                }
+                else break; //mandatory field
+            }
+            //Get Gene optional
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))
+            {
+                CT2CA pszConvertedAnsiString(buffer);
+                s_gene = pszConvertedAnsiString;
             }
 
-           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
             {
-               std::string s;
-               CT2CA pszConvertedAnsiString(buffer);
-               s = pszConvertedAnsiString;
-               if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
-               s_riskallele = " [" + s +"] ";
+                std::string s;
+                CT2CA pszConvertedAnsiString(buffer);
+                s = pszConvertedAnsiString;
+                if (s != "A" && s != "C" && s != "G" && s != "T") break; //Mandatory!!
+                s_riskallele = " [" + s + "] ";
             }
- 
-           //Get Odds Ratio optional but should be inclued if available
-           if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
+
+            //Get Odds Ratio optional but should be inclued if available
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
             {
-              CT2CA pszConvertedAnsiString(buffer);
-              s_oddsratio = pszConvertedAnsiString;
+                CT2CA pszConvertedAnsiString(buffer);
+                s_oddsratio = pszConvertedAnsiString;
             }
-           //NO Missing Fields for file read!
-           if (s_gene.length() == 0) s_gene = "----";
-           if (s_oddsratio.length() == 0) s_oddsratio = "-.--";
+            //NO Missing Fields for file read!
+            if (s_gene.length() == 0) s_gene = "----";
+            if (s_oddsratio.length() == 0) s_oddsratio = "-.--";
 
-           //format for display
-           if (s_rsid.length() < 10) {
-               int y = 10 - s_rsid.length();
-               for (int x = 0; x < y; x++) {
-                   s_rsid = s_rsid + " "; //add padding spaces
-               }
-           }
-           if (s_chr.length() < 2) s_chr = s_chr + " ";
-           std::string s;
-           s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskallele + "  " + s_oddsratio;
-           std::wstring str2(s.length(), L' '); // Make room for characters
-           int lcount,lindex=-1;
+            //format for display
+            if (s_rsid.length() < 10) {
+                int y = 10 - s_rsid.length();
+                for (int x = 0; x < y; x++) {
+                    s_rsid = s_rsid + " "; //add padding spaces
+                }
+            }
+            if (s_chr.length() < 2) s_chr = s_chr + " ";
+            std::string s;
+            s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskallele + "  " + s_oddsratio;
+            std::wstring str2(s.length(), L' '); // Make room for characters
+            int lcount, lindex = -1;
 
 
-         // Copy string to wstring.
-           std::copy(s.begin(), s.end(), str2.begin());
-           wcsncpy_s(global_s, str2.c_str(), 255);
-           lcount = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_GETCOUNT, 0, 0);
-           if (lcount > 0)   lindex = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
-           if (lindex == -1)  SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_ADDSTRING, 0, (LPARAM)global_s);
-           //clear entered data
-           LPWSTR lp=(const_cast < LPTSTR>(L""));
-           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT3), lp);
-           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_ALLES1), lp);
-           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT2), lp);
-           SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
-           SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
+            // Copy string to wstring.
+            std::copy(s.begin(), s.end(), str2.begin());
+            wcsncpy_s(global_s, str2.c_str(), 255);
+            lcount = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_GETCOUNT, 0, 0);
+            if (lcount > 0)   lindex = SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
+            if (lindex == -1)  SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_ADDSTRING, 0, (LPARAM)global_s);
+            //clear entered data
+            LPWSTR lp = (const_cast <LPTSTR>(L""));
+            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT3), lp);
+            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_ALLES1), lp);
+            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT2), lp);
+            SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
+            SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
         }
-        break;
+                      break;
         case IDC_LIST1:
         {
             switch (HIWORD(wParam))
@@ -2699,8 +2696,8 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hDlg, Deletemsg) == TRUE) {
                         gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
                         //Delete entry an redraw to update
-                        if(gselected != -1 ) SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_DELETESTRING, gselected, 0);
-                      } //trigger WM_PAINT  
+                        if (gselected != -1) SendMessage(GetDlgItem(hDlg, IDC_LIST1), LB_DELETESTRING, gselected, 0);
+                    } //trigger WM_PAINT  
                     InvalidateRect(hDlg, NULL, TRUE);
                     UpdateWindow(hDlg);
                     return TRUE;
@@ -2711,7 +2708,17 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         }
-		break;
+        break;
+    }
+    break;
+    case WM_DESTROY: //Thanks DeepSeek for this fix!
+        // Clean up the icon
+        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
+        if (hicon) {
+            DestroyIcon(hicon);
+            RemoveProp(hDlg, L"DIALOG_ICON");
+        }
+    break;
     }
     return (INT_PTR)FALSE;
 }
