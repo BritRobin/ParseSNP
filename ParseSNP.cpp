@@ -469,7 +469,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
              GlobalUnlock(hg);
              SetClipboardData(CF_TEXT, hg);
              CloseClipboard();
-             GlobalFree(hg);
+             // GlobalFree(hg); // REMOVE THIS LINE - system owns memory after SetClipboardData
              return TRUE;
              }
             return FALSE;
