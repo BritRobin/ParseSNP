@@ -1410,6 +1410,7 @@ void  SnipParser::FConvert(void)
 If it is found it updates the odds ratio                       */
 std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
 {
+	float denominator = 0.0; //to prevent div by zero
     std::string result_message = "N/A";
 
     // Check you have SNP data loaded
@@ -1443,7 +1444,8 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 buffer[5] = ' ';
                 buffer[6] = NULL;
                 result_message = buffer;
-               
+                //fixed logic in ver 0.9 Beta
+				denominator = (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio))); //protect from diversion by zero
                 //Match of risk  allele on both chromosones!
                 if (snp[i].a == riskallele && snp[i].b == riskallele)
                 {
@@ -1453,14 +1455,13 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                         result_message = buffer;
                         result_message += "Risk Heterozygous";
                         if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
-                        else *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                        else if (denominator > 0.0) *sumoddsratio += (float)(*sumoddsratio * oddsratio) / denominator;
                         return result_message;
                     }
                     result_message += "Risk Homozygous!";
                     //from a post on statistics here https://stats.stackexchange.com/questions/187107/can-you-add-up-different-genes-odds-ratios-to-get-a-general-odds-ratio
-                    if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
-                    else  *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
-                    *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+					if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio * 2.0; //for homozygous fix logic ver 0.9 Beta
+					else  if (denominator > 0.0) *sumoddsratio += (float)((*sumoddsratio * oddsratio) / denominator) * 2.0; //for homozygous fix logic ver 0.9 Beta
                     return result_message;
                 }
                 //Match in one chromosone
@@ -1468,7 +1469,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 {
                     result_message += "Risk Heterozygous";
                     if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
-                    else *sumoddsratio += (float)(*sumoddsratio * oddsratio) / (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio)));
+                    else if (denominator > 0.0) *sumoddsratio += (float)(*sumoddsratio * oddsratio) / denominator;
                     return result_message;
                 }
                 if (snp[i].a == '0' && snp[i].b == '0')  result_message += "N/A (No Read)";
