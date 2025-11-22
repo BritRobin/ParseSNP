@@ -260,19 +260,21 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         if(a != (PSTR)0) {//11-13-2025 This could be confusing if a previous result is left loaded!
                             //Covert RS number for display
                             std::string s = std::to_string(local_rs_number);
-                            USES_CONVERSION_EX;
+							USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
                             LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
                             s = (std::string)"--";
                             lp = A2W_EX(s.c_str(), s.length());
-                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
                             s = (std::string)"0";
                             lp = A2W_EX(s.c_str(), s.length());
-                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
                             s = (std::string)"-";
                             lp = A2W_EX(s.c_str(), s.length());
-                            SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
-                            SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                            if (lp != NULL) {
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                            }
                             //trigger WM_PAINT              
                             InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                             UpdateWindow(aDiag);
@@ -288,25 +290,25 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                             {
                                 //Covert RS number for display
                                 std::string s = std::to_string(rs_number);
-                                USES_CONVERSION_EX;
+								USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
                                 LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+                                if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
                                 //Covert chromosome for display
                                 s = chromosome;
                                 lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+                                if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
                                 //covert poistion for display
                                 s = std::to_string(position);
                                 lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+                                if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
                                 s = allele1;
                                 lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                                if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
                                 //Fix 'X' chromosone in men as ancestoy dna files populate both  alleles as it make searches easier?
                                 if (chromosome[0] == 'X' && x.sex() == 'M') allele2 = '-';
                                 s = allele2;
                                 lp = A2W_EX(s.c_str(), s.length());
-                                SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                                if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
                                 EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), TRUE);
                                 EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), TRUE);
                                 //trigger WM_PAINT              
@@ -379,25 +381,25 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                   {
                       //Covert RS number for display
                       std::string s = std::to_string(rs_number);
-                      USES_CONVERSION_EX;
+					  USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
                       LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                      SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+                      if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
                       //Covert chromosome for display
                       s = chromosome;
                       lp = A2W_EX(s.c_str(), s.length());
-                      SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+                      if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
                       //covert poistion for display
                       s = std::to_string(position);
                       lp = A2W_EX(s.c_str(), s.length());
-                      SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+                      if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
                       s = allele1;
                       lp = A2W_EX(s.c_str(), s.length());
-                      SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+                      if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
                       //Fix 'X' chromosone in men as ancestoy dna files populate both  alleles as it make searches easier?
                       if (chromosome[0] == 'X' && x.sex() == 'M') allele2 = '-';
                       s = allele2;
                       lp = A2W_EX(s.c_str(), s.length());
-                      SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+                      if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
                       EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), TRUE);
                       EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), TRUE);
                       //trigger WM_PAINT              
@@ -585,13 +587,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             untranslated = x.IllumUntransVG();
                                             //Updated translated VG to RSID
                                             std::string s = std::to_string(tranlated);
-                                            USES_CONVERSION_EX;
+											USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
                                             LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                                             //Unpdate ramining disgarded VG code lines
                                             s = std::to_string(untranslated);
                                             lp = A2W_EX(s.c_str(), s.length());
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                             //Update count and path per normal
                                              //New code Beta 0.2
                                             std::string strx;
@@ -617,13 +619,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             untranslated = x.IllumUntransVG();
                                             //Updated translated VG to RSID
                                             std::string s = std::to_string(tranlated);
-                                            USES_CONVERSION_EX;
+											USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
                                             LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                                             //Undate remaining disgarded VG code lines
                                             s = std::to_string(untranslated);
                                             lp = A2W_EX(s.c_str(), s.length());
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                             //Update count and path per normal
                                             //New code Beta 0.2
                                             std::string strx;
@@ -806,13 +808,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     untranslated = x.IllumUntransVG();
                                     //Updated translated VG to RSID
                                     std::string s = std::to_string(tranlated);
-                                    USES_CONVERSION_EX;
+									USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
                                     LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                                     //Update remaining disgarded VG code lines
                                     s = std::to_string(untranslated);
                                     lp = A2W_EX(s.c_str(), s.length());
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
                                     //New code Beta 0.2
                                     std::string strx;
@@ -888,13 +890,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     untranslated = x.IllumUntransVG();
                                     //Updated translated VG to RSID
                                     std::string s = std::to_string(tranlated);
-                                    USES_CONVERSION_EX;
+									USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
                                     LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
                                     //Unpadate ramining disgarded VG code lines
                                     s = std::to_string(untranslated);
                                     lp = A2W_EX(s.c_str(), s.length());
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                     //Update count and path per normal
                                     //New code Beta 0.2
                                     std::string strx;
@@ -1971,9 +1973,9 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     case WM_INITDIALOG: {
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "The Merge operation was aborted due to too many differences between existing SNP alleles.\nNo changes have been made.";
-        USES_CONVERSION_EX;
+		USES_CONVERSION_EX; //Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
 
         return (INT_PTR)TRUE;
     }
@@ -2010,20 +2012,20 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     case WM_INITDIALOG: {
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "Merge Completed Successfully!\n\nThe Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
-        USES_CONVERSION_EX;
+		USES_CONVERSION_EX;//Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
         std::ostringstream ss;
         ss << x.MergeProcessed();
         std::string sf(ss.str());
         lp = A2W_EX(sf.c_str(), sf.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_EDITTOTAL), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_EDITTOTAL), lp);
         mergeTotal += x.merged();
         std::ostringstream sx;
         sx << x.merged();
         std::string se(sx.str());
         lp = A2W_EX(se.c_str(), se.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_MERGED), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_MERGED), lp);
         return (INT_PTR)TRUE;
     }
 
@@ -2059,9 +2061,9 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     case WM_INITDIALOG: {
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "**You Have Initiated a Merge!**\n\nNote: There is a lot of data to compare and the program may become unresposive for several minutes.\nAlso be aware that the function is indended to be used to merge two files of the same person, if two different subject's files are merged the code will detect the many differences and abort the merge.\n\nClick OK to proceed!";
-        USES_CONVERSION_EX;
+		USES_CONVERSION_EX;//Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
 
         return (INT_PTR)TRUE;
     }
@@ -2105,9 +2107,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         //Updated Icon code to prevent resource leaks
-        USES_CONVERSION_EX;
+		USES_CONVERSION_EX;//Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
         const HFONT font = (HFONT)SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_GETFONT, 0, 0);
         LOGFONT fontAttributes = { 0 };
         ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
@@ -2174,10 +2176,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         //Updated Icon code to prevent resource leaks
-        USES_CONVERSION_EX;
+		USES_CONVERSION_EX;//Added Null check
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
         lp = A2W_EX(s.c_str(), s.length());
-        SetWindowTextW(GetDlgItem(hDlg, IDC_INFOP), lp);
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_INFOP), lp);
         { //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
             LOGFONT lf;
             LOGFONT fontAttributes = { 0 };
