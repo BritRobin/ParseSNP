@@ -141,18 +141,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    const int width = 1000;
-   const int height = 700;// was CW_USEDEFAULT
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, width, height, nullptr, nullptr, hInstance, nullptr);
+   const int height = 700;
+
+   //Thanks to DeepSeek for centering code
+   // Calculate centered position
+   int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+   int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+   int x = (screenWidth - width) / 2;
+   int y = (screenHeight - height) / 2;
+
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
-      return FALSE;
+       return FALSE;
    }
-  
+
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
-
    PWSTR   ppszPath;    // variable to receive the path memory block pointer.
 
    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &ppszPath);
@@ -1679,9 +1685,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             // Position and show the dialog
             RECT Rect;
-            GetWindowRect(aDiag, &Rect);
-            SetWindowPos(aDiag, HWND_TOP, 0, 0, Rect.right - Rect.left, Rect.bottom - Rect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_SHOWWINDOW);
-            ShowWindow(aDiag, SW_SHOW);
+			if (GetWindowRect(aDiag, &Rect) != NULL) {//sanity check
+               SetWindowPos(aDiag, HWND_TOP, 0, 0, Rect.right - Rect.left, Rect.bottom - Rect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_SHOWWINDOW);
+               ShowWindow(aDiag, SW_SHOW);
+               }
+
             std::string s = "0";
             USES_CONVERSION_EX;
             LPWSTR lp = A2W_EX(s.c_str(), s.length());
