@@ -1683,9 +1683,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             std::string s = "0";
             USES_CONVERSION_EX;
             LPWSTR lp = A2W_EX(s.c_str(), s.length());
-            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
-            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+			if (lp != NULL) { //sanity check
+                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
+                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+            }
         }
         break;
   
@@ -1728,7 +1730,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         LPWSTR fp = A2W_EX("Female", 6);
         LPWSTR mp = A2W_EX("Male", 4);
-        SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
+		if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp); //add null lp check
         EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), TRUE);
         EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH), TRUE);
         //Set a limit on rs field
@@ -1737,8 +1739,8 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
         //show NCBI BUILD
         SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
-        if (sx == 'F') SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp);
-        else SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp);
+        if (sx == 'F' && fp !=NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp); //add null fp check
+                else if(mp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp); //add null lp check
         EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
         //optimized ver 0.3 beta
         HWND plst = GetDlgItem(aDiag, IDC_LIST2);
@@ -1766,7 +1768,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
                  mergeLoad = mergeTotal = 0;
                  USES_CONVERSION_EX;
                  LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                 SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
+                 if(lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
                  EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), FALSE);
                  EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH),   FALSE);
                  //Set a limit on rs field
@@ -1781,13 +1783,17 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
     std::string s = "";
     USES_CONVERSION_EX;
     LPWSTR lp = A2W_EX(s.c_str(), s.length());
-    SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
-    SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
-    SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
-    SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
-    SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+	if (lp != NULL) {//sanity check
+        SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT1), lp);
+        SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_CHRNUM), lp);
+        SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_POSIT), lp);
+        SetWindowTextW(GetDlgItem(aDiag, IDC_EDIT_ALLES1), lp);
+        SetWindowTextW(GetDlgItem(aDiag, IDC_AllELE2), lp);
+    }
     EnableWindow(GetDlgItem(aDiag, IDC_COPYCLIP), FALSE);
     EnableWindow(GetDlgItem(aDiag, IDC_COPYPROJ), FALSE);
+    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+    UpdateWindow(aDiag);
 }
 
 void PathoPrint()
