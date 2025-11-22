@@ -7,7 +7,6 @@
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
 #define IDI_PARSESNP                    107
-#define IDI_SMALL                       108
 #define IDC_PARSESNP                    109
 #define IDB_BITMAP1                     129
 #define IDD_FORMVIEW                    131

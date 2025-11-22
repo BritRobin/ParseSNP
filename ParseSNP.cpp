@@ -121,7 +121,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW);//FIX Weird backgroud 0.2beta
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_PARSESNP);
     wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_PARSESNP));
 
     return RegisterClassExW(&wcex);
 }
@@ -184,7 +184,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     case WM_INITDIALOG:
     {   
         HBITMAP hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+        //check operation suceeded
+        if(hBmp != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
         
         // Store the bitmap handle so we can delete it later
         SetProp(hwnd, L"BUTTONBITMAP", hBmp);
@@ -445,35 +446,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          return TRUE;
         }
         
-        case IDC_COPYCLIP:
-        {
-             TCHAR buffer[16] = { 0 };
-             //Stop non found references from pathogenics being added
-             if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
-              {
-               int local_rs_number;
-               local_rs_number = _wtoi(buffer);
-               if (local_rs_number != rs_number) return FALSE;
-              }
-            if(OpenClipboard(hwnd))
-             { 
-             std::string s = "RS";
-             s += std::to_string(rs_number) + " Chromosome:" + chromosome + " Postion:" + std::to_string(position) + " Alleles: " + allele1 + " " + allele2;
-             EmptyClipboard();
-             HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE, s.size() + 1);
-             if (!hg) {
-                CloseClipboard();
-                return FALSE;
-             }
-             memcpy(GlobalLock(hg), s.c_str(), s.size() + 1);
-             GlobalUnlock(hg);
-             SetClipboardData(CF_TEXT, hg);
-             CloseClipboard();
-             // GlobalFree(hg); // REMOVE THIS LINE - system owns memory after SetClipboardData
-             return TRUE;
-             }
-            return FALSE;
-        }
+                     
         case WM_DESTROY:
         {
             // Clean up the font
@@ -525,8 +498,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             IFileOpenDialog* pFileOpen;
 
             // Create the FileOpenDialog object.
-            hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+            hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
             if (SUCCEEDED(hr))
             {
@@ -794,8 +766,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -877,8 +848,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
                 if (SUCCEEDED(hr))
                 {
                     LPCWSTR a = L"Text Files";
@@ -960,8 +931,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -1033,8 +1003,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -1107,8 +1076,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -1181,8 +1149,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -1383,8 +1350,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
@@ -1739,8 +1705,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hWnd, &ps);
     }
     break;
-    break;
- case WM_MOVE:
+    case WM_MOVE:
         RECT rc;
         GetWindowRect(hWnd, &rc);
         RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
@@ -1951,7 +1916,7 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
      UNREFERENCED_PARAMETER(lParam);
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
-    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     switch (message)
     {
     case WM_INITDIALOG:
@@ -1993,7 +1958,7 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
     //Set Icon
-    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     //Set Icon
     switch (message)
     {
@@ -2032,7 +1997,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
     //Set Icon
-    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     //Set Icon
     switch (message)
     {
@@ -2081,7 +2046,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
     //Set Icon
-    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_SMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     //Set Icon
     switch (message)
     {
@@ -2127,7 +2092,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         std::string s = "ParseSNP Version: ";
         s = s.c_str() + x.PVer();
         //Updated Icon code to prevent resource leaks
-        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
         if (hIcon) {
             SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
             SetProp(hDlg, L"DIALOG_ICON", hIcon);
@@ -2142,8 +2107,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
         fontAttributes.lfUnderline = TRUE;
         HFONT x = CreateFontIndirect(&fontAttributes);
-        SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_SETFONT, (WPARAM)x, 1);
-        SetProp(hDlg, L"UNDERLINE_FONT", x);
+        if (x != NULL) {
+            SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_SETFONT, (WPARAM)x, 1);
+            SetProp(hDlg, L"UNDERLINE_FONT", x);
+        }
         return (INT_PTR)TRUE;
     }
   
@@ -2198,7 +2165,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         std::string s;
         LPCWSTR lp;
         //Updated Icon code to prevent resource leaks
-        HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL));
+        HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;
@@ -2214,7 +2181,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             lf.lfHeight = 16;                      // request a 16 pixel-height font
             _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
             HFONT x = CreateFontIndirect(&lf);
-            SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1);
+			if (x != NULL) SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1); //Set new font if valid
         } //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
         return (INT_PTR)TRUE;
     }
@@ -2504,8 +2471,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 IFileOpenDialog* pFileOpen;
 
                 // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
                 if (SUCCEEDED(hr))
                 {
