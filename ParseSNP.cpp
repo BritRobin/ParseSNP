@@ -32,8 +32,8 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 //Global class instance
 SnipParser x;
 //START:Global returned values
-HWND ghWnd;
-HWND aDiag;
+HWND ghWnd = nullptr;   // Add initialization
+HWND aDiag = nullptr;   // Add initialization
 int rs_number = 0;      // RS Number 
 int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
@@ -58,6 +58,7 @@ INT_PTR CALLBACK    Pathogen(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    SearchFailmsg(HWND, UINT, WPARAM, LPARAM);
 bool RawTextToPrinter(const std::string& text);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -414,6 +415,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                   }
                   else
                   { //Not Found dialog
+                      DialogBox(hInst, MAKEINTRESOURCE(IDD_NOTFOUND), aDiag, SearchFailmsg);
                       return FALSE;
                   }
                }
@@ -2168,6 +2170,76 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+
+
+INT_PTR CALLBACK SearchFailmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    //Because we have created a form dialog after the menu
+    ShowWindow(hDlg, 5);
+
+    switch (message)
+    {
+    case WM_INITDIALOG: {
+        std::string s = "RSID: ";
+        std::string rs_string = "0";
+		std::string e = " was not found.";
+
+        //Updated Icon code to prevent resource leaks
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
+        if (hIcon) {
+            SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+            SetProp(hDlg, L"DIALOG_ICON", hIcon);
+        }
+
+        //Updated Icon code to prevent resource leaks
+        USES_CONVERSION_EX;//Added Null check
+        LPWSTR lp = A2W_EX(s.c_str(), s.length());
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDNF1), lp);
+        rs_string = std::to_string(rs_number);
+        lp = A2W_EX(rs_string.c_str(), rs_string.length());
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDNF), lp);
+        lp = A2W_EX(e.c_str(), e.length());
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDNF3), lp);
+        return (INT_PTR)TRUE;
+    }
+
+    case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId) {
+        case IDOK:
+        case IDCANCEL:
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+       }
+        break;
+    }
+    case WM_DESTROY:
+    {
+        // Clean up the icon
+        HICON hIcon = (HICON)RemoveProp(hDlg, L"DIALOG_ICON");
+        if (hIcon) {
+            DestroyIcon(hIcon);
+        }
+
+        // Clean up the created font
+        HFONT hUnderlineFont = (HFONT)RemoveProp(hDlg, L"UNDERLINE_FONT");
+        if (hUnderlineFont) {
+            DeleteObject(hUnderlineFont);
+        }
+        return TRUE;
+    }
+
+
+    }
+    return (INT_PTR)FALSE;
+}
+
+
 INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);

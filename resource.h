@@ -18,6 +18,7 @@
 #define IDD_MERGABORT                   139
 #define IDD_MERREPORT                   140
 #define IDB_BITMAP2                     141
+#define IDD_NOTFOUND                    142
 #define IDC_STATIC_RS                   1001
 #define IDC_STATIC_SEARCHGROUP          1002
 #define IDC_EDIT_SEARCH                 1003
@@ -65,6 +66,10 @@
 #define IDC_BUTTON2                     1056
 #define IDC_LOAD_DRAFT                  1056
 #define IDC_BUTTON1                     1060
+#define IDC_RSIDNF                      1061
+#define ICD1                            1062
+#define IDC_RSIDNF1                     1062
+#define IDC_RSIDNF3                     1063
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -88,9 +93,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        142
+#define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1064
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
