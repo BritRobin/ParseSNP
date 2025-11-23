@@ -1,12 +1,5 @@
 ﻿#include "SnipParser.h"
-// Define a macro for force inline
-#ifdef _MSC_VER
-#define FORCE_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-#define FORCE_INLINE __attribute__((always_inline)) inline
-#else
-#define FORCE_INLINE inline
-#endif
+#include <atomic>
 
 //SNP in human genome DNA_SNP_BUFFER_SIZE. 
 struct ST
@@ -1111,7 +1104,7 @@ unsigned int SnipParser::MergeProcessed(void)
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!! */
-FORCE_INLINE bool SnipParser::mergeRs(int code,std::string line)
+/*FORCE_INLINE bool SnipParser::mergeRs(int code, std::string line)
 {
     for (unsigned int i = 0; i <= end_index_;)
     { //merge if code is a no read or not found
@@ -1132,7 +1125,7 @@ FORCE_INLINE bool SnipParser::mergeRs(int code,std::string line)
             snpM[i].b = snpM[end_index_].b;
             end_index_--;
             if (allcecked_ > 1250)
-            { //if all matches are less that 1/4 of the total check the files are way to different and merge is aborted
+            { //if all matches are less that 1/4 of the total check the files are way too different and merge is aborted
                 if ((allcecked_ >> 2) < failcheck_) abortMerge_ = true;
             }
             return false;
@@ -1142,7 +1135,42 @@ FORCE_INLINE bool SnipParser::mergeRs(int code,std::string line)
     }
     merged_++;
     return true;
+}*/
+
+bool SnipParser::mergeRs(int code, const std::string& line) {
+    std::lock_guard<std::mutex> lock(merge_mutex_);
+
+    if (abortMerge_) return false;
+
+    for (unsigned int i = 0; i <= end_index_; ++i) {
+        if (snpM[i].rs == code) {
+            allcecked_++;
+
+            if (snpM[i].a == '0') return true;
+
+            std::size_t found = line.find(snpM[i].a);
+            if (found == std::string::npos) failcheck_++;
+            else {
+                found = line.find(snpM[i].b);
+                if (found == std::string::npos) failcheck_++;
+            }
+
+            // Move data
+            snpM[i] = snpM[end_index_];
+            end_index_--;
+
+            if (allcecked_ > 1250 && ((allcecked_ >> 2) < failcheck_)) {
+                abortMerge_ = true;
+            }
+
+            return false;
+        }
+    }
+
+    merged_++;
+    return true;
 }
+
 /*RS number search function passed the RS number to searcg for
 and a structure of type s to place the data in if a match is found */
 bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr4, int *pos, char *a, char *b)

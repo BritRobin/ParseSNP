@@ -226,6 +226,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                     urlsnp += (buffer);
                     //Try to find SNP on SNPedia               
                     ShellExecute(NULL, TEXT("open"), urlsnp.c_str(), NULL, NULL, SW_SHOWNORMAL);
+                    return TRUE;
                 }
             }   
         }
@@ -475,7 +476,39 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         default:
             return DefWindowProc(hwnd, Message, wParam, lParam);
         }
-        
+
+    case WM_DESTROY:
+    {
+     // Clean up all GDI resources we created
+
+     // 1. Clean up the font
+     HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
+     if (hFont) {
+         DeleteObject(hFont);
+       }
+
+      // 2. Clean up the bitmap
+     HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
+     if (hBmp) {
+         DeleteObject(hBmp);
+       }
+
+     // 3. Optional: Clean up any other resources
+     // Remove any other window properties you might have set
+
+     return TRUE; // Message handled
+    }
+
+    case WM_NCDESTROY: {
+    // Final cleanup - this is the LAST message a window receives
+    // Remove properties even if we missed them in WM_DESTROY
+    RemoveProp(hwnd, L"LIST2FONT");
+    RemoveProp(hwnd, L"BUTTONBITMAP");
+    // Don't DeleteObject here - just remove properties
+    }
+        return FALSE; // Let DefWindowProc handle it too
+	default:
+    return FALSE;
     }
  }
 //
