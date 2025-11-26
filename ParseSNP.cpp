@@ -18,6 +18,8 @@
 #include <sstream>
 #include <commdlg.h>
 #include "MD5.h"
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 #include <winspool.h>
 #pragma comment(lib, "winspool.lib")
 
@@ -254,12 +256,13 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         CT2CA pszConvertedAnsiString(buffer);
                         PSTR a;
                         a = StrStrA(pszConvertedAnsiString, "N/A");
+
                         //Moved up for none available data
                         memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
                         for (int i = 2; i < 18; i++)
                         {
                             if (lbuffer[i] == L' ') break;
-                            if (isdigit(lbuffer[i])) {
+                            if (isdigit((unsigned char)lbuffer[i])) {
                                 lookup[i - 2] = lbuffer[i];
                             }
                         }
@@ -370,8 +373,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                   //Ctrl+V can paste alpha 
                   for (int pos = 0,cln=0; pos < 15; pos++)
                   {
-                   
-                      if (isdigit(buffer[pos]))
+                      if (isdigit((unsigned char)buffer[pos]))
                         {
                          cleanbuffer[cln] = buffer[pos];
                          cln++;
@@ -781,10 +783,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     lbuffer += tc;
                     lbuffer += "\n";
                     TCHAR text[256];
-                    for (int x = 0, ln = 0; x <= lcount; x++)
+                    for (int x = 0, ln = 0; x < lcount; x++)// Fixed: x < lcount
                     {
                         ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
-                        if (ln > 0 and ln < 256) {
+                        if (ln != LB_ERR && ln > 0 && ln < 255) {// Reserve space for null terminate
                             SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
                             //checked: the returned text is Zero terminated at tchar[ln] !
                             CT2CA pszConvertedAnsiString(text);

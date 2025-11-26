@@ -47,12 +47,10 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_,fi_); //store latest filename
-            while (!fs.eof())
+            while (fs.getline(nbuffer, 256)) //read a line into a temorary buffer
             {
-                //read a line into a temorary buffer
-                fs.getline(nbuffer, 256);
                 int rdindex = 0;
-                
+             
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex +1] == 's' && isdigit((int)nbuffer[rdindex +2])) {
 					char num[24];//fixed size 11/12/2025
@@ -194,9 +192,8 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             nbuffer[257] = NULL;        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
-            while (!fs.eof() && !abortMerge_)
-            {   //read a line into a temporary buffer
-                fs.getline(nbuffer, 256);
+			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
+            {   
                 //Merge code
                 vercheck = nbuffer;
                 //Merge code
@@ -348,11 +345,9 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vecotr for next file for next file
-            while (!fs.eof())
+            while (fs.getline(nbuffer, 256))//read a line into a temorary buffer
             {
                 fdind = 0;
-                //read a line into a temorary buffer
-                fs.getline(nbuffer, 256);
                 int rdindex = 2;
                 if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
                 //GET RS Number numeric part only 
@@ -528,11 +523,9 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
-            while (!fs.eof() && !abortMerge_)
+			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
             {
                 fdind = 0;
-                //read a line into a temorary buffer
-                fs.getline(nbuffer, 256);
                 //Merge code
                 vercheck = nbuffer;
                 //Merge code
@@ -701,10 +694,8 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vector for next file for next file
-            while (!fs.eof())
+            while (fs.getline(nbuffer, 256))//read a line into a temorary buffer
             {
-                //read a line into a temorary buffer
-                fs.getline(nbuffer, 256);
                 int rdindex = 0;
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]) )) && isdigit((int)nbuffer[rdindex + 2]))
@@ -887,10 +878,8 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
-            while (!fs.eof() && !abortMerge_)
+			while (fs.getline(nbuffer, 256) && !abortMerge_)//read a line into a temorary buffer and ensure not aborting merge
             {
-                //read a line into a temorary buffer
-                fs.getline(nbuffer, 256);
                 //Merge code
                 vercheck = nbuffer;
                 //Merge code
@@ -1070,6 +1059,33 @@ unsigned int SnipParser::merged(void)
 void SnipParser::initMergeCopy(void)
 {
     if (loadCount_ > 0) {
+        // Ensure snpM is large enough for existing data + some headroom
+        unsigned int newSize = loadCount_ + 16;
+        snpM.resize(newSize);
+
+        // Copy existing SNP data
+        for (unsigned int i = 0; i < loadCount_; i++) {
+            snpM[i].rs = snp[i].rs;
+            snpM[i].a = snp[i].a;
+            snpM[i].b = snp[i].b;
+        }
+
+        // Initialize the extra capacity to safe defaults
+        for (unsigned int i = loadCount_; i < newSize; i++) {
+            snpM[i].rs = 0;
+            snpM[i].a = '0';
+            snpM[i].b = '0';
+        }
+    }
+    else {
+        // No data loaded - create empty buffer
+        snpM.clear();
+        snpM.resize(0);  // Or just leave it empty
+    }
+}
+/*void SnipParser::initMergeCopy(void)
+{
+    if (loadCount_ > 0) {
         for (unsigned int i = 0; i <= loadCount_; i++) {
             snpM[i].rs = snp[i].rs;
             snpM[i].a  = snp[i].a;
@@ -1078,7 +1094,7 @@ void SnipParser::initMergeCopy(void)
     }
     snpM.resize(loadCount_ + 16); //add 16 for paranoia
     return;
-}
+}*/
 //returns if merge failed
 bool SnipParser::MergeState(void)
 {
@@ -1383,12 +1399,10 @@ void  SnipParser::FConvert(void)
         //Check file was opened  
         if (fs.is_open() && fsOut.is_open()) {
             fdind = 0;
-
-            while (!fs.eof())
+            while (fs.getline(nbuffer, 256))
             {
                 int rdindex = 0;
                 int nmindex = 0;
-                fs.getline(nbuffer, 256);
                 //move past tab or spaces to next numeric data posotion number
                 while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                 {//wrote with braces for readablility
