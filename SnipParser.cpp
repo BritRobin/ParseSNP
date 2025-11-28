@@ -1120,39 +1120,6 @@ unsigned int SnipParser::MergeProcessed(void)
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!! */
-/*FORCE_INLINE bool SnipParser::mergeRs(int code, std::string line)
-{
-    for (unsigned int i = 0; i <= end_index_;)
-    { //merge if code is a no read or not found
-        if (snpM[i].rs == code)
-        {           
-            allcecked_++;
-            //special case replace noread value
-            if (snpM[i].a == '0') return true;
-            std::size_t found = line.find(snpM[i].a);
-            if (found == std::string::npos) failcheck_++;
-            else { 
-                  found = line.find(snpM[i].b);
-                  if (found == std::string::npos) failcheck_++;
-                 }
-            //shorten the loop with every match we can move data aroud as its a subset copy!
-            snpM[i].rs = snpM[end_index_].rs;
-            snpM[i].a = snpM[end_index_].a;
-            snpM[i].b = snpM[end_index_].b;
-            end_index_--;
-            if (allcecked_ > 1250)
-            { //if all matches are less that 1/4 of the total check the files are way too different and merge is aborted
-                if ((allcecked_ >> 2) < failcheck_) abortMerge_ = true;
-            }
-            return false;
-        }
-        //inceament loop
-        i++;
-    }
-    merged_++;
-    return true;
-}*/
-
 bool SnipParser::mergeRs(int code, const std::string& line) {
     std::lock_guard<std::mutex> lock(merge_mutex_);
 
@@ -1163,7 +1130,7 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             allcecked_++;
 
             if (snpM[i].a == '0') return true;
-
+ 
             std::size_t found = line.find(snpM[i].a);
             if (found == std::string::npos) failcheck_++;
             else {

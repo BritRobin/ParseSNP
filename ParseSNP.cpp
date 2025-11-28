@@ -500,16 +500,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
      return TRUE; // Message handled
     }
-
-    case WM_NCDESTROY: {
-    // Final cleanup - this is the LAST message a window receives
-    // Remove properties even if we missed them in WM_DESTROY
-    RemoveProp(hwnd, L"LIST2FONT");
-    RemoveProp(hwnd, L"BUTTONBITMAP");
-    // Don't DeleteObject here - just remove properties
-    }
-        return FALSE; // Let DefWindowProc handle it too
-	default:
+	
+    default:
     return FALSE;
     }
  }
@@ -521,7 +513,6 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 //  WM_COMMAND  - process the application menu
 //  WM_PAINT    - Paint the main window
 //  WM_DESTROY  - post a quit message and return
-//
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -587,10 +578,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             fstrm.open(Target, std::ios::in);
                             //Check file was opened  
                             if (fstrm.is_open()) {
-                                while (!fstrm.eof())
+                                while (fstrm.getline(lbuffer, 256))//read a line into a temorary buffer
                                 {
-                                    //read a line into a temorary buffer
-                                    fstrm.getline(lbuffer, 256);//DNA file to open
+                                    //DNA file to open
                                     //file name and path wide                         
                                     str = A2T(lbuffer);
                                     fstrm.getline(lbuffer, 256);//DNA file type to open
@@ -1357,7 +1347,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         std::string  lbuffer;
                                         lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                         TCHAR text[256];
-                                        for (int x = 0, ln = 0; x <= lcount; x++)
+										for (int x = 0, ln = 0; x < lcount; x++)//fixed now taking one entry less
                                         {
                                             ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                             if (ln > 0 and ln < 256) {
@@ -1482,15 +1472,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         fp = &sumoddsratio;
                                         EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
 
-                                        while (!fstrm.eof())
+                                        while (fstrm.getline(lbuffer, 256))//Read next line in
                                         {
                                             int rsid=0;
                                             char riskallele;
                                             float oddsratio = 0.0;
-
-                                            //Read next line in
+                                                                                        
                                             //Read first reference lines
-                                            fstrm.getline(lbuffer, 256);
+                                            
                                             for (int i = 0; i < 257;) {
                                                 //***Obtain RSid number***
                                                 if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S')
@@ -2283,8 +2272,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-  
-    case WM_INITDIALOG: {
+    case WM_INITDIALOG:{
         std::string s;
         LPCWSTR lp;
         //Updated Icon code to prevent resource leaks
@@ -2302,10 +2290,12 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
             memcpy_s(&lf, sizeof(fontAttributes), &fontAttributes, sizeof(lf));
             lf.lfHeight = 16;                      // request a 16 pixel-height font
-            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11);    // request a face name "Courier New"
+            _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11); // request a face name "Courier New"
             HFONT x = CreateFontIndirect(&lf);
-			if (x != NULL) SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1); //Set new font if valid
-        } //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
+			if (x != NULL) {
+                SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1); //Set new font if valid
+                SetProp(hDlg, L"PATHOGEN_FONT", x); // Store for cleanup
+            } //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
         return (INT_PTR)TRUE;
     }
 
@@ -2657,9 +2647,8 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         std::copy(s.begin(), s.end(), str2.begin());
                                         wcsncpy_s(global_s, str2.c_str(), 255);
                                         SetWindowText(GetDlgItem(hDlg, IDC_NCBIref), global_s);
-                                        while (!fstrm.eof())
+                                        while (fstrm.getline(lbuffer, 256))
                                         {
-                                            fstrm.getline(lbuffer, 256);
                                             s = lbuffer;
                                             if (s.length() > 5) {
                                                 str2.resize(s.length(), L' '); // Make room for characters
@@ -2800,15 +2789,23 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     break;
-    case WM_DESTROY: //Thanks DeepSeek for this fix!
-        // Clean up the icon
-        HICON hicon = (HICON)GetProp(hDlg, L"DIALOG_ICON");
-        if (hicon) {
-            DestroyIcon(hicon);
-            RemoveProp(hDlg, L"DIALOG_ICON");
-        }
-    break;
+case WM_DESTROY: {
+                  // Clean up the font we created
+                  HFONT hFont = (HFONT)RemoveProp(hDlg, L"PATHOGEN_FONT");
+                  if (hFont) {
+                                DeleteObject(hFont);
+                              }
+
+                   // Clean up the icon (your existing code)
+                   HICON hicon = (HICON)RemoveProp(hDlg, L"DIALOG_ICON");
+                   if (hicon) {
+                                DestroyIcon(hicon);
+                               }
+                   return TRUE;
+                  }    
+	 break;//the break is redundant here but left incase the code is altered
+
     }
-    return (INT_PTR)FALSE;
+  return (INT_PTR)FALSE;
 }
 
