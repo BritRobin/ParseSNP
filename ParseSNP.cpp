@@ -2272,14 +2272,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-    case WM_INITDIALOG:{
+    case WM_INITDIALOG: {
         std::string s;
         LPCWSTR lp;
         //Updated Icon code to prevent resource leaks
         HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         //Updated Icon code to prevent resource leaks
-		USES_CONVERSION_EX;//Added Null check
+        USES_CONVERSION_EX;//Added Null check
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
         lp = A2W_EX(s.c_str(), s.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_INFOP), lp);
@@ -2292,13 +2292,13 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             lf.lfHeight = 16;                      // request a 16 pixel-height font
             _tcsncpy_s(lf.lfFaceName, LF_FACESIZE, _T("Courier New"), 11); // request a face name "Courier New"
             HFONT x = CreateFontIndirect(&lf);
-			if (x != NULL) {
+            if (x != NULL) {
                 SendDlgItemMessage(hDlg, IDC_LIST1, WM_SETFONT, (WPARAM)x, 1); //Set new font if valid
                 SetProp(hDlg, L"PATHOGEN_FONT", x); // Store for cleanup
             } //Ver 3.0 Beta - re-written so it make sense! FIXED IN 4.1
-        return (INT_PTR)TRUE;
+            return (INT_PTR)TRUE;
+        }
     }
-
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
