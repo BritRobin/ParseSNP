@@ -530,7 +530,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PWSTR pszFilePath;
         if (SUCCEEDED(hr))
         {
-            IFileOpenDialog* pFileOpen;
+            IFileOpenDialog* pFileOpen = nullptr;
 
             // Create the FileOpenDialog object.
             hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -560,11 +560,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                         if (SUCCEEDED(hr))
                         { 
-                        USES_CONVERSION;
-                        LPCWSTR Target;
-                        std::fstream  fstrm;
-                        if (!fstrm.bad())
-                        {
+                            USES_CONVERSION;
+                            LPCWSTR Target;
                             CString temp = "ProjectManifest.ptxt";
                             std::wstring str;
                             std::string  linebuffer;
@@ -574,6 +571,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             currentProject = pszFilePath;
                             currentProject = currentProject.substr(0, currentProject.length() - temp.GetLength());//SET CURRENT PROJECT!!!
                             //filestream 
+                            std::fstream  fstrm;
                             fstrm.open(Target, std::ios::in);
                             //Check file was opened  
                             if (fstrm.is_open()) {
@@ -703,7 +701,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 
                               }
                             }
-                        }
+                        
                     }
                     
                     
@@ -760,7 +758,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     CT2CA pszConvertedAnsiString(pathfilname.c_str());
                     lbuffer = pszConvertedAnsiString; //the full path to the file to load
                     lbuffer += "\n";
-                    _itoa_s(loadedFiletype, tc, 10); //the function to use to load it
+                    //Protection for alteration to the code overflowing tc[] buffer should ALWAYS work in existing code
+                    if (loadedFiletype < 9) _itoa_s(loadedFiletype, tc, 10); //the function to use to load it
+                    else {
+                           tc[0] = '1';
+                           tc[1] = NULL;
+                          }
                     lbuffer += tc;
                     lbuffer += "\n";
                     //Get Project window entry count
@@ -824,7 +827,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         {
                             PWSTR pszFilePath;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
@@ -1725,7 +1727,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   
     case WM_ERASEBKGND:
         return 1; // We handle background in WM_PAINT
-
     case WM_PAINT:
     {
         PAINTSTRUCT ps;

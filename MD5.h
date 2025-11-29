@@ -328,9 +328,8 @@ public:
         else
         {
             while (len = fread(buffer, 1, 1024, file))
-                Update(buffer, len);
+            Update(buffer, len);
             Final();
-
             fclose(file);
         }
 
