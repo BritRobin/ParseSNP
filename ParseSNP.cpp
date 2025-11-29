@@ -705,6 +705,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             }
                         }
                     }
+                    
+                    
                 }
             }
             CoUninitialize();//Was Missing
@@ -863,9 +865,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
 				CoUninitialize(); //Needed to be moved here
             }
             break;
@@ -945,9 +947,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
 				CoUninitialize();//needed to be moved here
             }
             break;
@@ -1017,9 +1019,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
                 CoUninitialize(); //was in the wrong place
             }
         }
@@ -1090,9 +1092,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
                 CoUninitialize(); //needed to be moved here
             }
         }
@@ -1163,9 +1165,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -1235,9 +1237,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -1593,9 +1595,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
                 }
+				pFileOpen->Release(); //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -2658,10 +2660,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 pItem->Release();
                             }
                         }
-                        pFileOpen->Release();
                     }
 
                 }
+				pFileOpen->Release();//Release
                 CoUninitialize(); //needed to be moved here
             }
         }
