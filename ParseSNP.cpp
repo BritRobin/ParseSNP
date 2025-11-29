@@ -334,8 +334,6 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             }
             return TRUE;
         }
-
-
         case IDC_LIST3:
         {
           switch (HIWORD(wParam))
@@ -713,7 +711,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         }
-     
         case ID_FILE_SAVEPROJECT:
         { 
         if (currentProject.length() == 0) {
@@ -955,7 +952,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
-
         case ID_OPENFILE:
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1100,7 +1096,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 CoUninitialize(); //needed to be moved here
             }
         }
-            break;
+        break;
         case ID_FILE_MERGE23TOMETXTFILE: {
 
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1173,7 +1169,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CoUninitialize(); //needed to be moved here
             }
         }
-         break;
+        break;
         case ID_FILE_MERGEFTDNA: {
 
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1296,7 +1292,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 CoUninitialize();
             }
         }
-            break;
+        break;
         case ID_PROJEX: {
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -1371,11 +1367,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 CoUninitialize();
             }
         }
-            break;
+        break;
         case ID_PATHOGENICS_CREATE: {
              DialogBox(hInst, MAKEINTRESOURCE(136), aDiag, Pathogen);
         }
-            break;
+        break;
         case ID_PATHOGENICS_LOAD: {
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -1603,7 +1599,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CoUninitialize(); //needed to be moved here
             }
         }
-            break;
+        break;
         case ID_PATHOGENICS_EXPORTRESULTSTO: {
                 HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
@@ -1682,17 +1678,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     CoUninitialize();
                 }
             }
-            break;
+        break;
         case ID_PRINT_RESULTS:
             //DialogBox(hInst, MAKEINTRESOURCE(IDD_PRINT), aDiag, PrintSetup);
             PathoPrint();
-			break;
+		break;
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-            break;
+        break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
-            break;
+        break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
             }
