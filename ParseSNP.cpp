@@ -476,7 +476,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             return TRUE;
         }
         default:
-            return DefWindowProc(hwnd, Message, wParam, lParam);
+            //return DefWindowProc(hwnd, Message, wParam, lParam); //<- Major Bug
+            return FALSE;
         }
 
     case WM_DESTROY:
@@ -724,16 +725,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         //Copy Source File
         if (SourceFilePath.length() > 0)
         {   /* Derive the target path from source file and project path */
-            std::wstring pathfilname;
-            wchar_t filename[256];
-            int position, totallength, sublen;
-            pathfilname = SourceFilePath;
-            totallength = pathfilname.length();
-            position = pathfilname.find_last_of(L"\\");
-            sublen = totallength - position;
-            pathfilname.copy(filename, sublen, position);
-            filename[sublen] = NULL;
-            pathfilname = currentProject + filename;
+            // Extract filename safely using filesystem
+			//ChatGPT4 suggested method start
+            std::filesystem::path fullpath(SourceFilePath);
+            std::wstring filename = fullpath.filename().wstring();   // Always safe
+			//ChatGPT4 suggested method end
+            // Build final project file path
+            std::wstring pathfilname = currentProject + filename;
             //Copy the original DNA file retaining its original name to the project folder
             LPCWSTR Source = SourceFilePath.c_str();
             LPCWSTR Target = pathfilname.c_str();
