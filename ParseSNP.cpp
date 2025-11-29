@@ -1085,7 +1085,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
                                   //Update count and path per normal
                                   count = x.SNPCount();
-                                  PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name
+                                //  PWSTR src = const_cast<PWSTR>(SourceFilePath.c_str());//Retain original name WORKS FINE BUT IS BAD PRACTICE
+                                  std::wstring ws = SourceFilePath;   // local copy
+                                  PWSTR src = ws.data();              // writable buffer
                                   ScreenUpdate(hWnd, count, src, NULL, x.sex());
                                   EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                   InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
@@ -1541,11 +1543,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     if (strlen(number) > 0) oddsratio = atof(number);
                                                     else oddsratio = 0.0;
                                                 }
-                                                while(lbuffer[i] != '\n') {
+												while (lbuffer[i] != NULL) {//std::fstream::getline() stops at '\n' consuming it and replacing with NULL
                                                      i++;
                                                 }
-                                                //protect from drop through buffer overrun
-                                                if (lbuffer[i] != '\n') lbuffer[i] = NULL;
                                                 break;
                                             }
                                             std::string ret_result;
