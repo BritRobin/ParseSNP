@@ -213,6 +213,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         return TRUE;
     }
     case WM_COMMAND:
+    {
         switch (LOWORD(wParam))
         {
         
@@ -455,54 +456,31 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
          UpdateWindow(aDiag);
          return TRUE;
-        }
-        
-                     
-        case WM_DESTROY:
-        {
-            // Clean up the font
-            HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
-            if (hFont) {
-                DeleteObject(hFont);
-            }
 
-            // Clean up the bitmap
-            HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
-            if (hBmp) {
-                DeleteObject(hBmp);
-            }
-            return TRUE;
         }
-        default:
-            //return DefWindowProc(hwnd, Message, wParam, lParam); //<- Major Bug
-            return FALSE;
-        }
-
+        } // End of LOWORD(wParam) switch
+        break;
+    } // End of WM_COMMAND case
     case WM_DESTROY:
     {
-     // Clean up all GDI resources we created
+         // Cleanup code - moved to proper location
+         HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
+        if (hBmp) {
+          DeleteObject(hBmp);
+         }
 
-     // 1. Clean up the font
-     HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
-     if (hFont) {
-         DeleteObject(hFont);
-       }
+         HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
+        if (hFont) {
+          DeleteObject(hFont);
+         }
 
-      // 2. Clean up the bitmap
-     HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
-     if (hBmp) {
-         DeleteObject(hBmp);
-       }
-
-     // 3. Optional: Clean up any other resources
-     // Remove any other window properties you might have set
-
-     return TRUE; // Message handled
+         return TRUE;
     }
-	
+
     default:
     return FALSE;
     }
+ return TRUE;
  }
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -863,13 +841,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize(); //Needed to be moved here
             }
             break;
@@ -945,13 +923,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize();//needed to be moved here
             }
             break;
@@ -1017,13 +995,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);                                    
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
                 CoUninitialize(); //was in the wrong place
             }
         }
@@ -1092,13 +1070,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                   InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                   UpdateWindow(aDiag);
-                                  CoTaskMemFree(pszFilePath);
+                                  if (pszFilePath) CoTaskMemFree(pszFilePath);
                                   pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
                 CoUninitialize(); //needed to be moved here
             }
         }
@@ -1165,13 +1143,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -1237,13 +1215,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -1286,7 +1264,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             if (SUCCEEDED(hr))
                             {
                                 x.AncestoryWriter((pszFilePath));
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
@@ -1593,13 +1571,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         RedrawWindow(plst, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
                                     }
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
                 }
-				pFileOpen->Release(); //another COM object release fix
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize(); //needed to be moved here
             }
         }
@@ -1653,7 +1631,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             std::string  lbuffer;
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                             TCHAR text[260];
-                                            for (int x = 0, ln = 0; x <= lcount; x++)
+											for (int x = 0, ln = 0; x < lcount; x++) //fixed now taking one entry less
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                                 if (ln > 0 and ln < 256) {
@@ -2396,7 +2374,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                             fstrm.write(write_it, s_ncbiref.length());
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                             TCHAR text[256];
-                                            for (int x = 0, ln = 0; x <= lcount; x++)
+											for (int x = 0, ln = 0; x < lcount; x++)//fix one less read
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                                 if (ln > 0 and ln < 256) {
@@ -2441,7 +2419,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
@@ -2546,7 +2524,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                             fstrm.write(write_it, s_ncbiref.length());
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                             TCHAR text[256];
-                                            for (int x = 0, ln = 0; x <= lcount; x++)
+											for (int x = 0, ln = 0; x < lcount; x++)//fix one less read
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                                 if (ln > 0 and ln < 256) {
@@ -2563,7 +2541,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
@@ -2657,14 +2635,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                CoTaskMemFree(pszFilePath);
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                             }
                         }
                     }
 
                 }
-				pFileOpen->Release();//Release
+				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };//Release
                 CoUninitialize(); //needed to be moved here
             }
         }
@@ -2695,8 +2673,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 std::string s;
                 CT2CA pszConvertedAnsiString(buffer);
                 s = pszConvertedAnsiString;
-
-                if ((strtod(s.data(), NULL) > 0 && strtod(s.data(), NULL) < 23) || s == "X" || s == "Y" || s == "MT") {
+				//Per Deepseek add check for empty string and made the valid numeric range more obvoius to read >=1 && <=22 rather than >0 && <23 which is the same logic but harder to parse visually
+                if (s != "" && ((strtod(s.data(), NULL) >= 1 && strtod(s.data(), NULL) <= 22) || s == "X" || s == "Y" || s == "MT"))
+                {
                     s_chr = s;
                 }
                 else break; //mandatory field

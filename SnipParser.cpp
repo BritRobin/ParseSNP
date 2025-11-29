@@ -1161,17 +1161,20 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
     // Check you have SNP data loaded
     if (loadCount_ > 0)
     { 
+		//For Sanity check ensure NULL termination
+        
         // Search for RS numer int rs
         for (unsigned int i = 0; i <=loadCount_;)
         {
             if (snp[i].rs == *rs)
             {
                 //match found! populate and return the structure
+                snp[i].ch[3] = NULL; //there should be a NULL before this in all cases BUT this is the safety to ensure no buffer overrun
                 *rs = snp[i].rs;         // RS number
                 *chr1 = snp[i].ch[0];    // Chromosone array as string
                 *chr2 = snp[i].ch[1];    // Chromosone array as string
                 *chr3 = snp[i].ch[2];    // Chromosone array as string
-                *chr4 = snp[i].ch[3];    // Chromosone array as string
+                *chr4 = snp[i].ch[3];    // ALWAYS NULL
                 *pos = snp[i].pos;       // Position
                 *a = snp[i].a;           // first nucleotide
                 *b = snp[i].b;           // first nucleotide
