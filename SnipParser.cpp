@@ -56,7 +56,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 					char num[24];//fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
                     rdindex += 2;
                     while (isdigit((int)nbuffer[rdindex]) && rdindex < 23)
                     {
@@ -64,7 +64,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         rdindex++;
                         nmindex++;
                     }
-                    num[nmindex] = NULL;
+                    num[nmindex] = '\0';
                     //First in the line is the RS number
                     snp[inx].rs = atoi(num);
                     //move past tab or spaces to next numeric data chromosone number
@@ -74,7 +74,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                     //re-init 
                     nmindex = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     // 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
@@ -86,7 +86,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                             nmindex++;
                         }
                         //second in the line is the chromosone number
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         strcpy_s(snp[inx].ch, num);
                     }
 
@@ -98,14 +98,14 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     //read position
                     //re-init 
                     nmindex = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
                     while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
                         nmindex++;
                     }
-                    num[nmindex] = NULL;
+                    num[nmindex] = '\0';
                     //second in the line is the chromosone number
                     snp[inx].pos = atoi(num);
 
@@ -152,7 +152,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                                     char sub[3] = "";
                                     sub[0]=nbuffer[i]; 
                                     sub[1]=nbuffer[i + 1];
-                                    sub[2] = NULL;
+                                    sub[2] = '\0';
                                     NCBIBuild_ = sub;
                                     break;
                                 }
@@ -189,7 +189,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             int inx = loadCount_ + 1,rst, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, fi_); //store latest filename
-            nbuffer[257] = NULL;        //more efficient
+            nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
 			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
@@ -203,7 +203,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
 					char num[24]; //fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
                     rdindex += 2;
                     while (isdigit((int)nbuffer[rdindex]) && rdindex < 23)
                     {
@@ -211,7 +211,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         rdindex++;
                         nmindex++;
                     }
-                    num[nmindex] = NULL;
+                    num[nmindex] = '\0';
                     mergefile_++; //get the total merge import count so a percentage difference can be calculated
                     //First in the line is the RS number
                     rst = atoi(num);
@@ -225,7 +225,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         }
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
 
                         // 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
@@ -237,7 +237,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                                 nmindex++;
                             }
                             //second in the line is the chromosone number
-                            num[nmindex] = NULL;
+                            num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
 
@@ -249,14 +249,14 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         //read position
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
 
@@ -295,7 +295,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                                     char sub[3] = "";
                                     sub[0] = nbuffer[i];
                                     sub[1] = nbuffer[i + 1];
-                                    sub[2] = NULL;
+                                    sub[2] = '\0';
                                     NCBIBuild_ = sub;
                                     break;
                                 }
@@ -359,7 +359,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     int  nmindex = 0;
                     loopbreak = 0;
                     rdindex += fdind;//ftdna-illumina
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
@@ -369,7 +369,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //First in the line is the RS number
                         snp[inx].rs = atoi(num);
 
@@ -395,7 +395,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             fdind++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         rdindex =fdind;                  //set read index
                         snp[inx].rs = FTDNADecode(num); //ver 0.3 beta separate decode function!
                     }
@@ -409,7 +409,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                     //re-init 
                     nmindex = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                     {
@@ -420,14 +420,14 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             nmindex++;
                         }
                         //second in the line is the chromosone number
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         strcpy_s(snp[inx].ch, num);
                     }
                     else {
                         snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
                         if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
                         if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                        snp[inx].ch[1] = NULL;
+                        snp[inx].ch[1] = '\0';
 
                     }
                     
@@ -439,14 +439,14 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     //read position
                         //re-init 
                     nmindex = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
                     while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
                         nmindex++;
                     }
-                    num[nmindex] = NULL;
+                    num[nmindex] = '\0';
                     //second in the line is the chromosone number
                     snp[inx].pos = atoi(num);
      
@@ -519,7 +519,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, fi_); //store latest filename
-            nbuffer[257] = NULL;        //more efficient
+            nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
@@ -540,7 +540,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     int  nmindex = 0;
                     loopbreak = 0;
                     rdindex += fdind;//ftdna-illumina
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
@@ -550,7 +550,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //First in the line is the RS number
                         rst = atoi(num);
 
@@ -576,7 +576,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             fdind++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         rdindex = fdind;                  //set read index
                         rst = FTDNADecode(num); //ver 0.3 beta separate decode function!
                     }
@@ -590,7 +590,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         }
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
@@ -601,14 +601,14 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                                 nmindex++;
                             }
                             //second in the line is the chromosone number
-                            num[nmindex] = NULL;
+                            num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
                         else {
                             snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
                             if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
                             if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                            snp[inx].ch[1] = NULL;
+                            snp[inx].ch[1] = '\0';
 
                         }
 
@@ -620,14 +620,14 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         //read position
                             //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
 
@@ -703,7 +703,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     char num[20];
                     int  nmindex = 0;
                     loopbreak = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
@@ -714,7 +714,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //First in the line is the RS number
                         snp[inx].rs = atoi(num);
 
@@ -732,7 +732,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                        
                         snp[inx].rs = f23andMeDecode(num);//in example  VG01S1077 ftdna will equal numeric 11007
                     }
@@ -746,7 +746,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         }
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
@@ -757,7 +757,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                                 nmindex++;
                             }
                             //second in the line is the chromosone number
-                            num[nmindex] = NULL;
+                            num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
                         else {//Bug fix 3/10/21
@@ -765,14 +765,14 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                                  {//know its uppercase but others use the format
                                   snp[inx].ch[0] = 'M';
                                   snp[inx].ch[1] = 'T';
-                                  snp[inx].ch[2] = NULL;  //Bug fix 3/11/21
+                                  snp[inx].ch[2] = '\0';  //Bug fix 3/11/21
                                   singleAllele = true;
                                  } else
                                        {
                                         snp[inx].ch[0] = nbuffer[rdindex]; 
                                         if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
                                         if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                                        snp[inx].ch[1] = NULL;
+                                        snp[inx].ch[1] = '\0';
                                         singleAllele = true;
                                        }
 
@@ -786,14 +786,14 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         //read position
                             //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
 
@@ -810,7 +810,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         rdindex++;
                         if (singleAllele)
                         {
-                            snp[inx].b = NULL;
+                            snp[inx].b = '\0';
                         }
                         else
                         {
@@ -874,7 +874,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             //NO!!!: reset loadcount_ and vector for next file for next file
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, fi_); //store latest filename
-            nbuffer[257] = NULL;        //more efficient
+            nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
@@ -890,7 +890,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                     char num[20];
                     int  nmindex = 0;
                     loopbreak = 0;
-                    num[0] = NULL;
+                    num[0] = '\0';
 
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
@@ -901,7 +901,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //First in the line is the RS number
                          rst = atoi(num);
 
@@ -919,7 +919,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
 
                         rst = f23andMeDecode(num);//in example  VG01S1077 ftdna will equal numeric 11007
                     }
@@ -934,7 +934,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         }
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
@@ -945,7 +945,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                                 nmindex++;
                             }
                             //second in the line is the chromosone number
-                            num[nmindex] = NULL;
+                            num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
                         else {//Bug fix 3/10/21
@@ -953,7 +953,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                             {//know its uppercase but others use the format
                                 snp[inx].ch[0] = 'M';
                                 snp[inx].ch[1] = 'T';
-                                snp[inx].ch[2] = NULL;  //Bug fix 3/11/21
+                                snp[inx].ch[2] = '\0';  //Bug fix 3/11/21
                                 singleAllele = true;
                             }
                             else
@@ -961,7 +961,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                                 snp[inx].ch[0] = nbuffer[rdindex];
                                 if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
                                 if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                                snp[inx].ch[1] = NULL;
+                                snp[inx].ch[1] = '\0';
                                 singleAllele = true;
                             }
 
@@ -975,14 +975,14 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         //read position
                         //re-init 
                         nmindex = 0;
-                        num[0] = NULL;
+                        num[0] = '\0';
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
                             nmindex++;
                         }
-                        num[nmindex] = NULL;
+                        num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
 
@@ -998,7 +998,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         rdindex++;
                         if (singleAllele)
                         {
-                            snp[inx].b = NULL;
+                            snp[inx].b = '\0';
                         }
                         else
                         {
@@ -1103,10 +1103,10 @@ bool SnipParser::MergeState(void)
 /*Revert a failed merge*/
 void SnipParser::revertMerge(void)
 {
-    //Reset rsid to null
+    //Reset rsid to '\0'
     for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
     {
-        snp[i].rs = NULL;
+        snp[i].rs = '\0';
     }
     //reset load count
     loadCount_ = origloadcount_;
@@ -1161,7 +1161,7 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
     // Check you have SNP data loaded
     if (loadCount_ > 0)
     { 
-		//For Sanity check ensure NULL termination
+		//For Sanity check ensure '\0' termination
         
         // Search for RS numer int rs
         for (unsigned int i = 0; i <=loadCount_;)
@@ -1169,12 +1169,12 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
             if (snp[i].rs == *rs)
             {
                 //match found! populate and return the structure
-                snp[i].ch[3] = NULL; //there should be a NULL before this in all cases BUT this is the safety to ensure no buffer overrun
+                snp[i].ch[3] = '\0'; //there should be a '\0' before this in all cases BUT this is the safety to ensure no buffer overrun
                 *rs = snp[i].rs;         // RS number
                 *chr1 = snp[i].ch[0];    // Chromosone array as string
                 *chr2 = snp[i].ch[1];    // Chromosone array as string
                 *chr3 = snp[i].ch[2];    // Chromosone array as string
-                *chr4 = snp[i].ch[3];    // ALWAYS NULL
+                *chr4 = snp[i].ch[3];    // ALWAYS '\0'
                 *pos = snp[i].pos;       // Position
                 *a = snp[i].a;           // first nucleotide
                 *b = snp[i].b;           // first nucleotide
@@ -1183,25 +1183,25 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
                 if (*chr1 == '2' && *chr2 == '3')
                 {
                     *chr1 = 'X';
-                    *chr2 = NULL;
+                    *chr2 = '\0';
                 }
                 if (*chr1 == '2' && *chr2 == '4')
                 {
                     *chr1 = 'Y';
-                    *chr2 = NULL;
+                    *chr2 = '\0';
                 }
                 if (*chr1 == '2' && *chr2 == '5')
                 {
                     *chr1 = 'P';
                     *chr2 = 'A';
                     *chr3 = 'R';
-                    *chr4 = NULL;
+                    *chr4 = '\0';
                 }
                 if (*chr1 == '2' && *chr2 == '6')
                 {
                     *chr1 = 'm';
                     *chr2 = 't';
-                    *chr3 = NULL;
+                    *chr3 = '\0';
                 }
                 //END: For Ancestory DNA files 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                 return true;
@@ -1319,14 +1319,14 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                      }
                      else
                      {
-                         allele1 = allele2 = snp[inx].a + NULL;
+                         allele1 = allele2 = snp[inx].a + '\0';
                      }
                  }
                  else {
                         if (snp[inx].a == '-' || snp[inx].a == '0') allele1 = (std::string)"0";
-                             else allele1 = snp[inx].a + NULL;
+                             else allele1 = snp[inx].a + '\0';
                         if (snp[inx].b == '-' || snp[inx].b == '0') allele2 = (std::string)"0";
-                             else allele2 = snp[inx].b + NULL;
+                             else allele2 = snp[inx].b + '\0';
                       }
 
                  lbuffer = "rs" + rsID + "\t" + Chromosome + "\t" + Position + "\t" + allele1 + "\t" + allele2 + "\n";
@@ -1381,14 +1381,14 @@ void  SnipParser::FConvert(void)
                 //read position
                 //re-init 
                 nmindex = 0;
-                num[0] = NULL;
+                num[0] = '\0';
                 while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                 {
                     num[nmindex] = nbuffer[rdindex];
                     rdindex++;
                     nmindex++;
                 }
-                num[nmindex] = NULL;
+                num[nmindex] = '\0';
                 //START constructing the write line
                 lbuffer = "case " + std::string(num) + ":" + char(13) + "  snp[inx].rs = ";
                 //read second rsID number
@@ -1400,14 +1400,14 @@ void  SnipParser::FConvert(void)
                 //read position
                 //re-init 
                 nmindex = 0;
-                num[0] = NULL;
+                num[0] = '\0';
                 while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                 {
                     num[nmindex] = nbuffer[rdindex];
                     rdindex++;
                     nmindex++;
                 }
-                num[nmindex] = NULL;
+                num[nmindex] = '\0';
                 //lbuffer= lbuffer + +=
                 lbuffer += std::string(num) + ";" + char(13) +"  illuminaT_++;" + char(13) + "  break;" + char(13) ;
                 const char* write_it = lbuffer.c_str();
@@ -1439,7 +1439,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 if (!strcmp(snp[i].ch, "23"))
                 {
                     check_Y[0] = 'X';
-                    check_Y[1] = NULL;
+                    check_Y[1] = '\0';
                 }
                 else
                 {
@@ -1454,7 +1454,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 buffer[3] = (char)snp[i].b;
                 buffer[4] = ']';
                 buffer[5] = ' ';
-                buffer[6] = NULL;
+                buffer[6] = '\0';
                 result_message = buffer;
                 //fixed logic in ver 0.9 Beta
 				denominator = (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio))); //protect from diversion by zero
