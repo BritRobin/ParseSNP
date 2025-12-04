@@ -2097,6 +2097,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     return (INT_PTR)FALSE;
 }
 // Message handler for about box.
+
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -2106,19 +2107,50 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG: {
+        // Center the dialog on its parent window
+        HWND hwndParent = GetParent(hDlg);
+        RECT rcDialog, rcParent;
+
+        // Get dialog size
+        GetWindowRect(hDlg, &rcDialog);
+        int dlgWidth = rcDialog.right - rcDialog.left;
+        int dlgHeight = rcDialog.bottom - rcDialog.top;
+
+        // Get parent window rect (or screen if no parent)
+        if (hwndParent) {
+            GetWindowRect(hwndParent, &rcParent);
+        }
+        else {
+            // If no parent, center on screen
+            rcParent.left = 0;
+            rcParent.top = 0;
+            rcParent.right = GetSystemMetrics(SM_CXSCREEN);
+            rcParent.bottom = GetSystemMetrics(SM_CYSCREEN);
+        }
+
+        // Calculate centered position
+        int parentWidth = rcParent.right - rcParent.left;
+        int parentHeight = rcParent.bottom - rcParent.top;
+        int xx = rcParent.left + (parentWidth - dlgWidth) / 2;
+        int yy = rcParent.top + (parentHeight - dlgHeight) / 2;
+        ShowWindow(hDlg, SW_SHOW);
+        // Move the dialog
+        SetWindowPos(hDlg, NULL, xx, yy, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
         std::string s = "ParseSNP Version: ";
-        s = s.c_str() + x.PVer();
+        s += x.PVer();
         //Updated Icon code to prevent resource leaks
         HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
         if (hIcon) {
             SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
             SetProp(hDlg, L"DIALOG_ICON", hIcon);
         }
-
         //Updated Icon code to prevent resource leaks
 		USES_CONVERSION_EX;//Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATICVER), lp);
+        s = x.PAbout();
+        lp = A2W_EX(s.c_str(), s.length());
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_ABTTXT), lp);
         const HFONT font = (HFONT)SendDlgItemMessage(hDlg, IDC_STATIC_LNK, WM_GETFONT, 0, 0);
         LOGFONT fontAttributes = { 0 };
         ::GetObject(font, sizeof(fontAttributes), &fontAttributes);
@@ -2149,6 +2181,18 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     }
+
+    case WM_CTLCOLORSTATIC:
+    {
+        // Make the hyperlink blue
+        if ((HWND)lParam == GetDlgItem(hDlg, IDC_STATIC_LNK))
+        {
+            SetTextColor((HDC)wParam, RGB(0, 0, 255));
+            SetBkMode((HDC)wParam, TRANSPARENT);
+            return (INT_PTR)GetSysColorBrush(COLOR_BTNFACE);
+        }
+        break;
+    }
     case WM_DESTROY:
     {
         // Clean up the icon
@@ -2164,7 +2208,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         return TRUE;
     }
-
 
     }
     return (INT_PTR)FALSE;

@@ -67,9 +67,9 @@
 #define IDC_LOAD_DRAFT                  1056
 #define IDC_BUTTON1                     1060
 #define IDC_RSIDNF                      1061
-#define ICD1                            1062
 #define IDC_RSIDNF1                     1062
 #define IDC_RSIDNF3                     1063
+#define IDC_ABTTXT                      1064
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -95,7 +95,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         32792
-#define _APS_NEXT_CONTROL_VALUE         1064
+#define _APS_NEXT_CONTROL_VALUE         1065
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

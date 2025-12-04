@@ -34,7 +34,8 @@ public:
 	unsigned int IllumUntransVG(void);
 	unsigned int MergeProcessed(void);
 	bool mergeRs(int code, const std::string& line);
-	std::string PVer(void); //return program/class version
+	std::string PVer(void); //return version
+	std::string PAbout(void); //return program/class about info
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 
@@ -58,7 +59,8 @@ private:
 	wchar_t fileLoaded_[260];
 	char sex_;
 	std::string NCBIBuild_;
-	std::string Pversion_;
+	std::string Pversion_ = "1.0.0"; //SET **VERSION** HERE
+	std::string PAbouttxt_ = "Written by Robin Taylor. 2021 - 2025 \nReleased under GNU GPL v3.0"; //ABOUT INFO
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;
 	int FTDNADecode(std::string code);

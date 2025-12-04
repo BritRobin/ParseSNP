@@ -1083,18 +1083,7 @@ void SnipParser::initMergeCopy(void)
         snpM.resize(0);  // Or just leave it empty
     }
 }
-/*void SnipParser::initMergeCopy(void)
-{
-    if (loadCount_ > 0) {
-        for (unsigned int i = 0; i <= loadCount_; i++) {
-            snpM[i].rs = snp[i].rs;
-            snpM[i].a  = snp[i].a;
-            snpM[i].b  = snp[i].b;
-        }
-    }
-    snpM.resize(loadCount_ + 16); //add 16 for paranoia
-    return;
-}*/
+
 //returns if merge failed
 bool SnipParser::MergeState(void)
 {
@@ -1215,11 +1204,15 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
 }
 
 //return version number
-std::string  SnipParser::PVer(void)
+std::string SnipParser::PVer(void)
 {
     return  Pversion_;
 }
 
+std::string SnipParser::PAbout(void)
+{
+    return PAbouttxt_;
+}
 /*return the NCBI Build the file was based on gives position a referance
   as well as being a clue to the age of the files contents */
 std::string SnipParser::NCBIBuild(void)
