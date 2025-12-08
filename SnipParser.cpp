@@ -3288,7 +3288,386 @@ int SnipParser::f23andMeDecode(std::string code)
         rs = 864622707;
         illuminaT_++;
         break;
-
+	case 3000001: //23andMe RS IDs V3
+        rs = 113993960;  // RS113993960
+        illuminaT_++;
+        break;
+    case 3000014:
+        rs = 372706460;  // RS372706460
+        illuminaT_++;
+        break;
+    case 3000029:
+        rs = 375151448;  // RS375151448
+        illuminaT_++;
+        break;
+    case 3000037:
+        rs = 796993763;  // RS796993763
+        illuminaT_++;
+        break;
+    case 3000065:
+        rs = 796727509;  // RS796727509
+        illuminaT_++;
+        break;
+    case 3000078:
+        rs = 372362604;  // RS372362604
+        illuminaT_++;
+        break;
+    case 3000206:
+        rs = 17215500;  // RS17215500
+        illuminaT_++;
+        break;
+    case 3000564:
+        rs = 41464546;  // RS41464546
+        illuminaT_++;
+        break;
+    case 3000954:
+        rs = 28358282;  // RS28358282
+        illuminaT_++;
+        break;
+    case 3001096:
+        rs = 118203888;  // RS118203888
+        illuminaT_++;
+        break;
+    case 3001474:
+        rs = 3021088;  // RS3021088
+        illuminaT_++;
+        break;
+    case 3002432:
+        rs = 1799963;  // RS1799963
+        illuminaT_++;
+        break;
+    case 3002449:
+        rs = 1800123;  // RS1800123
+        illuminaT_++;
+        break;
+    case 3002455:
+        rs = 1800386;  // RS1800386
+        illuminaT_++;
+        break;
+    case 3002468:
+        rs = 1800730;  // RS1800730
+        illuminaT_++;
+        break;
+    case 3002484:
+        rs = 1801086;  // RS1801086
+        illuminaT_++;
+        break;
+    case 3002485:
+        rs = 1801166;  // RS1801166
+        illuminaT_++;
+        break;
+    case 3002486:
+        rs = 1801175;  // RS1801175
+        illuminaT_++;
+        break;
+    case 3002507:
+        rs = 1805009;  // RS1805009
+        illuminaT_++;
+        break;
+    case 3002517:
+        rs = 1805137;  // RS1805137
+        illuminaT_++;
+        break;
+    case 3002721:
+        rs = 121917808;  // RS121917808
+        illuminaT_++;
+        break;
+    case 3002758:
+        rs = 28933979;  // RS28933979
+        illuminaT_++;
+        break;
+    case 3002759:
+        rs = 76992529;  // RS76992529
+        illuminaT_++;
+        break;
+    case 3002773:
+        rs = 118192163;  // RS118192163
+        illuminaT_++;
+        break;
+    case 3002796:
+        rs = 104894724;  // RS104894724
+        illuminaT_++;
+        break;
+    case 3002797:
+        rs = 121964895;  // RS121964895
+        illuminaT_++;
+        break;
+    case 3002808:
+        rs = 79761867;  // RS79761867
+        illuminaT_++;
+        break;
+    case 3003043:
+        rs = 28940285;  // RS28940285
+        illuminaT_++;
+        break;
+    case 3003074:
+        rs = 28941776;  // RS28941776
+        illuminaT_++;
+        break;
+    case 3003090:
+        rs = 28942081;  // RS28942081
+        illuminaT_++;
+        break;
+    case 3003093:
+        rs = 28942084;  // RS28942084
+        illuminaT_++;
+        break;
+    case 3003094:
+        rs = 28942085;  // RS28942085
+        illuminaT_++;
+        break;
+    case 3003387:
+        rs = 5030808;  // RS5030808
+        illuminaT_++;
+        break;
+    case 3003389:
+        rs = 5030818;  // RS5030818
+        illuminaT_++;
+        break;
+    case 3003391:
+        rs = 5030821;  // RS5030821
+        illuminaT_++;
+        break;
+    case 3003392:
+        rs = 5030823;  // RS5030823
+        illuminaT_++;
+        break;
+    case 3003397:
+        rs = 5030843;  // RS5030843
+        illuminaT_++;
+        break;
+    case 3003398:
+        rs = 5030846;  // RS5030846
+        illuminaT_++;
+        break;
+    case 3003399:
+        rs = 5030847;  // RS5030847
+        illuminaT_++;
+        break;
+    case 3003400:
+        rs = 5030850;  // RS5030850
+        illuminaT_++;
+        break;
+    case 3003401:
+        rs = 5030851;  // RS5030851
+        illuminaT_++;
+        break;
+    case 3003403:
+        rs = 5030856;  // RS5030856
+        illuminaT_++;
+        break;
+    case 3003404:
+        rs = 5030859;  // RS5030859
+        illuminaT_++;
+        break;
+    case 3003405:
+        rs = 5030860;  // RS5030860
+        illuminaT_++;
+        break;
+    case 3003411:
+        rs = 5030869;  // RS5030869
+        illuminaT_++;
+        break;
+    case 4000101:
+        rs = 796483281;  // RS796483281
+        illuminaT_++;
+        break;
+    case 4000146:
+        rs = 796827870;  // RS796827870
+        illuminaT_++;
+        break;
+    case 4000163:
+        rs = 773700419;  // RS773700419
+        illuminaT_++;
+        break;
+    case 4000164:
+        rs = 368154770;  // RS368154770
+        illuminaT_++;
+        break;
+    case 4000166:
+        rs = 375296284;  // RS375296284
+        illuminaT_++;
+        break;
+    case 4000171:
+        rs = 368057017;  // RS368057017
+        illuminaT_++;
+        break;
+    case 4000178:
+        rs = 112707890;  // RS112707890
+        illuminaT_++;
+        break;
+    case 4000186:
+        rs = 113822196;  // RS113822196
+        illuminaT_++;
+        break;
+    case 4000189:
+        rs = 113686221;  // RS113686221
+        illuminaT_++;
+        break;
+    case 4000291:
+        rs = 74551128;  // RS74551128
+        illuminaT_++;
+        break;
+    case 4000292:
+        rs = 121908745;  // RS121908745
+        illuminaT_++;
+        break;
+    case 4000294:
+        rs = 75961395;  // RS75961395
+        illuminaT_++;
+        break;
+    case 4000295:
+        rs = 78655421;  // RS78655421
+        illuminaT_++;
+        break;
+    case 4000296:
+        rs = 121909011;  // RS121909011
+        illuminaT_++;
+        break;
+    case 4000297:
+        rs = 77932196;  // RS77932196
+        illuminaT_++;
+        break;
+    case 4000299:
+        rs = 77646904;  // RS77646904
+        illuminaT_++;
+        break;
+    case 4000300:
+        rs = 113993959;  // RS113993959
+        illuminaT_++;
+        break;
+    case 4000301:
+        rs = 121908755;  // RS121908755
+        illuminaT_++;
+        break;
+    case 4000302:
+        rs = 121909005;  // RS121909005
+        illuminaT_++;
+        break;
+    case 4000305:
+        rs = 75527207;  // RS75527207
+        illuminaT_++;
+        break;
+    case 4000306:
+        rs = 74597325;  // RS74597325
+        illuminaT_++;
+        break;
+    case 4000307:
+        rs = 80055610;  // RS80055610
+        illuminaT_++;
+        break;
+    case 4000308:
+        rs = 74767530;  // RS74767530
+        illuminaT_++;
+        break;
+    case 4000309:
+        rs = 77010898;  // RS77010898
+        illuminaT_++;
+        break;
+    case 3002703:
+        rs = 137854448;  // RS137854448
+        illuminaT_++;
+        break;
+    case 4000339:
+        rs = 144467873;  // RS144467873
+        illuminaT_++;
+        break;
+    case 4000340:
+        rs = 773328511;  // RS773328511
+        illuminaT_++;
+        break;
+    case 4000341:
+        rs = 879254867;  // RS879254867
+        illuminaT_++;
+        break;
+    case 4000342:
+        rs = 879254866;  // RS879254866
+        illuminaT_++;
+        break;
+    case 4000343:
+        rs = 879255059;  // RS879255059
+        illuminaT_++;
+        break;
+    case 4000345:
+        rs = 150021927;  // RS150021927
+        illuminaT_++;
+        break;
+    case 4000346:
+        rs = 121908024;  // RS121908024
+        illuminaT_++;
+        break;
+    case 4000347:
+        rs = 121908029;  // RS121908029
+        illuminaT_++;
+        break;
+    case 4000349:
+        rs = 121908038;  // RS121908038
+        illuminaT_++;
+        break;
+    case 4000353:
+        rs = 775924858;  // RS775924858
+        illuminaT_++;
+        break;
+    case 4000354:
+        rs = 121908033;  // RS121908033
+        illuminaT_++;
+        break;
+    case 4000355:
+        rs = 121908026;  // RS121908026
+        illuminaT_++;
+        break;
+    case 4000357:
+        rs = 121908028;  // RS121908028
+        illuminaT_++;
+        break;
+    case 4000362:
+        rs = 121908035;  // RS121908035
+        illuminaT_++;
+        break;
+    case 4000366:
+        rs = 121908025;  // RS121908025
+        illuminaT_++;
+        break;
+    case 4000367:
+        rs = 769318035;  // RS769318035
+        illuminaT_++;
+        break;
+    case 4000368:
+        rs = 769737896;  // RS769737896
+        illuminaT_++;
+        break;
+    case 4000369:
+        rs = 879254800;  // RS879254800
+        illuminaT_++;
+        break;
+    case 4000372:
+        rs = 370777955;  // RS370777955
+        illuminaT_++;
+        break;
+    case 4000374:
+        rs = 137929307;  // RS137929307
+        illuminaT_++;
+        break;
+    case 4000457:
+        rs = 80357919;  // RS80357919
+        illuminaT_++;
+        break;
+    case 4000459:
+        rs = 80357711;  // RS80357711
+        illuminaT_++;
+        break;
+    case 4000461:
+        rs = 80357662;  // RS80357662
+        illuminaT_++;
+        break;
+    case 4000462:
+        rs = 555607708;  // RS555607708
+        illuminaT_++;
+        break;
+    case 4000464:
+        rs = 80359874;  // RS80359874
+        illuminaT_++;
+        break;
     default:illuminaU_++; //untranslaned lines
         break;
     }
