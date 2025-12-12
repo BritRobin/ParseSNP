@@ -385,7 +385,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         {
                          cleanbuffer[cln] = buffer[pos];
                          cln++;
-                         cleanbuffer[cln] = NULL;//terminate the string
+                         cleanbuffer[cln] = '\0';//terminate the string
                         }
                   }
                   //re-write the correct numeric part back to the search box
@@ -749,7 +749,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (loadedFiletype < 9) _itoa_s(loadedFiletype, tc, 10); //the function to use to load it
                     else {
                            tc[0] = '1';
-                           tc[1] = NULL;
+                           tc[1] = '\0';
                           }
                     lbuffer += tc;
                     lbuffer += "\n";
@@ -1398,15 +1398,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
-                                size_t dest;
-                                size_t srce;
+                                //Wide Char Safer Loading code AI's suggested
+                                char lbuffer[260] = { 0 };
                                 size_t charsConverted = 0;
-                                srce = wcslen(pszFilePath);
-                                dest = srce + 1;
-                                char filename[260];
-                                char lbuffer[260];
-                                wcstombs_s(&charsConverted, filename, dest, (wchar_t const*)pszFilePath, srce);
-
+                                char filename[260] = { 0 };
+                                wcstombs_s(&charsConverted, filename, sizeof(filename), pszFilePath, _TRUNCATE);
                                 /*open file*/ //2025
                                 std::fstream  fstrm;
                                 if (!fstrm.bad())
@@ -1479,7 +1475,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                         i++;
                                                         n++;
                                                     }
-                                                    number[n] = NULL;
+                                                    number[n] = '\0';
                                                     rsid = atoi(number);                                              
                                                 }
                                                 /*skip spaces, could be wrtten in one line but this is more readable*/
@@ -1526,7 +1522,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                         i++;
                                                         n++;
                                                     }
-                                                    number[n] = NULL;
+                                                    number[n] = '\0';
                                                     if (strlen(number) > 0) oddsratio = atof(number);
                                                     else oddsratio = 0.0;
                                                 }
@@ -2682,7 +2678,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 ext[1] = 'P';
                                 ext[2] = 'P';
                                 ext[3] = 'I';
-                                ext[4] = NULL;
+                                ext[4] = '\0';
                                 StrCpyW(filename, pszFilePath);//we know 
                                 wcscat_s(filename, ext);
                                 {//Write the file
@@ -2733,7 +2729,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 ext[1] = 'M';
                                                 ext[2] = 'D';
                                                 ext[3] = '5';
-                                                ext[4] = NULL;
+                                                ext[4] = '\0';
                                                 std::string hash;
                                                 size_t dest;
                                                 size_t srce;
