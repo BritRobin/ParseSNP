@@ -7,6 +7,7 @@
 #include <shobjidl_core.h>
 #include <string>
 #include <atlstr.h>
+#include <atlconv.h>  // For CT2CA
 #include <windows.h>
 #include <tchar.h>
 #include <stdlib.h>
@@ -22,6 +23,10 @@
 #pragma comment(lib, "shlwapi.lib")
 #include <winspool.h>
 #pragma comment(lib, "winspool.lib")
+#include <memory>
+#include <vector>
+//temp
+#include <iostream>
 
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
@@ -61,7 +66,11 @@ INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    SearchFailmsg(HWND, UINT, WPARAM, LPARAM);
-bool RawTextToPrinter(const std::string& text);
+//bool RawTextToPrinter(const std::string& text);
+static bool IsLocaleUS();
+static int GetTextWidth(HDC hdc, const std::wstring& s);
+bool PrintPlainText(const std::wstring& text);
+std::wstring GetCurrentDateString(void);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -1806,83 +1815,367 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
     UpdateWindow(aDiag);
 }
+/*ChatGPT generated printing function I just could deal with 
+Windows UNICODE BS when I could just use plain text printing in ASCII before.
+I requsted the use of A4 standard with Letter for US hence the function below*/
+// Helper: returns true if user's locale country is "US"
+static bool IsLocaleUS()
+{
+    wchar_t buf[8] = { 0 };
+    // LOCALE_USER_DEFAULT works on older systems; LOCALE_SISO3166CTRYNAME returns "US", "GB", etc.
+    if (GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, buf, (int)_countof(buf)) > 0) {
+        return (_wcsicmp(buf, L"US") == 0);
+    }
+    return false; // default to A4 if unsure
+}
+
+// Helper: safe GetTextExtent wrapper
+static int GetTextWidth(HDC hdc, const std::wstring& s)
+{
+    if (s.empty()) return 0;
+    SIZE sz = { 0,0 };
+    // GetTextExtentPoint32W returns TRUE on success
+    GetTextExtentPoint32W(hdc, s.c_str(), (int)s.size(), &sz);
+    return sz.cx;
+}
+
+// Main printing function (updated)
+bool PrintPlainText(const std::wstring& text)
+{
+    WCHAR printerName[256];
+    DWORD size = ARRAYSIZE(printerName);
+
+    if (!GetDefaultPrinterW(printerName, &size))
+        return false;
+
+    // Create a printer DC for the default printer
+    HDC hdc = CreateDCW(NULL, printerName, NULL, NULL);
+    if (!hdc)
+        return false;
+
+    // --- Modify printer DEVMODE to set paper size (A4 vs Letter) ---
+    HANDLE hPrinter = NULL;
+    if (OpenPrinterW(printerName, &hPrinter, NULL)) {
+        // Get size of DEVMODE
+        LONG dmSize = DocumentPropertiesW(NULL, hPrinter, printerName, NULL, NULL, 0);
+        if (dmSize > 0) {
+            // allocate DEVMODE
+            std::unique_ptr<DEVMODEW, decltype(&GlobalFree)> pDevMode(
+                (DEVMODEW*)GlobalAlloc(GPTR, dmSize), &GlobalFree);
+            if (pDevMode) {
+                // Fill current devmode
+                LONG res = DocumentPropertiesW(NULL, hPrinter, printerName, pDevMode.get(), NULL, DM_OUT_BUFFER);
+                if (res == IDOK) {
+                    // choose paper size
+                    if (IsLocaleUS()) {
+                        pDevMode->dmPaperSize = DMPAPER_LETTER;   // US Letter
+                    }
+                    else {
+                        pDevMode->dmPaperSize = DMPAPER_A4;       // A4 elsewhere
+                    }
+                    pDevMode->dmFields |= DM_PAPERSIZE;
+
+                    // Apply the DEVMODE to the HDC
+                    // ResetDC returns nonzero on success
+                    ResetDCW(hdc, pDevMode.get());
+                    // Note: we do not free pDevMode explicitly (unique_ptr will)
+                }
+            }
+        }
+        ClosePrinter(hPrinter);
+    }
+
+    // --- Start the document ---
+    DOCINFOW di = { 0 };
+    di.cbSize = sizeof(DOCINFOW);
+    di.lpszDocName = L"Plain Text Print";
+
+    if (StartDocW(hdc, &di) <= 0) {
+        DeleteDC(hdc);
+        return false;
+    }
+
+    if (StartPage(hdc) <= 0) {
+        EndDoc(hdc);
+        DeleteDC(hdc);
+        return false;
+    }
+
+    // Get DPI and page metrics
+    int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+    int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+    int pageWidth = GetDeviceCaps(hdc, HORZRES);
+    int pageHeight = GetDeviceCaps(hdc, VERTRES);
+
+    // Use a readable font size (12 pt). Adjust if you prefer 11 or 14.
+    const int pointSize = 12;
+    int fontHeight = -MulDiv(pointSize, dpiY, 72); // negative for character height
+
+    LOGFONTW lf = { 0 };
+    lf.lfHeight = fontHeight;
+    lf.lfWeight = FW_NORMAL;
+    lf.lfCharSet = DEFAULT_CHARSET;
+    lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
+    lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+    lf.lfQuality = CLEARTYPE_QUALITY; // readable
+    lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+    wcscpy_s(lf.lfFaceName, L"Consolas"); // monospaced; fallback if not installed
+
+    HFONT hFont = CreateFontIndirectW(&lf);
+    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+
+    // 1 inch margins
+    int marginX = dpiX * 1;
+    int marginY = dpiY * 1;
+
+    // printable area
+    int left = marginX;
+    int right = pageWidth - marginX;
+    int top = marginY;
+    int bottom = pageHeight - marginY;
+    int maxWidth = right - left;
+    int maxY = bottom;
+
+    // Get line height
+    TEXTMETRICW tm = { 0 };
+    GetTextMetricsW(hdc, &tm);
+    int lineHeight = tm.tmHeight + tm.tmExternalLeading;
+    if (lineHeight <= 0) lineHeight = MulDiv(pointSize, dpiY, 72) + 2;
+
+    // Helper to output a single line and paginate when necessary
+    auto emitLine = [&](const std::wstring& ln, int& curY) {
+        TextOutW(hdc, left, curY, ln.c_str(), (int)ln.size());
+        curY += lineHeight;
+        if (curY + lineHeight > maxY) {
+            // new page
+            EndPage(hdc);
+            StartPage(hdc);
+            SelectObject(hdc, hFont); // re-select font on new page
+            curY = top;
+        }
+        };
+
+    // Now do robust wrapping:
+    // We process input text by paragraphs (split on '\n'), then wrap tokens by spaces.
+    int curY = top;
+    size_t pos = 0;
+    const size_t N = text.size();
+
+    while (pos < N) {
+        // extract one paragraph (up to next '\n')
+        size_t nl = text.find(L'\n', pos);
+        std::wstring para;
+        if (nl == std::wstring::npos) {
+            para = text.substr(pos);
+            pos = N;
+        }
+        else {
+            para = text.substr(pos, nl - pos);
+            pos = nl + 1; // skip newline
+        }
+
+        // Trim possible '\r' (windows CRLF)
+        // Not strictly necessary because we split on '\n', but be safe
+        if (!para.empty() && para.back() == L'\r') para.pop_back();
+
+        // If empty paragraph, emit a blank line
+        if (para.empty()) {
+            emitLine(L"", curY);
+            continue;
+        }
+
+        // Tokenize by spaces/tabs while preserving tokens (URLs have no spaces)
+        size_t i = 0;
+        std::wstring currentLine;
+        while (i < para.size()) {
+            // skip leading spaces - but if we want to preserve single leading spaces, adjust
+            while (i < para.size() && (para[i] == L' ' || para[i] == L'\t')) ++i;
+            if (i >= para.size()) break;
+
+            // find next whitespace to get token
+            size_t j = i;
+            while (j < para.size() && para[j] != L' ' && para[j] != L'\t') ++j;
+
+            std::wstring token = para.substr(i, j - i);
+            i = j;
+
+            // Measure if token fits on currentLine
+            std::wstring candidate = currentLine.empty() ? token : (currentLine + L" " + token);
+            int candWidth = GetTextWidth(hdc, candidate);
+
+            if (candWidth <= maxWidth) {
+                // it fits
+                currentLine = std::move(candidate);
+            }
+            else {
+                // it doesn't fit
+                if (currentLine.empty()) {
+                    // current line empty but token too long => force-break token
+                    size_t start = 0;
+                    while (start < token.size()) {
+                        // find the max substring length that fits
+                        size_t end = token.size();
+                        size_t lo = start, hi = end;
+                        size_t best = start;
+                        // binary search for largest fit to reduce GetTextExtent calls
+                        while (lo < hi) {
+                            size_t mid = (lo + hi + 1) / 2;
+                            int w = GetTextWidth(hdc, token.substr(start, mid - start));
+                            if (w <= maxWidth) {
+                                best = mid;
+                                lo = mid;
+                            }
+                            else {
+                                hi = mid - 1;
+                            }
+                        }
+                        if (best == start) {
+                            // even a single char doesn't fit (very narrow maxWidth?). Force at least 1 char
+                            best = start + 1;
+                        }
+                        std::wstring piece = token.substr(start, best - start);
+                        emitLine(piece, curY);
+                        start = best;
+                    }
+                    // after breaking token, currentLine stays empty
+                }
+                else {
+                    // flush currentLine
+                    emitLine(currentLine, curY);
+                    // start new currentLine with token (it may still be too long; next loop iteration will handle force-break)
+                    currentLine = L"";
+                    // try placing token again by resetting i back to token start
+                    // but simpler: set currentLine = token and let next iteration detect overflow
+                    if (GetTextWidth(hdc, token) <= maxWidth) {
+                        currentLine = token;
+                    }
+                    else {
+                        // force-break token now (same logic as above)
+                        size_t start = 0;
+                        while (start < token.size()) {
+                            size_t end = token.size();
+                            size_t lo = start, hi = end;
+                            size_t best = start;
+                            while (lo < hi) {
+                                size_t mid = (lo + hi + 1) / 2;
+                                int w = GetTextWidth(hdc, token.substr(start, mid - start));
+                                if (w <= maxWidth) {
+                                    best = mid;
+                                    lo = mid;
+                                }
+                                else {
+                                    hi = mid - 1;
+                                }
+                            }
+                            if (best == start) best = start + 1;
+                            std::wstring piece = token.substr(start, best - start);
+                            emitLine(piece, curY);
+                            start = best;
+                        }
+                        currentLine.clear();
+                    }
+                }
+            }
+        } // end tokens loop
+
+        // flush any remaining current line
+        if (!currentLine.empty()) {
+            emitLine(currentLine, curY);
+        }
+
+        // after paragraph, advance a blank line (preserve paragraph spacing)
+        // This is optional; if you don't want extra blank line, remove the next line
+        // emitLine(L"", curY);
+    }
+
+    // End of document cleanup
+    SelectObject(hdc, hOldFont);
+    DeleteObject(hFont);
+
+    EndPage(hdc);
+    EndDoc(hdc);
+    DeleteDC(hdc);
+
+    return true;
+}
+
+
 
 void PathoPrint()
 {
     HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-    
 
     if (!plst) {
-        MessageBox(NULL, TEXT("List box not found"), TEXT("Error"), MB_OK);
+        MessageBox(NULL, L"List box not found", L"Error", MB_OK | MB_ICONERROR);
         return;
     }
-    int lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
+
+    int lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
     if (lcount == LB_ERR) {
-        MessageBox(NULL, TEXT("Failed to get list box count"), TEXT("Error"), MB_OK);
+        MessageBox(NULL, L"Failed to get list box count", L"Error", MB_OK | MB_ICONERROR);
         return;
     }
 
     if (lcount < 1) {
-        MessageBox(NULL, TEXT("List box is empty"), TEXT("Error"), MB_OK);
+        MessageBox(NULL, L"List box is empty", L"Error", MB_OK | MB_ICONERROR);
         return;
     }
 
+    // --- Build everything as WIDE TEXT ---
+    std::wstring text;
+    text += L"========================================\n";
+    text += L"        PATHOGENIC SNP REPORT\n";
+    text += L"========================================\n\n";
 
+    // Wide date function needed
+    text += L"Date: ";
+    text += GetCurrentDateString();   // ← implement this returning std::wstring
+    text += L"\n";
 
-    // Build the text as one big string with line breaks
-    std::string text = "Pathogenic SNP Report\n\n";
+    text += L"Total Variants: " + std::to_wstring(lcount) + L"\n\n";
+    text += L"----------------------------------------\n\n";
 
+    // Collect listbox strings (wide)
     for (int x = 0; x < lcount; x++)
     {
-        int len = SendMessage(plst, LB_GETTEXTLEN, x, 0);
-        if (len <= 0 || len > 1000) continue;
+        int len = (int)SendMessage(plst, LB_GETTEXTLEN, x, 0);
+        if (len <= 0 || len > 2048) continue;
 
-        std::vector<TCHAR> buffer(len + 1);
+        std::wstring buffer(len, L'\0');
+
         if (SendMessage(plst, LB_GETTEXT, x, (LPARAM)buffer.data()) != LB_ERR)
         {
-            CT2CA converted(buffer.data());
-            text += converted;
-            text += "\n";
+            // Add "n. item text"
+            text += std::to_wstring(x + 1);
+            text += L". ";
+            text += buffer;
+            text += L"\n";
         }
     }
 
-    // Simple raw text printing
-    RawTextToPrinter(text);
+    text += L"\n----------------------------------------\n";
+    text += L"End of Report\n";
+
+    // Print using your wide-printing function
+    if (!PrintPlainText(text)) {
+        MessageBox(NULL, L"Printing failed", L"Error", MB_OK | MB_ICONERROR);
+    }
 }
-bool RawTextToPrinter(const std::string& text)
+
+std::wstring GetCurrentDateString(void)
 {
-    TCHAR printerName[256];
-    DWORD size = ARRAYSIZE(printerName);
-
-    if (!GetDefaultPrinter(printerName, &size)) {
-        return false;
-    }
-
-    HANDLE hPrinter = nullptr;
-    if (!OpenPrinter(printerName, &hPrinter, NULL)) {
-        return false;
-    }
-
-    DOC_INFO_1 docInfo = { 0 };
-    docInfo.pDocName = const_cast<LPTSTR>(TEXT("SNP Report"));
-    docInfo.pOutputFile = NULL;
-    docInfo.pDatatype = const_cast<LPTSTR>(TEXT("RAW"));
-
-    if (StartDocPrinter(hPrinter, 1, (LPBYTE)&docInfo) == 0) {
-        ClosePrinter(hPrinter);
-        return false;
-    }
-
-    DWORD bytesWritten = 0;
-    BOOL success = WritePrinter(hPrinter, (LPVOID)text.c_str(), (DWORD)text.size(), &bytesWritten);
-
-    EndDocPrinter(hPrinter);
-    ClosePrinter(hPrinter);
-
-    return (success && bytesWritten == text.size());
+    time_t now = time(0);
+    struct tm tstruct;
+    char buf[80];
+	std::string timeStr;
+    localtime_s(&tstruct, &now);
+    strftime(buf, sizeof(buf), "%Y-%m-%d", &tstruct);
+	timeStr = buf;
+    int len = MultiByteToWideChar(CP_UTF8, 0, timeStr.c_str(), -1, NULL, 0);
+    std::wstring result(len - 1, L'\0');  // minus null terminator
+    MultiByteToWideChar(CP_UTF8, 0, timeStr.c_str(), -1, &result[0], len);
+    return result;
 }
-
-
 // Message handler for new project box.
 INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {

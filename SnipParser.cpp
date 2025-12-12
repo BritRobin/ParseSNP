@@ -3668,6 +3668,7 @@ int SnipParser::f23andMeDecode(std::string code)
         rs = 80359874;  // RS80359874
         illuminaT_++;
         break;
+	//ALL RSID's from SNPedia Illumina to dbSNP mapping file included above as of 12/9/2025
     default:illuminaU_++; //untranslaned lines
         break;
     }
