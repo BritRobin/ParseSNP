@@ -86,6 +86,9 @@
 #define ID_FILE_MERGE23TOMETXTFILE      32789
 #define ID_FILE_                        32790
 #define ID_PRINT_RESULTS                32791
+#define ID_PATHOGENICS_CLEARRESULTS     32792
+#define ID_ClrResults                   32793
+#define ID_CLEARRESULTS                 32794
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -94,7 +97,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        143
-#define _APS_NEXT_COMMAND_VALUE         32792
+#define _APS_NEXT_COMMAND_VALUE         32795
 #define _APS_NEXT_CONTROL_VALUE         1065
 #define _APS_NEXT_SYMED_VALUE           110
 #endif

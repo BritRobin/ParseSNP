@@ -1577,6 +1577,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Print Option on Sucessful load
+								EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Clear Results option
                             }
                         }
                     }
@@ -1586,6 +1587,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+        case ID_CLEARRESULTS: {// Clear Pathogenic Results
+			HWND plst = GetDlgItem(aDiag, IDC_LIST2);//Get Pathogenic List Box
+            SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
+			EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_DISABLED); //Disable print on clear
+            EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_DISABLED); //Disable clear results on clear 
+            EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_DISABLED); //Disable export to export to text of clear
+		}
+		break;
         case ID_PATHOGENICS_EXPORTRESULTSTO: {
                 HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
                 if (SUCCEEDED(hr))
@@ -1666,7 +1675,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         break;
         case ID_PRINT_RESULTS:
-            //DialogBox(hInst, MAKEINTRESOURCE(IDD_PRINT), aDiag, PrintSetup);
+			//Print functions write by AI becuase I'm lazy
             PathoPrint();
 		break;
         case IDM_ABOUT:
