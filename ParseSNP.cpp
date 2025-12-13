@@ -1330,8 +1330,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     if (fstrm.is_open()) {
                                         //Get Project window entry count
                                         HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                        int  lcount;
-                                        std::string  lbuffer;
+                                        int  lcount = 0;
+                                        std::string  lbuffer = "";
                                         lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                         TCHAR text[256];
 										for (int x = 0, ln = 0; x < lcount; x++)//fixed now taking one entry less
@@ -1458,11 +1458,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         while (fstrm.getline(lbuffer, 256))//Read next line in
                                         {
                                             int rsid=0;
-                                            char riskallele;
+                                            char riskallele='\0';
                                             float oddsratio = 0.0;
                                                                                         
                                             //Read first reference lines
-                                            
                                             for (int i = 0; i < 257;) {
                                                 //***Obtain RSid number***
                                                 if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S')
@@ -1498,7 +1497,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                 {
                                                     i++;
                                                 }
-
                                                 /*skip spaces, could be wrtten in one line but this is more readable*/
                                                 while (lbuffer[i] == ' ' || lbuffer[i]=='[')
                                                 {
@@ -1578,6 +1576,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 pItem->Release();
+                                EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Print Option on Sucessful load
                             }
                         }
                     }
@@ -1635,7 +1634,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             bool beginFormating = false;
                                             std::string  lbuffer;
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-                                            TCHAR text[260];
+                                            TCHAR text[260] = {'0'};
 											for (int x = 0, ln = 0; x < lcount; x++) //fixed now taking one entry less
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
