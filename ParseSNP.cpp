@@ -229,7 +229,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         case IDC_BUTTON1: {
             TCHAR buffer[16] = { 0 };
 
-            if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
+            if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, _countof(buffer)))
             {
                 int local_rs_number;
                 local_rs_number = _wtoi(buffer);
@@ -261,6 +261,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                     //get selected text
                     SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
                     if (buffer[0] == L'R' && buffer[1] == L'S') {
+
                         //selected is an RS nummber
                         char lookup[16] = { 0 }, lbuffer[16] = { 0 };
                         CT2CA pszConvertedAnsiString(buffer);
@@ -372,9 +373,9 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         case IDC_BUTTON_SEARCH:
         {
-           TCHAR buffer[15] = { 0 };
+           TCHAR buffer[16] = { 0 };
 
-              if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, 15))
+              if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT_SEARCH), buffer, _countof(buffer)))
                {
                   //new in ver 4.6
                   TCHAR cleanbuffer[15] = { 0 };
@@ -436,7 +437,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         {
          TCHAR buffer[16] = { 0 };
 		 //Stop non found references from pathogenics being added
-         if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, 15))
+         if (GetWindowText(GetDlgItem(aDiag, IDC_EDIT1), buffer, _countof(buffer)))
          {
              int local_rs_number;
              local_rs_number = _wtoi(buffer);
@@ -760,17 +761,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     lbuffer += tc;
                     lbuffer += "\n";
                     TCHAR text[256];
-                    for (int x = 0, ln = 0; x < lcount; x++)// Fixed: x < lcount
+                    
+                    for (int x = 0; x < lcount; x++)
                     {
-                        ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
-                        if (ln != LB_ERR && ln > 0 && ln < 255) {// Reserve space for null terminate
-                            SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
-                            //checked: the returned text is Zero terminated at tchar[ln] !
-                            CT2CA pszConvertedAnsiString(text);
-                            lbuffer += pszConvertedAnsiString;
-                            lbuffer += "\n";
-                        }
+                        int ln = (int)SendMessage(plst, LB_GETTEXTLEN, x, 0);
+                        if (ln == LB_ERR) continue;
 
+                        if (ln >= (int)_countof(text))
+                            ln = (int)_countof(text) - 1;
+
+                        SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                        text[ln] = TEXT('\0');   // REQUIRED
+
+                        CT2CA pszConvertedAnsiString(text);
+                        lbuffer += pszConvertedAnsiString;
+                        lbuffer += "\n";
                     }
                     const char* write_it = lbuffer.c_str();
                     fstrm.write(write_it, lbuffer.length());
@@ -1339,6 +1344,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                             if (ln > 0 and ln < 256) {
                                                 SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+												text[ln] = TEXT('\0'); //Ensure Zero terminated
                                                 //checked: the returned text is Zero terminated at tchar[ln] !
                                                 CT2CA pszConvertedAnsiString(text);
                                                 lbuffer = pszConvertedAnsiString;
@@ -1514,7 +1520,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                 {
                                                     char number[255];
                                                     int n = 0;
-                                                    while (((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58) || lbuffer[i]=='.')
+													while ( (((int)(lbuffer[i]) >= '0' && (int)(lbuffer[i]) <= '9') || lbuffer[i] == '.') && n < 254 && i < sizeof(lbuffer))
                                                     {
                                                         number[n] = lbuffer[i];
                                                         i++;
@@ -1524,7 +1530,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     if (strlen(number) > 0) oddsratio = atof(number);
                                                     else oddsratio = 0.0;
                                                 }
-												while (lbuffer[i] != NULL) {//std::fstream::getline() stops at '\n' consuming it and replacing with NULL
+												while (lbuffer[i] != '\0'){//std::fstream::getline() stops at '\n' consuming it and replacing with NULL
                                                      i++;
                                                 }
                                                 break;
@@ -1649,6 +1655,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                                 if (ln > 0 and ln < 256) {
                                                     SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+													text[ln] = TEXT('\0'); //Ensure Zero terminated
                                                     //checked: the returned text is Zero terminated at tchar[ln] !
                                                     CT2CA pszConvertedAnsiString(text);
                                                     lbuffer = pszConvertedAnsiString;
@@ -2196,7 +2203,7 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         if (LOWORD(wParam) == IDOK) {
             TCHAR buffer[256] = { 0 };
             std::wstring temp;
-            if (GetWindowText(GetDlgItem(hDlg, IDC_ProjectNm), buffer, 256)) {
+            if (GetWindowText(GetDlgItem(hDlg, IDC_ProjectNm), buffer, _countof(buffer))) {
                temp = buffer;
                for(int x=0;x<temp.length();)
                {   //check for invalid characters for a directory name i know alph numeric is strict but i'm to lasy to check all allowed vs invalid
@@ -2625,21 +2632,21 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             TCHAR buffer[260] = { 0 };
             std::string s_study, s_URL, s_ncbiref;
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_study = pszConvertedAnsiString;
             }
             else  break; //mandatory field
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_URL += pszConvertedAnsiString;
             }
             else  break; //mandatory field
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_ncbiref += pszConvertedAnsiString;
@@ -2717,8 +2724,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 											for (int x = 0, ln = 0; x < lcount; x++)//fix one less read
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
-                                                if (ln > 0 and ln < 256) {
+												if (ln > 0 and ln < 256) {
                                                     SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                                                    text[ln] = TEXT('\0'); //Ensure null termination
                                                     //checked: the returned text is Zero terminated at tchar[ln] !
                                                     CT2CA pszConvertedAnsiString(text);
                                                     lbuffer = pszConvertedAnsiString;
@@ -2774,19 +2782,19 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             TCHAR buffer[260] = { 0 };
             std::string s_study, s_URL, s_ncbiref;
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_study = pszConvertedAnsiString;
             }
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT5), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_URL += pszConvertedAnsiString;
             }
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, 255))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_NCBIref), buffer, _countof(buffer)))
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_ncbiref += pszConvertedAnsiString;
@@ -2869,6 +2877,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
                                                 if (ln > 0 and ln < 256) {
                                                     SendMessage(plst, LB_GETTEXT, x, (LPARAM)text);
+                                                    text[ln] = TEXT('\0'); //Ensure null termination
                                                     //checked: the returned text is Zero terminated at tchar[ln] !
                                                     CT2CA pszConvertedAnsiString(text);
                                                     lbuffer = pszConvertedAnsiString;
@@ -2996,7 +3005,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             TCHAR buffer[260] = { 0 };
             std::string s_rsid, s_chr, s_gene, s_riskallele, s_oddsratio;
             //get rsid number
-            if (GetWindowText(GetDlgItem(hDlg, IDC_RSIDP), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_RSIDP), buffer, 15)) //at 260 no danger of buffer overflow from UNICODE etc 
             {
                 std::string s;
                 //the dialog only allows numbers to be entered
@@ -3008,7 +3017,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             else  break; //mandatory field
 
             //Get chromosone number
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), buffer, 15))//at 260 no danger of buffer overflow from UNICODE etc
             {
                 std::string s;
                 CT2CA pszConvertedAnsiString(buffer);
@@ -3021,13 +3030,13 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 else break; //mandatory field
             }
             //Get Gene optional
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))//at 260 no danger of buffer overflow from UNICODE etc
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_gene = pszConvertedAnsiString;
             }
 
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT_ALLES1), buffer, 15))//at 260 no danger of buffer overflow from UNICODE etc
             {
                 std::string s;
                 CT2CA pszConvertedAnsiString(buffer);
@@ -3037,7 +3046,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             }
 
             //Get Odds Ratio optional but should be inclued if available
-            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))
+            if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT3), buffer, 15))//at 260 no danger of buffer overflow from UNICODE etc
             {
                 CT2CA pszConvertedAnsiString(buffer);
                 s_oddsratio = pszConvertedAnsiString;
