@@ -46,7 +46,7 @@ int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
 int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
 int mergeTotal = 0;
-char chromosome[4] = { NULL,NULL,NULL,NULL };//chromosome number
+char chromosome[8] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL };//chromosome number
 char allele1 = NULL, allele2 = NULL;
 wchar_t global_s[260];
 std::wstring currentProject;
@@ -454,8 +454,27 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          std::wstring str2(s.length(), L' '); // Make room for characters
 
          // Copy string to wstring.
-         std::copy(s.begin(), s.end(), str2.begin());
-         wcsncpy_s(global_s,  str2.c_str(),255);
+		 //Added proper conversion for non-ASCII characters AI suggested code nence the formatting change
+         std::wstring ws;
+         int len = MultiByteToWideChar(
+             CP_ACP, 0,
+             s.c_str(), -1,
+             nullptr, 0
+         );
+
+         ws.resize(len - 1);
+
+         MultiByteToWideChar(
+             CP_ACP, 0,
+             s.c_str(), -1,
+             ws.data(), len
+         );
+         wcsncpy_s(
+             global_s,
+             _countof(global_s),
+             ws.c_str(),
+             _TRUNCATE
+         );
 
          lcount = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_GETCOUNT, 0, 0);
          if(lcount > 0)   lindex = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
