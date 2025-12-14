@@ -5,7 +5,7 @@
 
 //Written by Sanya Tayal
 //https://stackoverflow.com/questions/13256446/compute-md5-hash-value-by-c-winapi
-//replaced two depricated functions
+//I replaced two depricated functions
 #pragma region MD5 defines
 // Constants for MD5Transform routine.
 #define S11 7
@@ -292,7 +292,6 @@ public:
     void writeToString()
     {
         int pos;
-
         for (pos = 0; pos < 16; pos++){
             //fixed for saftey sprintf(digestChars + (pos * 2), "%02x", digestRaw[pos]);
             //snprintf(digestChars + (pos * 2), 33, "%02x", digestRaw[pos]);

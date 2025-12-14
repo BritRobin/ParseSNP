@@ -237,8 +237,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                     std::wstring urlsnp = L"https://www.snpedia.com/index.php/RS";
                     urlsnp += (buffer);
                     //Try to find SNP on SNPedia               
-                    ShellExecute(NULL, TEXT("open"), urlsnp.c_str(), NULL, NULL, SW_SHOWNORMAL);
-                    return TRUE;
+                    if ( ((INT_PTR)ShellExecute(NULL, TEXT("open"), urlsnp.c_str(), NULL, NULL, SW_SHOWNORMAL)) <= 32) return FALSE ;
+                    else return TRUE;
                 }
             }   
         }
@@ -749,7 +749,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //Write Project configuration files
             //Open file for write 
             std::fstream  fstrm;
-            if (!fstrm.bad())
             {
                 CString temp = "\\ProjectManifest.ptxt", configPath;
                 std::string  lbuffer, linebuffer;
@@ -1348,7 +1347,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             if (SUCCEEDED(hr))
                             {//Open file for write 
                                 std::fstream  fstrm;
-                                if (!fstrm.bad())
                                 {   //filestream 
                                     fstrm.open(pszFilePath, std::ios::out);
                                     if (fstrm.is_open()) {
@@ -1430,7 +1428,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 wcstombs_s(&charsConverted, filename, sizeof(filename), pszFilePath, _TRUNCATE);
                                 /*open file*/ //2025
                                 std::fstream  fstrm;
-                                if (!fstrm.bad())
                                 {
                                     //filestream 
                                     fstrm.open(pszFilePath, std::ios::in);
@@ -1658,7 +1655,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 if (SUCCEEDED(hr))
                                 {//Open file for write 
                                     std::fstream  fstrm;
-                                    if (!fstrm.bad())
                                     {   //filestream 
                                         fstrm.open(pszFilePath, std::ios::out);
                                         if (fstrm.is_open()) {
@@ -2492,15 +2488,14 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         // Parse the menu selections:
         switch (wmId) {
         case IDOK:
-        case IDCANCEL:
-        {
+        case IDCANCEL: {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
-        }
+         }
         case IDC_STATIC_LNK: {
-            ShellExecute(NULL, TEXT("open"), TEXT("https://github.com/BritRobin/ParseSNP"), NULL, NULL, SW_SHOWNORMAL);
-            return (INT_PTR)TRUE;
-        }
+            if ((INT_PTR)ShellExecute(NULL, TEXT("open"), TEXT("https://github.com/BritRobin/ParseSNP"), NULL, NULL, SW_SHOWNORMAL) <= 32) return (INT_PTR)FALSE;/* error */
+            else return (INT_PTR)TRUE;
+         }
         }
         break;
     }
@@ -2718,7 +2713,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 {//Write the file
                                     //Open file for write 
                                     std::fstream  fstrm;
-                                    if (!fstrm.bad())
                                     {   //filestream 
                                         //fstrm.open(pszFilePath, std::ios::out);
                                         fstrm.open(filename, std::ios::out);
@@ -2869,7 +2863,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 {//Write the file
                                     //Open file for write 
                                     std::fstream  fstrm;
-                                    if (!fstrm.bad())
                                     {   //filestream 
                                         //fstrm.open(pszFilePath, std::ios::out);
                                         fstrm.open(filename, std::ios::out);
@@ -2956,9 +2949,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 char lbuffer[260];
                                 /*open file*/
                                 std::fstream  fstrm;
-                                if (!fstrm.bad())
-                                {
-                                    //filestream 
+                                {   //filestream 
                                     fstrm.open(pszFilePath, std::ios::in);
                                     //Check file was opened  
                                     if (fstrm.is_open()) {
