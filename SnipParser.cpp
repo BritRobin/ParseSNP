@@ -30,7 +30,6 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
   
     //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -173,7 +172,6 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 bool  SnipParser::MergeAncestory(wchar_t* fi_)
 { 
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -325,7 +323,6 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 {
     //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -363,7 +360,8 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                      //while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -401,11 +399,10 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                  if (snp[inx].rs > 0) //stop line load of uniterpreted VG codes
                  {
-
                    //move past tab or spaces to next numeric data chromosone number
                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
                     {//wrote whith braces for readablility
-                            rdindex++;
+                      rdindex++;
                     }
                     //re-init 
                     nmindex = 0;
@@ -497,7 +494,6 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 {  
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -536,7 +532,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                 if (((nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's') || (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')) && isdigit((int)nbuffer[fdind + 2]))
                 {//ftdna-illumina
                     int ftdna = 0;
-                    char num[20];
+                    char num[25];
                     int  nmindex = 0;
                     loopbreak = 0;
                     rdindex += fdind;//ftdna-illumina
@@ -544,7 +540,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -674,7 +670,6 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 bool  SnipParser::f23andMe(wchar_t* fi_)
 {
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -700,7 +695,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]) )) && isdigit((int)nbuffer[rdindex + 2]))
                 {//ftdna-illumina
-                    char num[20];
+					char num[25];//fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = '\0';
@@ -708,7 +703,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
                         rdindex += 2;
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -726,7 +721,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         nmindex = 0;
                         rdindex += 1; //Skip i
                                                
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -852,7 +847,6 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 {
     std::fstream  fs;
-    if (!fs.bad())
     {
         char nbuffer[260];
         int loopbreak = 0;
@@ -887,7 +881,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]))) && isdigit((int)nbuffer[rdindex + 2]))
                 {//ftdna-illumina
-                    char num[20];
+                    char num[25];
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = '\0';
@@ -895,7 +889,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
                         rdindex += 2;
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -913,7 +907,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         nmindex = 0;
                         rdindex += 1; //Skip i
 
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -1223,7 +1217,6 @@ std::string SnipParser::NCBIBuild(void)
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
      std::fstream  fs;
-     if (!fs.bad())
      {
          char timebufd[128], timebuft[128];
          std::string  lbuffer;
@@ -1348,7 +1341,6 @@ void  SnipParser::FConvert(void)
 
     std::fstream  fs;
     std::fstream  fsOut;
-    if (!fs.bad() && !fsOut.bad())
     {
         char nbuffer[260];
         std::string  lbuffer;
