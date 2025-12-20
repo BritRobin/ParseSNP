@@ -2019,7 +2019,7 @@ int SnipParser::f23andMeDecode(std::string code)
     int num, rs = 0;
 
     num = atoi(code.c_str());
-    switch (num) {//covert Illumina Internatl codes to rsID equivenelts
+    switch (num) {//convert Illumina Internal codes to rsID equivelents
     case 3003626:  //CCR5 delta 32 mutation. imparts HIV1 immunity if Hetrozogous (but makes you more vunerable to flaviviruses and no immunity to HIV2
         rs = 333;
         illuminaT_++;
@@ -3661,7 +3661,8 @@ int SnipParser::f23andMeDecode(std::string code)
         illuminaT_++;
         break;
 	//ALL RSID's from SNPedia Illumina to dbSNP mapping file included above as of 12/9/2025
-    default:illuminaU_++; //untranslaned lines
+    default:
+        illuminaU_++; //untranslaned lines
         break;
     }
     return rs;

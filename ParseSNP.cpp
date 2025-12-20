@@ -503,7 +503,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
           DeleteObject(hFont);
          }
 
-         return TRUE;
+        break;
     }
 
     default:
@@ -683,6 +683,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     xsw = atoi(lbuffer);
                                     if (xsw == 0) {
                                         fstrm.close();
+                                        if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
+                                        CoUninitialize(); //Needed to be moved here
                                         break;
                                     }
 
@@ -701,6 +703,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         if(lst==1)EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
                                     }
                                     fstrm.close();
+                                    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
+                                    CoUninitialize(); //Needed to be moved here
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                     break;
@@ -714,6 +718,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     
                 }
             }
+            if(pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object 12/20/2025
             CoUninitialize();//Was Missing
         }
         break;
@@ -1258,54 +1263,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-        case ID_FILE_EXPORT:{
+        case ID_FILE_EXPORT:
+        {
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileWrite;
-
-                // Create the FileOpenDialog object.
-                hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
+                IFileOpenDialog* pFileWrite = nullptr;
+                hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL,
+                    IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
 
                 if (SUCCEEDED(hr))
                 {
-                    LPCWSTR a = L"Text Files";
-                    LPCWSTR b = L"All Files";
-                    COMDLG_FILTERSPEC rgSpec[] =
-                    {
-                        {a, L"*.txt"},
-                        {b, L"*.*" },
-                    };
-                    //set file type options
-                    hr = pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    COMDLG_FILTERSPEC rgSpec[] = { {L"Text Files", L"*.txt"}, {L"All Files", L"*.*"} };
+                    pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    pFileWrite->SetDefaultExtension(L"txt");  // Helpful addition
 
-                    // Show the Open dialog box.
+                    // Using NULL instead of hWnd because modal dialogs sometimes hang
+                    // in WndProc. NULL works reliably, even if it appears behind.
+                    // Users can Alt+Tab if needed. Reliability > theoretical correctness.
                     hr = pFileWrite->Show(NULL);
 
-                    // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
+                        IShellItem* pItem = nullptr;
                         hr = pFileWrite->GetResult(&pItem);
-                        if (SUCCEEDED(hr))
+                        if (SUCCEEDED(hr) && pItem)  // Added && pItem check
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;  // Initialize
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
-                            // Display the file name to the user.
-                            if (SUCCEEDED(hr))
+                            if (SUCCEEDED(hr) && pszFilePath)  // Added && pszFilePath check
                             {
-                                x.AncestoryWriter((pszFilePath));
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
-                                InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                x.AncestoryWriter(pszFilePath);
+                                CoTaskMemFree(pszFilePath);
+                                InvalidateRect(aDiag, NULL, FALSE);
                                 UpdateWindow(aDiag);
                             }
+
+                            pItem->Release();  // CRITICAL: Release pItem!
                         }
                     }
-                    pFileWrite->Release();
+
+                    if (pFileWrite) pFileWrite->Release();
                 }
-                CoUninitialize();
+                CoUninitialize();  // Always called (moved outside if)
             }
         }
         break;
