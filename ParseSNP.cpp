@@ -534,7 +534,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case ID_FILE_LOADPROJECT:
         {   
         HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
-        PWSTR pszFilePath;
+        PWSTR pszFilePath = nullptr;
         if (SUCCEEDED(hr))
         {
             IFileOpenDialog* pFileOpen = nullptr;
@@ -840,7 +840,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -921,7 +921,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1003,7 +1003,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1075,7 +1075,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1150,7 +1150,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1223,7 +1223,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1341,7 +1341,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1416,7 +1416,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
 
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
@@ -1537,7 +1537,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                 {
                                                     char number[255];
                                                     int n = 0;
-													while ( (((int)(lbuffer[i]) >= '0' && (int)(lbuffer[i]) <= '9') || lbuffer[i] == '.') && n < 254 && i < sizeof(lbuffer))
+                                                    // getline null-terminates, so:
+                                                    while (i < sizeof(lbuffer) && lbuffer[i] != '\0' && (((int)(lbuffer[i]) >= '0' && (int)(lbuffer[i]) <= '9') || lbuffer[i] == '.') && n < 254)
                                                     {
                                                         number[n] = lbuffer[i];
                                                         i++;
@@ -1649,7 +1650,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             hr = pFileWrite->GetResult(&pItem);
                             if (SUCCEEDED(hr))
                             {
-                                PWSTR pszFilePath;
+                                PWSTR pszFilePath = nullptr;
                                 hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                                 // Display the file name to the user.
@@ -2697,7 +2698,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             WCHAR filename[260];
                             WCHAR ext[5];
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
@@ -2845,7 +2846,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
                             WCHAR ext[6];
                             WCHAR filename[260];
 
@@ -2941,7 +2942,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath;
+                            PWSTR pszFilePath = nullptr;
 
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
