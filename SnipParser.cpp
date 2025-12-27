@@ -173,7 +173,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
 { 
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[260] = { '\0' };
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
@@ -182,24 +182,27 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         //merge variables
         //Open file for read 
         fs.open(fi_, std::ios::in);
+        //DEBUG
+        std::streampos lastPos = NULL;
+        //DEBUG
         //Check file was opened  
         if (fs.is_open()) {
-            int inx = loadCount_ + 1,rst, rdindex = 0;
+            int inx = loadCount_ + 1,rst = 0, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             nbuffer[257] = '\0';        //more efficient
+            char num[24] = { '\0' };    //fixed size 11/12/2025
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
 			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
             {   
-                //Merge code
+              //Merge code
                 vercheck = nbuffer;
                 //Merge code
                 rdindex = 0;
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's' && isdigit((int)nbuffer[rdindex + 2])) {
-					char num[24]; //fixed size 11/12/2025
-                    int  nmindex = 0;
+		            int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = '\0';
                     rdindex += 2;
@@ -213,9 +216,11 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     mergefile_++; //get the total merge import count so a percentage difference can be calculated
                     //First in the line is the RS number
                     rst = atoi(num);
-                    if (mergeRs(rst, vercheck))
+                       
+                    if (rst > 0 && mergeRs(rst, vercheck))
                     {
                         snp[inx].rs = rst;
+              
                         //move past tab or spaces to next numeric data chromosone number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
                         {//wrote whith braces for readablility
@@ -275,6 +280,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         //Is Char
                         snp[inx].b = nbuffer[rdindex];
                     }//END MERGE SCOPE!
+                    
                     //increment the primary index
                     inx++;
                     //increment count of lines loaded
@@ -302,10 +308,9 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     }
                 }
                 loopbreak++;
-                if (loopbreak == 2000) break;
+                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
             }
             fs.close();
-         
         }
         else return false;
     }
@@ -509,7 +514,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             end_index_ = origloadcount_ = loadCount_;
             abortMerge_ = false;
             //merge variables
-            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+			//sex_ = 'F'; //Sex already set in original load
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
@@ -519,6 +524,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
+      
 			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
             {
                 fdind = 0;
@@ -581,7 +587,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         snp[inx].rs = rst;
                         //move past tab or spaces to next numeric data chromosone number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
-                        {//wrote whith braces for readablility
+                        {//wrote with braces for readablility
                             rdindex++;
                         }
                         //re-init 
@@ -655,7 +661,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     }
                 } //FTDNA do not ref NCBI build
                 loopbreak++;
-                if (loopbreak == 2000) break;
+                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
             }
             fs.close();
         }
@@ -833,7 +839,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                 }
                 //does not ref ncbi build
                 loopbreak++;
-                if (loopbreak == 2000) break;
+                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
             }
             fs.close();
         }
@@ -861,7 +867,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         //Check file was opened  
         if (fs.is_open()) {
             singleAllele = false;
-            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+			// sex_ = 'F'; //Wrong you are merging you alrady know the Sex of the subject
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
@@ -1104,25 +1110,76 @@ unsigned int SnipParser::MergeProcessed(void)
 Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!! */
 bool SnipParser::mergeRs(int code, const std::string& line) {
-    std::lock_guard<std::mutex> lock(merge_mutex_);
+   std::lock_guard<std::mutex> lock(merge_mutex_);
 
     if (abortMerge_) return false;
-
-    for (unsigned int i = 0; i <= end_index_; ++i) {
-        if (snpM[i].rs == code) {
+    // SAFETY CHECK 1
+    if (end_index_ == 0 || end_index_ > DNA_SNP_BUFFER_SIZE) {
+        return true;  // Nothing to search or invalid
+    }
+    // SAFETY CHECK 2 - Use < not <=
+    for (unsigned int i = 0; i < end_index_; ++i) {
+        if (snpM[i].rs == code) //Does the code exist in the original dataset
+        {//yes we already have it!
             allcecked_++;
 
             if (snpM[i].a == '0') return true;
- 
-            std::size_t found = line.find(snpM[i].a);
-            if (found == std::string::npos) failcheck_++;
-            else {
-                found = line.find(snpM[i].b);
-                if (found == std::string::npos) failcheck_++;
+
+            // ---- NEW: BACKWARDS SEARCH ----
+            // Start from end of line
+            const char* lineEnd = line.c_str() + line.length();
+			const char* ptr = lineEnd - 1;//point to last char
+
+            // Skip trailing whitespace
+            while (ptr >= line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
+                ptr--;
             }
 
-            // Move data
-            snpM[i] = snpM[end_index_];
+            // Check second allele FIRST (it's last in string)
+            bool foundB = false;
+            if (snpM[i].b != '-' && snpM[i].b != '0') {
+                // Search backwards for second allele
+                const char* searchPtr = ptr;
+                while (searchPtr >= line.c_str()) {
+                    if (*searchPtr == snpM[i].b) {
+                        foundB = true;
+                        ptr = searchPtr - 1;  // Move before found allele
+                        break;
+                    }
+                    searchPtr--;
+                }
+                if (!foundB) failcheck_++;
+            }
+            else {
+                // No second allele (male X chromosome, etc.)
+                foundB = true;  // Consider it "found"
+            }
+
+            // Check first allele (search in remaining part)
+            bool foundA = false;
+            if (foundB || snpM[i].b == '-' || snpM[i].b == '0') {
+                // Skip any whitespace between alleles
+                while (ptr >= line.c_str() && (*ptr == ' ' || *ptr == '\t')) {
+                    ptr--;
+                }
+
+                // Search for first allele
+                const char* searchPtr = ptr;
+                while (searchPtr >= line.c_str()) {
+                    if (*searchPtr == snpM[i].a) {
+                        foundA = true;
+                        break;
+                    }
+                    searchPtr--;
+                }
+                if (!foundA) failcheck_++;
+            }
+            // ---- END BACKWARDS SEARCH ----
+
+            // Move data (check bounds!)
+            if (i != end_index_ - 1) {
+                snpM[i] = snpM[end_index_ - 1];
+            }
             end_index_--;
 
             if (allcecked_ > 1250 && ((allcecked_ >> 2) < failcheck_)) {
@@ -1132,7 +1189,6 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             return false;
         }
     }
-
     merged_++;
     return true;
 }

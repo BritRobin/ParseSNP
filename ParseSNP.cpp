@@ -1787,8 +1787,30 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
         //show NCBI BUILD
         SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
+        /*
         if (sx == 'F' && fp !=NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp); //add null fp check
                 else if(mp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp); //add null lp check
+        */
+		//DeepSeek fix
+        // Add error handling for unexpected values
+        if (sx == 'F' && fp != NULL) {
+            SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp);
+        }
+        else if (sx == 'M' && mp != NULL) {
+            SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp);
+        }
+        else {
+            // Handle unexpected case
+            USES_CONVERSION_EX;
+            std::string unknown = "Unknown";
+            LPWSTR lp = A2W_EX(unknown.c_str(), unknown.length());
+            if (lp != NULL) {
+                SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), lp);
+            }
+            // Optionally log this for debugging
+            OutputDebugString(L"Unexpected sex value encountered");
+        }
+
         EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
         //optimized ver 0.3 beta
         HWND plst = GetDlgItem(aDiag, IDC_LIST2);
