@@ -53,8 +53,7 @@ private:
 	unsigned int merged_ = 0;
 	unsigned int origloadcount_ = 0;
 	unsigned int mergefile_ = 0;
-
-	// Keep your existing class members (don't remove these):
+	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15;  // Empirical threshold for sex determination in Ancestory files
 	unsigned int loadCount_ = 0;
 	wchar_t fileLoaded_[260];
 	char sex_;

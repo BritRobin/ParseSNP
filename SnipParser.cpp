@@ -130,7 +130,29 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     {
                         noY = false;
                     }
-                    if (noreadcount > 15 || noY == true) sex_ = 'F';
+                    // SEX DETERMINATION LOGIC FOR ANCESTRYDNA FILES:
+                    // ==============================================
+                    // AncestryDNA files use special chromosome numbering:
+                    // - 23 = X chromosome
+                    // - 24 = Y chromosome  
+                    // - 25 = PAR region
+                    // - 26 = mtDNA
+                    //
+                    // Files are structured in ascending chromosome order, so:
+                    // 1. If NO "24" entries appear => definitely FEMALE (no Y chromosome data)
+                    // 2. If "24" entries exist but show '0'/'0' (no reads) => FEMALE
+                    //    (Female samples still get Y positions in array but with null alleles)
+                    // 3. If "24" entries exist with actual nucleotide alleles => MALE
+                    //
+                    // The `noreadcount > 15` check is a redundancy for robustness:
+                    // - In theory, checking `noY` alone should suffice
+                     // - In practice, it catches edge cases (corrupt files, mixed data)
+                    // - 15 was chosen empirically as a safe threshold [But can be altered in the header file.
+                    //
+                    // ALTERNATIVE SIMPLIFIED LOGIC (equally valid):
+                    // sex_ = (noY == true) ? 'F' : 'M';
+                    // ==============================================
+                    if (noreadcount > Y_CHROMOSOME_NO_READ_THRESHOLD || noY == true) sex_ = 'F';
                     else sex_ = 'M';
                     //Determine Sex
                     //increment the primary index
@@ -169,6 +191,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
     return true;
 };
+
 bool  SnipParser::MergeAncestory(wchar_t* fi_)
 { 
     std::fstream  fs;
@@ -279,12 +302,12 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         }
                         //Is Char
                         snp[inx].b = nbuffer[rdindex];
+                        //increment count of lines loaded
+                        loadCount_++; //Fixed 12/31/2025
                     }//END MERGE SCOPE!
                     
                     //increment the primary index
                     inx++;
-                    //increment count of lines loaded
-                    loadCount_++;
                 }
                 else
                 {
@@ -1058,7 +1081,7 @@ unsigned int SnipParser::merged(void)
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
-    if (loadCount_ > 0) {
+	if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
         // Ensure snpM is large enough for existing data + some headroom
         unsigned int newSize = loadCount_ + 16;
         snpM.resize(newSize);
@@ -1103,7 +1126,7 @@ void SnipParser::revertMerge(void)
 }
 unsigned int SnipParser::MergeProcessed(void)
 {
-    return(allcecked_ + merged_);
+    return(allcecked_); //Return Merged FIXED 12/31/2025
 }
 
 /*Check the subject is the same to prevent the generation of garbage genetic files

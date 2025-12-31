@@ -2361,7 +2361,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     //Set Icon
     switch (message)
     {
-    case WM_INITDIALOG: {
+	case WM_INITDIALOG: {//MERGE REPORT
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         std::string s = "Merge Completed Successfully!\n\nThe Merge results ONLY exist loaded in memory!\nYou should save the data by exporting as an ancestory file or saving as a project which will create an ancestory file in the project folder.";
 		USES_CONVERSION_EX;//Added Null check
