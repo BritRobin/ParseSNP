@@ -16,7 +16,7 @@ struct ST;
 class SnipParser
 {
 public:
-	std::string fi_;
+	std::string fi_ = "";
 	int SNPCount(void);
 	std::string NCBIBuild(void);
 	bool Ancestory(wchar_t* fi_);
@@ -53,13 +53,13 @@ private:
 	unsigned int merged_ = 0;
 	unsigned int origloadcount_ = 0;
 	unsigned int mergefile_ = 0;
-	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15;  // Empirical threshold for sex determination in Ancestory files
+	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	unsigned int loadCount_ = 0;
-	wchar_t fileLoaded_[260];
-	char sex_;
-	std::string NCBIBuild_;
+	wchar_t fileLoaded_[260] = { '\0' };
+	char sex_ = '-';
+	std::string NCBIBuild_ = "";
 	std::string Pversion_ = "1.0.0"; //SET **VERSION** HERE
-	std::string PAbouttxt_ = "Written by Robin Taylor. 2021 - 2025 \nReleased under GNU GPL v3.0"; //ABOUT INFO
+	std::string PAbouttxt_ = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;
 	int FTDNADecode(std::string code);

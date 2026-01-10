@@ -201,13 +201,12 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         //merge variables
         mergefile_ = 0;
         merged_ = allcecked_ = 0;
-        end_index_ = origloadcount_ = loadCount_;
+		//initialize both variables to current loadcount_
+        end_index_ = loadCount_;
+        origloadcount_ = loadCount_;
         //merge variables
         //Open file for read 
         fs.open(fi_, std::ios::in);
-        //DEBUG
-        std::streampos lastPos = NULL;
-        //DEBUG
         //Check file was opened  
         if (fs.is_open()) {
             int inx = loadCount_ + 1,rst = 0, rdindex = 0;
