@@ -44,16 +44,41 @@ public:
 
 private:
 	// === ALL YOUR MEMBER VARIABLES MUST BE HERE ===
-	// ONLY add the merge-specific variables and mutex
+    // Move these from global scope to private members:
+	struct ST {
+		int rs;       // RS number
+		char ch[4];   // Chromosome (max 3 chars + null)
+		int pos;      // Position
+		char a;       // first nucleotide
+		char b;       // second nucleotide
+	};
+
+	struct SM {
+		int rs;       // RS number
+		char a;       // first nucleotide
+		char b;       // second nucleotide
+	};
+
+	// The actual data vectors
+	std::vector<ST> snp;
+	std::vector<SM> snpM;
+
+	// Default empty instances (if needed)
+	ST defaultST;
+	SM defaultSM;
 	std::mutex merge_mutex_;
 	bool abortMerge_ = false;
+	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
+	//more defencsive code for invalid files
+	static constexpr int TOTAL_BUFFER_SIZE = 260;
+	static constexpr int READ_LIMIT = 256;
+	//more defensice code for invalid files
 	unsigned int end_index_ = 0;
 	unsigned int allcecked_ = 0;
 	unsigned int failcheck_ = 0;
 	unsigned int merged_ = 0;
 	unsigned int origloadcount_ = 0;
 	unsigned int mergefile_ = 0;
-	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	unsigned int loadCount_ = 0;
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_ = '-';

@@ -19,27 +19,6 @@
 #include "SnipParser.h"
 #include <atomic>
 
-//SNP in human genome DNA_SNP_BUFFER_SIZE. 
-struct ST
-{
-    int rs;       // RS number
-    char ch[4];   // Chromosone
-    int pos;      // Position
-    char a;       // first nucleotide
-    char b;       // second nucleotide
-} sname;
-ST x = { 0,"",0,'0','0' };//default empty SNP
-
-struct SM
-{
-    int rs;       // RS number
-    char a;       // first nucleotide
-    char b;       // second nucleotide
-} smerge;
-SM y = { 0,'0','0' };//default empty SNP merge
-
-std::vector<ST> snp(SnipParser::DNA_SNP_BUFFER_SIZE);
-std::vector<SM> snpM(SnipParser::DNA_SNP_BUFFER_SIZE);
 
 // Use 'variant::index' to know the type strored in variant (zero-based index). 
 //Read an Ancestory.com/23t0me and FtDNA RAW DNA file and create a 'standard array'
@@ -49,7 +28,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
     //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int noreadcount = 0;
         bool noY = true;
@@ -64,7 +43,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_,fi_); //store latest filename
-            while (fs.getline(nbuffer, 256)) //read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT)) //read a line into a temorary buffer
             {
                 int rdindex = 0;
              
@@ -85,7 +64,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     //First in the line is the RS number
                     snp[inx].rs = atoi(num);
                     //move past tab or spaces to next numeric data chromosone number
-                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote whith braces for readablility
                         rdindex++;
                     }
@@ -96,7 +75,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     // 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                     {
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -108,7 +87,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
 
                     //move past tab or spaces to next numeric data position number
-                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote whith braces for readablility
                         rdindex++;
                     }
@@ -116,7 +95,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     //re-init 
                     nmindex = 0;
                     num[0] = '\0';
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                    while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
@@ -128,7 +107,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                     {
                         rdindex++;
                     }
@@ -136,7 +115,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     rdindex++;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                     {
                         rdindex++;
                     }
@@ -179,28 +158,26 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     loadCount_++;
                 }
                 else 
-                {
-                    for (int indx = 0; indx < 255; indx++)
+                {  //i + 1 < searchEnd && i + 1 < READ_LIMIT
+                    for (int indx = 0; indx < (READ_LIMIT - 4); indx++)
                     {
                         if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
                         {
-                            for (int i = indx+3; i < indx + 12; i++)
+                            int searchEnd = (indx + 12 < READ_LIMIT) ? (indx + 12) : (READ_LIMIT - 1);  // Don't exceed buffer 1/17/2026
+                            for (int i = indx + 4; i <= searchEnd - 2; i++)  // Need space for i and i+1
                             {
-                                if (isdigit((int)nbuffer[i]))
+                                if (isdigit((unsigned char)nbuffer[i]) && isdigit((unsigned char)nbuffer[i + 1])) //Logic Bug fix check BOTH chars are digits!
                                 {
-                                    char sub[3] = "";
-                                    sub[0]=nbuffer[i]; 
-                                    sub[1]=nbuffer[i + 1];
-                                    sub[2] = '\0';
+                                    char sub[3] = { nbuffer[i], nbuffer[i + 1], '\0' };
                                     NCBIBuild_ = sub;
                                     break;
                                 }
                             }
                         }
-                     }
+                    }
                 }
-                loopbreak++;
-                if (loopbreak == 2000) break;
+             loopbreak++;
+             if (loopbreak == 2000) break;
             }
             fs.close();
         }
@@ -234,7 +211,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             char num[24] = { '\0' };    //fixed size 11/12/2025
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
-			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
+			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
             {   
               //Merge code
                 vercheck = nbuffer;
@@ -262,7 +239,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         snp[inx].rs = rst;
               
                         //move past tab or spaces to next numeric data chromosone number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -273,7 +250,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         // 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
-                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                             {
                                 num[nmindex] = nbuffer[rdindex];
                                 rdindex++;
@@ -285,7 +262,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         }
 
                         //move past tab or spaces to next numeric data position number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -293,7 +270,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         //re-init 
                         nmindex = 0;
                         num[0] = '\0';
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -305,7 +282,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -313,7 +290,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         rdindex++;
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -328,7 +305,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                 }
                 else
                 {
-                    for (int indx = 0; indx < 255; indx++)
+                    for (int indx = 0; indx < READ_LIMIT; indx++)
                     {
                         if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
                         {
@@ -369,7 +346,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
     //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int VG = 0; //illumina
         //Open file for read 
@@ -387,7 +364,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vecotr for next file for next file
-            while (fs.getline(nbuffer, 256))//read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
             {
                 fdind = 0;
                 int rdindex = 2;
@@ -445,7 +422,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                  if (snp[inx].rs > 0) //stop line load of uniterpreted VG codes
                  {
                    //move past tab or spaces to next numeric data chromosone number
-                   while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
+                   while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
                     {//wrote whith braces for readablility
                       rdindex++;
                     }
@@ -455,7 +432,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                     {
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -474,7 +451,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                     
                     //move past tab or spaces to next numeric data posotion number
-                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote whith braces for readablility
                         rdindex++;
                     }
@@ -482,7 +459,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         //re-init 
                     nmindex = 0;
                     num[0] = '\0';
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                    while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
@@ -495,7 +472,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                     {
                         rdindex++;
                     }
@@ -505,7 +482,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     rdindex++;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                        && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                     {
                         rdindex++;
                     }
@@ -540,7 +517,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 {  
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int VG = 0; //illumina
         //Open file for read 
@@ -565,7 +542,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             initMergeCopy();            //create merge subset
             //END:
       
-			while (fs.getline(nbuffer, 256) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
+			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
             {
                 fdind = 0;
                 //Merge code
@@ -626,7 +603,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     {
                         snp[inx].rs = rst;
                         //move past tab or spaces to next numeric data chromosone number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
                         {//wrote with braces for readablility
                             rdindex++;
                         }
@@ -636,7 +613,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
-                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                             {
                                 num[nmindex] = nbuffer[rdindex];
                                 rdindex++;
@@ -655,7 +632,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         }
 
                         //move past tab or spaces to next numeric data posotion number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -663,7 +640,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             //re-init 
                         nmindex = 0;
                         num[0] = '\0';
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -675,7 +652,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -685,7 +662,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         rdindex++;
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -717,7 +694,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 {
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         bool singleAllele;
         //Open file for read 
@@ -735,7 +712,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, fi_); //store latest filename
             //END: reset loadcount_ and vector for next file for next file
-            while (fs.getline(nbuffer, 256))//read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
             {
                 int rdindex = 0;
                 //GET RS Number numeric part only 
@@ -781,7 +758,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     if (snp[inx].rs > 0) //stop line load of uniterpreted i codes
                     {
                         //move past tab or spaces to next numeric data chromosone number below bug fix 3/11/21
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -791,7 +768,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
-                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                             {
                                 num[nmindex] = nbuffer[rdindex];
                                 rdindex++;
@@ -820,7 +797,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         }
 
                         //move past tab or spaces to next numeric data posotion number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -828,7 +805,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             //re-init 
                         nmindex = 0;
                         num[0] = '\0';
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -841,7 +818,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -857,7 +834,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         {
                             //As the last two values are not numeric we have to rely on the file still being TAB delimited
                             while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                                && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                                && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                             {
                                 rdindex++;
                             }
@@ -894,7 +871,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 {
     std::fstream  fs;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
@@ -918,7 +895,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
-			while (fs.getline(nbuffer, 256) && !abortMerge_)//read a line into a temorary buffer and ensure not aborting merge
+			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_)//read a line into a temorary buffer and ensure not aborting merge
             {
                 //Merge code
                 vercheck = nbuffer;
@@ -968,7 +945,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                     {
                         snp[inx].rs = rst;
                         //move past tab or spaces to next numeric data chromosone number below bug fix 3/11/21
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -978,7 +955,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
-                            while (isdigit((int)nbuffer[rdindex]) && rdindex < 256 && nmindex < 3)//last clause is to prevent overflow on corrupt file
+                            while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
                             {
                                 num[nmindex] = nbuffer[rdindex];
                                 rdindex++;
@@ -1008,7 +985,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         }
 
                         //move past tab or spaces to next numeric data posotion number
-                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
                         }
@@ -1016,7 +993,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         //re-init 
                         nmindex = 0;
                         num[0] = '\0';
-                        while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                        while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -1028,7 +1005,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                            && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                         {
                             rdindex++;
                         }
@@ -1044,7 +1021,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         {
                             //As the last two values are not numeric we have to rely on the file still being TAB delimited
                             while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
-                                && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < 256)
+                                && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
                             {
                                 rdindex++;
                             }
@@ -1238,12 +1215,14 @@ and a structure of type s to place the data in if a match is found */
 bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr4, int *pos, char *a, char *b)
 {
     // Check you have SNP data loaded
-    if (loadCount_ > 0)
+	// Check we have SNP data loaded && valid load count
+
+    if (loadCount_ > 0 && loadCount_ <= snp.size()) //fixed 1/17/2026
     { 
 		//For Sanity check ensure '\0' termination
         
         // Search for RS numer int rs
-        for (unsigned int i = 0; i <=loadCount_;)
+        for (unsigned int i = 0; i < loadCount_;) //fixed 1/17/2026
         {
             if (snp[i].rs == *rs)
             {
@@ -1253,7 +1232,7 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
                 *chr1 = snp[i].ch[0];    // Chromosone array as string
                 *chr2 = snp[i].ch[1];    // Chromosone array as string
                 *chr3 = snp[i].ch[2];    // Chromosone array as string
-                *chr4 = snp[i].ch[3];    // ALWAYS '\0'
+                *chr4 = '\0';            // ALWAYS '\0' made more efficient(sp) 1/17/2026 
                 *pos = snp[i].pos;       // Position
                 *a = snp[i].a;           // first nucleotide
                 *b = snp[i].b;           // first nucleotide
@@ -1438,7 +1417,7 @@ void  SnipParser::FConvert(void)
     std::fstream  fs;
     std::fstream  fsOut;
     {
-        char nbuffer[260];
+        char nbuffer[TOTAL_BUFFER_SIZE];
         std::string  lbuffer;
         char num[100];
         int loopbreak = 0;
@@ -1450,12 +1429,12 @@ void  SnipParser::FConvert(void)
         //Check file was opened  
         if (fs.is_open() && fsOut.is_open()) {
             fdind = 0;
-            while (fs.getline(nbuffer, 256))
+            while (fs.getline(nbuffer, READ_LIMIT))
             {
                 int rdindex = 0;
                 int nmindex = 0;
                 //move past tab or spaces to next numeric data posotion number
-                while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                 {//wrote with braces for readablility
                     rdindex++;
                 }
@@ -1463,7 +1442,7 @@ void  SnipParser::FConvert(void)
                 //re-init 
                 nmindex = 0;
                 num[0] = '\0';
-                while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                 {
                     num[nmindex] = nbuffer[rdindex];
                     rdindex++;
@@ -1474,7 +1453,7 @@ void  SnipParser::FConvert(void)
                 lbuffer = "case " + std::string(num) + ":" + char(13) + "  snp[inx].rs = ";
                 //read second rsID number
                 //move past tab or spaces to next numeric data position number
-                while (!isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                 {//wrote whith braces for readablility
                     rdindex++;
                 }
@@ -1482,7 +1461,7 @@ void  SnipParser::FConvert(void)
                 //re-init 
                 nmindex = 0;
                 num[0] = '\0';
-                while (isdigit((int)nbuffer[rdindex]) && rdindex < 256)
+                while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                 {
                     num[nmindex] = nbuffer[rdindex];
                     rdindex++;

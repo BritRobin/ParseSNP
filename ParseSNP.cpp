@@ -265,13 +265,17 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
                         //selected is an RS nummber
                         char lookup[16] = { 0 }, lbuffer[16] = { 0 };
+						int cp = 0; //stop juck copy
                         CT2CA pszConvertedAnsiString(buffer);
                         PSTR a;
                         a = StrStrA(pszConvertedAnsiString, "N/A");
-
-                        //Moved up for none available data
-                        memcpy_s(lbuffer, 15, pszConvertedAnsiString, 15);
-                        for (int i = 2; i < 18; i++)
+						//fixes potential issues with invalid entries
+                        size_t len = strlen(pszConvertedAnsiString);
+                        if (len > sizeof(lbuffer) - 1) len = sizeof(lbuffer) - 1;
+                        memcpy_s(lbuffer, sizeof(lbuffer), pszConvertedAnsiString, len); 
+                        lbuffer[len] = '\0';
+                        //fixes potential issues with invalid entries
+                        for (int i = 2; lbuffer[i] != '\0'; i++)
                         {
                             if (lbuffer[i] == L' ') break;
                             if (isdigit((unsigned char)lbuffer[i])) {
@@ -449,7 +453,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          //Character allign chr numver and letters
          std::string chr_s= (std::string)(chromosome + NULL);
 
-         if (atoi(chromosome) < 9 && chr_s != "MT") chr_s = " " + chr_s;
+         // Pad if it's a single-character chromosome (1–9, X, Y)
+         if (chr_s.size() == 1) chr_s = " " + chr_s;  //Fixed 1/19/2026
 
          std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Position: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
          std::wstring str2(s.length(), L' '); // Make room for characters
@@ -684,6 +689,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     xsw = atoi(lbuffer);
                                     if (xsw == 0) {
                                         fstrm.close();
+										if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; } //another COM memory release fix 1/19/2026
                                         if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
                                         CoUninitialize(); //Needed to be moved here
                                         break;
@@ -719,9 +725,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     
                 }
             }
-            if(pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object 12/20/2025
-            CoUninitialize();//Was Missing
+            else
+            {
+				CoUninitialize();
+                break;
+            }
+            if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object 12/20/2025
         }
+		else break;//break if coinit failed 1/19/2026
+        CoUninitialize();//Was Missing
         break;
         }
         case ID_FILE_SAVEPROJECT:
@@ -814,8 +826,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileOpen;
-
+                IFileOpenDialog* pFileOpen = nullptr;
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
@@ -885,7 +896,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
+            	if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
 				CoUninitialize(); //Needed to be moved here
             }
             break;
@@ -1402,7 +1413,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             std::fstream fstrm;
 
             hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-            if (FAILED(hr)) break;
+            if (FAILED(hr))
+            {
+                break;
+            }
 
             // ========== MISSING COM DIALOG CODE START ==========
             hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
@@ -2298,6 +2312,8 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     //Because we have created a form dialog after the menu
     ShowWindow(hDlg, 5);
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    // CRITICAL MISSING LINE:
+	SetProp(hDlg, L"DIALOG_ICON", hicon); //missing line to store icon handle for later cleanup 1/19/2026
     switch (message)
     {
     case WM_INITDIALOG:
@@ -2341,6 +2357,7 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     //Set Icon
+    SetProp(hDlg, L"DIALOG_ICON", hicon); //missing line to store icon handle for later cleanup 1/19/2026
     switch (message)
     {
     case WM_INITDIALOG: {
@@ -2379,6 +2396,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     ShowWindow(hDlg, 5);
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+    SetProp(hDlg, L"DIALOG_ICON", hicon); //missing line to store icon handle for later cleanup 1/19/2026
     //Set Icon
     switch (message)
     {
@@ -2429,6 +2447,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     //Set Icon
     HANDLE hicon = LoadImageW(hInst, MAKEINTRESOURCEW(IDI_PARSESNP), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
     //Set Icon
+    SetProp(hDlg, L"DIALOG_ICON", hicon); //missing line to store icon handle for later cleanup 1/19/2026
     switch (message)
     {
     case WM_INITDIALOG: {
@@ -3078,11 +3097,14 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 CT2CA pszConvertedAnsiString(buffer);
                 s = pszConvertedAnsiString;
 				//Per Deepseek add check for empty string and made the valid numeric range more obvoius to read >=1 && <=22 rather than >0 && <23 which is the same logic but harder to parse visually
-                if (s != "" && ((strtod(s.data(), NULL) >= 1 && strtod(s.data(), NULL) <= 22) || s == "X" || s == "Y" || s == "MT"))
-                {
-                    s_chr = s;
-                }
-                else break; //mandatory field
+                if (s != "")
+                 {
+                    double num = strtod(s.data(), NULL);
+                    if ((num >= 1 && num <= 22) || s == "X" || s == "Y" || s == "MT")
+                    {
+                        s_chr = s;
+                    }
+                 } else break; //mandatory field
             }
             //Get Gene optional
             if (GetWindowText(GetDlgItem(hDlg, IDC_EDIT2), buffer, 15))//at 260 no danger of buffer overflow from UNICODE etc
