@@ -1,6 +1,7 @@
 ﻿// ParseSNP.cpp : Defines the entry point for the application.
 //Visual Studio 2022 build
 
+#define NOMINMAX
 #include "framework.h"
 #include "ParseSNP.h"
 #include "SnipParser.h"
@@ -2004,7 +2005,7 @@ bool PrintPlainText(const std::wstring& text)
     lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
     lf.lfQuality = CLEARTYPE_QUALITY; // readable
     lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
-    wcscpy_s(lf.lfFaceName, L"Consolas"); // monospaced; fallback if not installed
+	wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), L"Consolas"); // monospaced; fallback if not installed Corrected usage of wcscpy_s 1/24/2026
 
     HFONT hFont = CreateFontIndirectW(&lf);
     HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);

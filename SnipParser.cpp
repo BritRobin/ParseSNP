@@ -42,9 +42,16 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             snp.clear();
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
-            wcscpy_s(fileLoaded_,fi_); //store latest filename
+			wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             while (fs.getline(nbuffer, READ_LIMIT)) //read a line into a temorary buffer
-            {
+            {   //More parser hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 int rdindex = 0;
              
                 //GET RS Number numeric part only
@@ -206,14 +213,21 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         if (fs.is_open()) {
             int inx = loadCount_ + 1,rst = 0, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
-            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             nbuffer[257] = '\0';        //more efficient
             char num[24] = { '\0' };    //fixed size 11/12/2025
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
 			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
-            {   
-              //Merge code
+            {  //More parser hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
+                //Merge code
                 vercheck = nbuffer;
                 //Merge code
                 rdindex = 0;
@@ -362,10 +376,17 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
             snp.resize(DNA_SNP_BUFFER_SIZE);
-            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             //END: reset loadcount_ and vecotr for next file for next file
             while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
-            {
+            {   //More parseer hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 fdind = 0;
                 int rdindex = 2;
                 if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
@@ -536,14 +557,21 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
-            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
       
 			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
-            {
+            {   //More parseer hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 fdind = 0;
                 //Merge code
                 vercheck = nbuffer;
@@ -710,10 +738,17 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
             snp.resize(DNA_SNP_BUFFER_SIZE);
-            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             //END: reset loadcount_ and vector for next file for next file
             while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
-            {
+            {   //More parser hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 int rdindex = 0;
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]) )) && isdigit((int)nbuffer[rdindex + 2]))
@@ -890,13 +925,20 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //NO!!!: reset loadcount_ and vector for next file for next file
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
-            wcscpy_s(fileLoaded_, fi_); //store latest filename
+            wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
 			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_)//read a line into a temorary buffer and ensure not aborting merge
-            {
+            {   //More parser hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 //Merge code
                 vercheck = nbuffer;
                 //Merge code
@@ -1430,7 +1472,14 @@ void  SnipParser::FConvert(void)
         if (fs.is_open() && fsOut.is_open()) {
             fdind = 0;
             while (fs.getline(nbuffer, READ_LIMIT))
-            {
+            {   //More parser hardening
+                if (fs.fail() && !fs.eof())
+                {
+                    // Line was too long — discard remainder
+                    fs.clear();
+                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+                    continue;
+                }
                 int rdindex = 0;
                 int nmindex = 0;
                 //move past tab or spaces to next numeric data posotion number
