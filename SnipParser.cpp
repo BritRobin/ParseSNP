@@ -25,7 +25,7 @@
 bool  SnipParser::Ancestory(wchar_t* fi_)
 {
   
-    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -204,6 +204,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
 bool  SnipParser::MergeAncestory(wchar_t* fi_)
 { 
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[260] = { '\0' };
@@ -365,7 +366,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::FTDNA(wchar_t* fi_)
 {
-    //std::fstream  fs(fi_, std::ios_base::in | std::ios_base::binary);
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -550,6 +551,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 {  
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -744,6 +746,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 //has VG numbers that may corespond to RS numbers
 bool  SnipParser::f23andMe(wchar_t* fi_)
 {
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -936,6 +939,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 //has VG numbers that may corespond to RS numbers
 bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 {
+    std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -1149,7 +1153,8 @@ unsigned int SnipParser::merged(void)
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
-	if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
+    std::lock_guard<std::mutex> lock(global_mutex_);
+    if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
         // Ensure snpM is large enough for existing data + some headroom
         unsigned int newSize = loadCount_ + 16;
         snpM.resize(newSize);
@@ -1183,6 +1188,7 @@ bool SnipParser::MergeState(void)
 /*Revert a failed merge*/
 void SnipParser::revertMerge(void)
 {
+    std::lock_guard<std::mutex> lock(global_mutex_);
     //Reset rsid to '\0'
     for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
     {
@@ -1205,7 +1211,7 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
 
     if (abortMerge_) return false;
     // SAFETY CHECK 1
-    if (end_index_ == 0 || end_index_ > DNA_SNP_BUFFER_SIZE) {
+	if (end_index_ == 0 || end_index_ >= DNA_SNP_BUFFER_SIZE) {//fixed bug 1/25/2026
         return true;  // Nothing to search or invalid
     }
     // SAFETY CHECK 2 - Use < not <=
@@ -1290,7 +1296,7 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
 {
     // Check you have SNP data loaded
 	// Check we have SNP data loaded && valid load count
-
+    std::lock_guard<std::mutex> lock(global_mutex_);
     if (loadCount_ > 0 && loadCount_ <= snp.size()) //fixed 1/17/2026
     { 
 		//For Sanity check ensure '\0' termination
@@ -1365,7 +1371,8 @@ std::string SnipParser::NCBIBuild(void)
 /*Major Work in porgress*/
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
-     std::fstream  fs;
+    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::fstream  fs;
      {
          char timebufd[128], timebuft[128];
          std::string  lbuffer;
@@ -1420,7 +1427,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
              while (inx < loadCount_)
              {   //For Ancestory DNA files 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                  over22 = false;
-                 if (!_itoa_s(snp[inx].rs, c_num, 10)) rsID = (std::string) c_num;  //warning C6054 ignore _itoa_s returns a NULL terminated sting
+                 if (_itoa_s(snp[inx].rs, c_num, 10) == 0) rsID = (std::string) c_num;  //warning C6054 ignore _itoa_s returns a NULL terminated sting fix
                  else break;
                  //convert 23toMe
                  if (!strcmp(snp[inx].ch, "MT")) {
@@ -1434,17 +1441,12 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                          Chromosome = (std::string)"24";
                          over22 = true;
                      } else                 
-                     {   //DEBUG
-                         if (isdigit(atoi(snp[inx].ch)))
-                         {
-                             int x = 23;
+                        {   
+                          Chromosome = (std::string)(snp[inx].ch);
                          }
-                         //DEBUG
-                       Chromosome = (std::string)(snp[inx].ch);
-                      }
                     
-                 if(!_itoa_s(snp[inx].pos, c_num, 10)) Position = c_num;
-                 else break;
+					 if (_itoa_s(snp[inx].pos, c_num, 10) == 0) Position = c_num; //fix 1/25/2026
+                      else break;
                  if (over22)
                  { //ancestory's wierd to bases for X Y and MT where there is only 1
                    // '-' as been converted on load but I am leaving the '-' option for any future code that the conversion is omitted  
@@ -1485,6 +1487,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 //INTERNAL code generator not of use 
 void  SnipParser::FConvert(void)
 {
+    std::lock_guard<std::mutex> lock(global_mutex_);
     wchar_t  codeIn_[] = L"f:\\icode.txt";
     wchar_t  codeOut_[] = L"f:\\ccode.txt";
 
@@ -1563,7 +1566,8 @@ void  SnipParser::FConvert(void)
 If it is found it updates the odds ratio                       */
 std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
 {
-	float denominator = 0.0; //to prevent div by zero
+    std::lock_guard<std::mutex> lock(global_mutex_);
+    float denominator = 0.0; //to prevent div by zero
     std::string result_message = "N/A";
 
     // Check you have SNP data loaded
@@ -1638,6 +1642,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
 }
 int SnipParser::FTDNADecode(std::string code)
 {
+    std::lock_guard<std::mutex> lock(global_mutex_);
     int rs = 0,num;
 
     num = atoi(code.c_str()); //in example  VG01S1077 ftdna will equal numeric 11007
@@ -2172,6 +2177,7 @@ int SnipParser::FTDNADecode(std::string code)
 }
 int SnipParser::f23andMeDecode(std::string code)
 { 
+    std::lock_guard<std::mutex> lock(global_mutex_);
     int num, rs = 0;
 
     num = atoi(code.c_str());

@@ -67,6 +67,7 @@ private:
 	ST defaultST;
 	SM defaultSM;
 	std::mutex merge_mutex_;
+	std::mutex global_mutex_;
 	bool abortMerge_ = false;
 	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	//more defencsive code for invalid files
