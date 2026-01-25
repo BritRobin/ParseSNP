@@ -38,7 +38,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         if (fs.is_open()) {
             int inx = 0;
             //START: reset loadcount_ and vector for next file for next file
-            loadCount_ = 0;
+            
             snp.clear();
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
@@ -52,8 +52,16 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
                     continue;
                 }
+
+				//Reject UTF-8 BOM encoded files
+                if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
+                {
+                    fs.close();
+                    // Reject UTF-8 BOM encoded files
+                    return false;
+                }
+
                 int rdindex = 0;
-             
                 //GET RS Number numeric part only
                 if (nbuffer[rdindex] == 'r' && nbuffer[rdindex +1] == 's' && isdigit((int)nbuffer[rdindex +2])) {
 					char num[24];//fixed size 11/12/2025
@@ -387,6 +395,13 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
                     continue;
                 }
+                //Reject UTF-8 BOM encoded files
+                if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
+                {
+                    fs.close();
+                    // Reject UTF-8 BOM encoded files
+                    return false;
+                }
                 fdind = 0;
                 int rdindex = 2;
                 if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
@@ -403,7 +418,6 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
-                      //while (isdigit((int)nbuffer[rdindex]) && rdindex < 24)
                         while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
@@ -572,6 +586,16 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
                     continue;
                 }
+
+
+                //Reject UTF-8 BOM encoded files
+                if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
+                {
+                    fs.close();
+                    // Reject UTF-8 BOM encoded files
+                    return false;
+                }
+
                 fdind = 0;
                 //Merge code
                 vercheck = nbuffer;
@@ -748,6 +772,14 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     fs.clear();
                     fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
                     continue;
+                }
+
+                //Reject UTF-8 BOM encoded files
+                if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
+                {
+                    fs.close();
+                    // Reject UTF-8 BOM encoded files
+                    return false;
                 }
                 int rdindex = 0;
                 //GET RS Number numeric part only 
@@ -1581,8 +1613,8 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                     }
                     result_message += "Risk Homozygous!";
                     //from a post on statistics here https://stats.stackexchange.com/questions/187107/can-you-add-up-different-genes-odds-ratios-to-get-a-general-odds-ratio
-					if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio * 2.0; //for homozygous fix logic ver 0.9 Beta
-					else  if (denominator > 0.0) *sumoddsratio += (float)((*sumoddsratio * oddsratio) / denominator) * 2.0; //for homozygous fix logic ver 0.9 Beta
+					if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio * (float)2.0; //for homozygous fix logic ver 0.9 Beta
+					else  if (denominator > 0.0) *sumoddsratio += (float)((*sumoddsratio * oddsratio) / denominator) * (float)2.0; //for homozygous fix logic ver 0.9 Beta
                     return result_message;
                 }
                 //Match in one chromosone
