@@ -102,10 +102,6 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
 
                     //move past tab or spaces to next numeric data position number
-                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                    {//wrote whith braces for readablility
-                        rdindex++;
-                    }
                     //read position
                     //re-init 
                     nmindex = 0;
