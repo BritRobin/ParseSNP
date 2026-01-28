@@ -1369,29 +1369,29 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
     std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
+    char timebufd[128], timebuft[128];
+    std::string  lbuffer;
+    std::time_t t = std::time(nullptr);
+    int loopbreak = 0;
+    // Convert the wchar_t string to a char* string. Record
+    // the length of the original string and add 1 to it to
+    // account for the terminating null character.
+    size_t origsize = wcslen(fileLoaded_) + 1;
+    size_t convertedChars = 0;
+    //MS example code
+    char strConcat[] = " (char *)";
+    size_t strConcatsize = (strlen(strConcat) + 1) * 2;
+    const size_t newsize = origsize * 2;
+    char* nstring = new char[newsize + strConcatsize](); //Wasn't being deleted 11/12/2025 delete[] nstring
+    if(wcstombs_s(&convertedChars, nstring, newsize, fileLoaded_, _TRUNCATE) != 0)
      {
-         char timebufd[128], timebuft[128];
-         std::string  lbuffer;
-         std::time_t t = std::time(nullptr);
-         int loopbreak = 0;
-         // Convert the wchar_t string to a char* string. Record
-         // the length of the original string and add 1 to it to
-         // account for the terminating null character.
-         size_t origsize = wcslen(fileLoaded_) + 1;
-         size_t convertedChars = 0;
-        //MS example code
-         char strConcat[] = " (char *)";
-         size_t strConcatsize = (strlen(strConcat) + 1) * 2;
-         const size_t newsize = origsize * 2;
-		 char* nstring = new char[newsize + strConcatsize](); //Wasn't being deleted 11/12/2025 delete[] nstring
-         if(wcstombs_s(&convertedChars, nstring, newsize, fileLoaded_, _TRUNCATE) != 0) {
-             delete[] nstring;
-             return false;
-            }
-          //Open file for write 
-         fs.open(fi_, std::ios::out);
-         //Check file was opened  
-         if (fs.is_open()) {
+       delete[] nstring;
+       return false;
+      }
+     //Open file for write 
+     fs.open(fi_, std::ios::out);
+     //Check file was opened  
+     if (fs.is_open()) {
              int unsigned inx = 0;
              //Start:Write Header
              _tzset(); //set timezone
@@ -1461,7 +1461,6 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                         if (snp[inx].b == '-' || snp[inx].b == '0') allele2 = (std::string)"0";
                              else allele2 = snp[inx].b + '\0';
                       }
-
                  lbuffer = "rs" + rsID + "\t" + Chromosome + "\t" + Position + "\t" + allele1 + "\t" + allele2 + "\n";
                  //write the line
                  const char* write_it = lbuffer.c_str();
@@ -1473,13 +1472,11 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
              //got through the loop assuming file wrote correctly
              return true;
 		 }
-		 else {//Delete allocated memory
-                 delete[] nstring;//11/12/2025
-                 return false;
+          else {//Delete allocated memory
+                delete[] nstring;//11/12/2025
+                return false;
                 }
-     }
-     return false;
-}
+ }
 //INTERNAL code generator not of use 
 void  SnipParser::FConvert(void)
 {
