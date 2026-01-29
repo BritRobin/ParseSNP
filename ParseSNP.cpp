@@ -570,7 +570,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     hr = pFileOpen->GetResult(&pItem);
                     if (SUCCEEDED(hr))
                     {
-                       
                         hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                         if (SUCCEEDED(hr))
                         { 
@@ -690,6 +689,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     xsw = atoi(lbuffer);
                                     if (xsw == 0) {
                                         fstrm.close();
+                                        if (pItem) { pItem->Release(); pItem = nullptr; }//release COM object nightmare fix 01/29/2026
 										if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; } //another COM memory release fix 1/19/2026
                                         if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
                                         CoUninitialize(); //Needed to be moved here
@@ -711,8 +711,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         if(lst==1)EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
                                     }
                                     fstrm.close();
-                                    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-                                    CoUninitialize(); //Needed to be moved here
+                                    if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
+                                    if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }//release COM object nightmare fix 01/29/2026
+                                    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };
+                                    CoUninitialize();
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                     break;
@@ -723,11 +725,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         
                     }
                     
-                    
                 }
             }
             else
             {
+                if (pFileOpen) {
+                    pFileOpen->Release();
+                    pFileOpen = nullptr;
+                }
 				CoUninitialize();
                 break;
             }
@@ -891,8 +896,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
-                                if (pszFilePath) if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pszFilePath) CoTaskMemFree(pszFilePath);
+                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -974,7 +979,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     UpdateWindow(aDiag);
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -1046,7 +1051,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     UpdateWindow(aDiag);                                    
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -1121,7 +1126,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                   UpdateWindow(aDiag);
                                   if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                  pItem->Release();
+                                  if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -1194,7 +1199,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -1265,8 +1270,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pszFilePath) if (pszFilePath) CoTaskMemFree(pszFilePath);
+                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
@@ -1313,7 +1318,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 UpdateWindow(aDiag);
                             }
 
-                            pItem->Release();  // CRITICAL: Release pItem!
+                            if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                         }
                     }
 
@@ -1391,8 +1396,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                             }
                         }
+                        if (pItem) pItem->Release();
                     }
-                    pFileWrite->Release();
+                    if (pFileWrite) pFileWrite->Release();
                 }
                 CoUninitialize();
             }
@@ -1659,7 +1665,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      std::copy(s.begin(), s.end(), str2.begin());
      wcsncpy_s(global_s, str2.c_str(), 255);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
      //Read first reference lines
      fp->getline(lbuffer, READ_LIMIT);
      s = "NCBI Reference: ";
@@ -1823,11 +1828,6 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
         //show NCBI BUILD
         SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
-        /*
-        if (sx == 'F' && fp !=NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp); //add null fp check
-                else if(mp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp); //add null lp check
-        */
-		//DeepSeek fix
         // Add error handling for unexpected values
         if (sx == 'F' && fp != NULL) {
             SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp);
@@ -2520,7 +2520,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         ShowWindow(hDlg, SW_SHOW);
         // Move the dialog
         SetWindowPos(hDlg, NULL, xx, yy, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-        std::string s = "ParseSNP Version: ";
+		std::string s = "ParseSNP Version: ";//get version from class
         s += x.PVer();
         //Updated Icon code to prevent resource leaks
         HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
@@ -2678,7 +2678,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         LPCWSTR lp;
         //Updated Icon code to prevent resource leaks
         HICON hicon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_PARSESNP));
-        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        if (hicon) {
+            SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+            SetProp(hDlg, L"DIALOG_ICON", hicon);
+        }
         //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;//Added Null check
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
