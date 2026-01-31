@@ -38,7 +38,6 @@ public:
 	std::string PAbout(void); //return program/class about info
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
-
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 
@@ -70,10 +69,10 @@ private:
 	std::mutex global_mutex_;
 	bool abortMerge_ = false;
 	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
-	//more defencsive code for invalid files
-	static constexpr int TOTAL_BUFFER_SIZE = 260;
+	//more defensive code for invalid files
+	static constexpr int TOTAL_BUFFER_SIZE = MAX_PATH;
 	static constexpr int READ_LIMIT = 256;
-	//more defensice code for invalid files
+	//more defensive code for invalid files
 	unsigned int end_index_ = 0;
 	unsigned int allcecked_ = 0;
 	unsigned int failcheck_ = 0;

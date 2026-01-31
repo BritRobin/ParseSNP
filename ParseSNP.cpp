@@ -47,9 +47,9 @@ int position = 0;       // relative position
 int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
 int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
 int mergeTotal = 0;
-char chromosome[8] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL };//chromosome number
-char allele1 = NULL, allele2 = NULL;
-wchar_t global_s[260];
+char chromosome[8] = { '\0','\0','\0','\0','\0','\0','\0','\0' };//chromosome number
+char allele1 = '\0', allele2 = '\0';
+wchar_t global_s[MAIN_TOTAL_BUFFER_SIZE];
 std::wstring currentProject;
 std::wstring myPath;
 std::wstring SourceFilePath;
@@ -258,7 +258,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                 lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
                 if (lcount > 0 && lcount != -1)//Ensure on left double click there are to lookup
                 {
-                    TCHAR buffer[256];
+                    TCHAR buffer[MAIN_READ_LIMIT];
                     gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
                     //get selected text
                     SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
@@ -272,8 +272,8 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                         a = StrStrA(pszConvertedAnsiString, "N/A");
 						//fixes potential issues with invalid entries
                         size_t len = strlen(pszConvertedAnsiString);
-                        if (len > sizeof(lbuffer) - 1) len = sizeof(lbuffer) - 1;
-                        memcpy_s(lbuffer, sizeof(lbuffer), pszConvertedAnsiString, len); 
+                        if (len > _countof(lbuffer) - 1) len = _countof(lbuffer) - 1;
+                        memcpy_s(lbuffer, _countof(lbuffer), pszConvertedAnsiString, len); 
                         lbuffer[len] = '\0';
                         //fixes potential issues with invalid entries
                         for (int i = 2; lbuffer[i] != '\0'; i++)
@@ -559,6 +559,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 };
                 //set file type options
                 hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                
+                //Missing error handling
+                if (FAILED(hr)) {
+                    // Handle error
+                    pFileOpen->Release();
+                    CoUninitialize();
+                    break;
+                }
 
                 // Show the Open dialog box.
                 hr = pFileOpen->Show(NULL);
@@ -578,7 +586,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             CString temp = "ProjectManifest.ptxt";
                             std::wstring str;
                             std::string  linebuffer;
-                            char lbuffer[260];
+                            char lbuffer[MAIN_TOTAL_BUFFER_SIZE];
                             //configPath = currentProject.c_str() + temp;
                             Target = pszFilePath;
                             currentProject = pszFilePath;
@@ -689,9 +697,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     xsw = atoi(lbuffer);
                                     if (xsw == 0) {
                                         fstrm.close();
-                                        if (pItem) { pItem->Release(); pItem = nullptr; }//release COM object nightmare fix 01/29/2026
+                                        if (pItem)       { pItem->Release(); pItem = nullptr; }//release COM object nightmare fix 01/29/2026
 										if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; } //another COM memory release fix 1/19/2026
-                                        if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
+                                        if (pFileOpen)   { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
                                         CoUninitialize(); //Needed to be moved here
                                         break;
                                     }
@@ -711,9 +719,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         if(lst==1)EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
                                     }
                                     fstrm.close();
-                                    if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
+                                    if (pItem)       { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                                     if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }//release COM object nightmare fix 01/29/2026
-                                    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };
+                                    if (pFileOpen)   { pFileOpen->Release(); pFileOpen = nullptr; };
                                     CoUninitialize();
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
@@ -722,8 +730,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 
                               }
                             }
+                        else {
+                              // Release COM objects in REVERSE order of creation
+                              if (pItem) { pItem->Release(); pItem = nullptr; }
+                              if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
+                              CoUninitialize();
+                              break;
+                              }
                         
-                    }
+                    } else {
+                            // Handle error
+                            pFileOpen->Release();
+                            CoUninitialize();
+                            break;
+                           }
                     
                 }
             }
@@ -802,7 +822,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     _itoa_s(lcount, tc, 10);
                     lbuffer += tc;
                     lbuffer += "\n";
-                    TCHAR text[256];
+                    TCHAR text[MAIN_READ_LIMIT];
                     
                     for (int x = 0; x < lcount; x++)
                     {
@@ -842,12 +862,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
                     hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-
+                    //Fixed Missing Error Handling
+                    if (FAILED(hr)) {
+                        // Handle error: log, show message, cleanup, return
+                        pFileOpen->Release();
+                        CoUninitialize();
+                        break;
+                    }
                     // Show the Open dialog box.
                     hr = pFileOpen->Show(NULL);
 
@@ -899,6 +925,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
                                 if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
+                            else {
+                                  // GetDisplayName failed
+                                  if (pItem) pItem->Release();  // pItem exists, must release!
+                                  // pszFilePath is NULL, no cleanup needed
+                                  // Fall through to pFileOpen cleanup
+                                 }
                         }
                     }
                 }
@@ -923,7 +955,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1005,7 +1037,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1077,7 +1109,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1152,7 +1184,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1225,7 +1257,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1343,7 +1375,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };
                     //set file type options
@@ -1374,7 +1406,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         int  lcount = 0;
                                         std::string  lbuffer = "";
                                         lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-                                        TCHAR text[256];
+                                        TCHAR text[MAIN_READ_LIMIT];
 										for (int x = 0, ln = 0; x < lcount; x++)//fixed now taking one entry less
                                         {
                                             ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
@@ -1453,8 +1485,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             // Convert path to UTF-8
             WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1,
-                utf8Path, sizeof(utf8Path) - 1, nullptr, nullptr);
-            utf8Path[sizeof(utf8Path) - 1] = '\0';
+                utf8Path, _countof(utf8Path) - 1, nullptr, nullptr);
+            utf8Path[_countof(utf8Path) - 1] = '\0';
 
             // NOW utf8Path has the selected file path
             if (utf8Path[0] != '\0') {
@@ -1497,7 +1529,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     LPCWSTR b = L"All Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
-                        {a, L"*.txt"},
+                        {a, L"*.txt" },
                         {b, L"*.*" },
                     };//file spec
                     //set file type options
@@ -1529,7 +1561,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                         bool beginFormating = false;
                                         std::string  lbuffer;
                                         lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-                                        TCHAR text[260] = { '0' };
+                                        TCHAR text[MAIN_TOTAL_BUFFER_SIZE] = { '0' };
                                         for (int x = 0, ln = 0; x < lcount; x++) //fixed now taking one entry less
                                         {
                                             ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
@@ -1645,7 +1677,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      //more defensice code for invalid files
      char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
      char filename[TOTAL_BUFFER_SIZE] = { 0 };
-     strcpy_s(filename, sizeof(filename), utf8Path);
+     strcpy_s(filename, _countof(filename), utf8Path);
      SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
      //Read first reference lines
      fp->getline(lbuffer, READ_LIMIT);
@@ -1696,7 +1728,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              //***Obtain RSid number***
              if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S')
              {
-                 char number[260];
+                 char number[MAIN_TOTAL_BUFFER_SIZE];
                  int n = 0;
                  while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58)
                  {
@@ -1744,7 +1776,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              }
              /*Obtain Odds Ration if entered!*/
              {
-                 char number[260];
+                 char number[MAIN_TOTAL_BUFFER_SIZE];
                  int n = 0;
                  // getline null-terminates, so:
                  while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.'))
@@ -1928,7 +1960,7 @@ static int GetTextWidth(HDC hdc, const std::wstring& s)
 // Main printing function (updated)
 bool PrintPlainText(const std::wstring& text)
 {
-    WCHAR printerName[256];
+    WCHAR printerName[MAIN_READ_LIMIT];
     DWORD size = ARRAYSIZE(printerName);
 
     if (!GetDefaultPrinterW(printerName, &size))
@@ -2255,7 +2287,7 @@ std::wstring GetCurrentDateString(void)
     char buf[80];
 	std::string timeStr;
     localtime_s(&tstruct, &now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d", &tstruct);
+    strftime(buf, _countof(buf), "%Y-%m-%d", &tstruct);
 	timeStr = buf;
     int len = MultiByteToWideChar(CP_UTF8, 0, timeStr.c_str(), -1, NULL, 0);
     std::wstring result(len - 1, L'\0');  // minus null terminator
@@ -2276,7 +2308,7 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK) {
-            TCHAR buffer[256] = { 0 };
+            TCHAR buffer[MAIN_READ_LIMIT] = { 0 };
             std::wstring temp;
             if (GetWindowText(GetDlgItem(hDlg, IDC_ProjectNm), buffer, _countof(buffer))) {
                temp = buffer;
@@ -2711,7 +2743,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         {
         case IDC_SAVE: {
 
-            TCHAR buffer[260] = { 0 };
+            TCHAR buffer[MAIN_TOTAL_BUFFER_SIZE] = { 0 };
             std::string s_study, s_URL, s_ncbiref;
 
             if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, _countof(buffer)))
@@ -2765,7 +2797,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         if (SUCCEEDED(hr))
                         {
                             PWSTR pszFilePath = nullptr;
-                            WCHAR filename[260];
+                            WCHAR filename[MAIN_TOTAL_BUFFER_SIZE];
                             WCHAR ext[5];
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
@@ -2801,7 +2833,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                             write_it = s_ncbiref.c_str();
                                             fstrm.write(write_it, s_ncbiref.length());
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-                                            TCHAR text[256];
+                                            TCHAR text[MAIN_READ_LIMIT];
 											for (int x = 0, ln = 0; x < lcount; x++)//fix one less read
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
@@ -2833,7 +2865,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 size_t charsConverted = 0;
                                                 srce = wcslen(filename);
                                                 dest = srce + 1;
-                                                char file[260];
+                                                char file[MAIN_TOTAL_BUFFER_SIZE];
                                                 wcstombs_s(&charsConverted, file, dest, (wchar_t const*)filename, srce);
                                                 hash = md5.digestFile(file);
                                                 std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
@@ -2860,7 +2892,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         case IDC_SAVE_DRAFT: {
-            TCHAR buffer[260] = { 0 };
+            TCHAR buffer[MAIN_TOTAL_BUFFER_SIZE] = { 0 };
             std::string s_study, s_URL, s_ncbiref;
 
             if (GetWindowText(GetDlgItem(hDlg, IDC_STUDY), buffer, _countof(buffer)))
@@ -2914,7 +2946,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                         {
                             PWSTR pszFilePath = nullptr;
                             WCHAR ext[6];
-                            WCHAR filename[260];
+                            WCHAR filename[MAIN_TOTAL_BUFFER_SIZE];
 
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
@@ -2951,7 +2983,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                             write_it = s_ncbiref.c_str();
                                             fstrm.write(write_it, s_ncbiref.length());
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
-                                            TCHAR text[256];
+                                            TCHAR text[MAIN_READ_LIMIT];
 											for (int x = 0, ln = 0; x < lcount; x++)//fix one less read
                                             {
                                                 ln = SendMessage(plst, LB_GETTEXTLEN, x, NULL);
@@ -3014,7 +3046,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {
-                                char lbuffer[260];
+                                char lbuffer[MAIN_TOTAL_BUFFER_SIZE];
                                 /*open file*/
                                 std::fstream  fstrm;
                                 {   //filestream 
@@ -3080,7 +3112,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
         }
         case IDC_ENTER: {//The main code, 
-            TCHAR buffer[260] = { 0 };
+            TCHAR buffer[MAIN_TOTAL_BUFFER_SIZE] = { 0 };
             std::string s_rsid, s_chr, s_gene, s_riskallele, s_oddsratio;
             //get rsid number
             if (GetWindowText(GetDlgItem(hDlg, IDC_RSIDP), buffer, 15)) //at 260 no danger of buffer overflow from UNICODE etc 

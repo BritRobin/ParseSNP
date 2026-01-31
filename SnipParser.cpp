@@ -415,7 +415,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -613,7 +613,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -792,7 +792,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
                         rdindex += 2;
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -810,7 +810,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         nmindex = 0;
                         rdindex += 1; //Skip i
                                                
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -986,7 +986,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                     if (nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's')
                     {
                         rdindex += 2;
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
@@ -1004,7 +1004,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         nmindex = 0;
                         rdindex += 1; //Skip i
 
-                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < sizeof(nbuffer) && nmindex < sizeof(num) - 1)
+                        while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
                         {
                             num[nmindex] = nbuffer[rdindex];
                             rdindex++;
