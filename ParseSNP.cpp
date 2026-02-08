@@ -539,229 +539,210 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wmId)
         {
         case ID_FILE_LOADPROJECT:
-        {   
-        HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
-        PWSTR pszFilePath = nullptr;
-        if (SUCCEEDED(hr))
         {
-            IFileOpenDialog* pFileOpen = nullptr;
-
-            // Create the FileOpenDialog object.
-            hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
 
             if (SUCCEEDED(hr))
             {
-                LPCWSTR a = L"Project Folder";
+                IFileOpenDialog* pFileOpen = nullptr;
+                IShellItem* pItem = nullptr;
+                PWSTR pszFilePath = nullptr;
 
-                COMDLG_FILTERSPEC rgSpec[] =
-                {
-                    {a, L"*.ptxt"},
-                };
-                //set file type options
-                hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-                
-                //Missing error handling
-                if (FAILED(hr)) {
-                    // Handle error
-                    pFileOpen->Release();
-                    CoUninitialize();
-                    break;
-                }
+                // Create the FileOpenDialog object.
+                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                    IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
-                // Show the Open dialog box.
-                hr = pFileOpen->Show(NULL);
-
-                // Get the file name from the dialog box.
                 if (SUCCEEDED(hr))
                 {
-                    IShellItem* pItem;
-                    hr = pFileOpen->GetResult(&pItem);
+                    LPCWSTR a = L"Project Folder";
+                    COMDLG_FILTERSPEC rgSpec[] = { {a, L"*.ptxt"} };
+
+                    // Set file type options
+                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+
                     if (SUCCEEDED(hr))
                     {
-                        hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                        // Show the Open dialog box.
+                        hr = pFileOpen->Show(NULL);
+
                         if (SUCCEEDED(hr))
-                        { 
-                            USES_CONVERSION;
-                            LPCWSTR Target;
-                            CString temp = "ProjectManifest.ptxt";
-                            std::wstring str;
-                            std::string  linebuffer;
-                            char lbuffer[MAIN_TOTAL_BUFFER_SIZE];
-                            //configPath = currentProject.c_str() + temp;
-                            Target = pszFilePath;
-                            currentProject = pszFilePath;
-                            currentProject = currentProject.substr(0, currentProject.length() - temp.GetLength());//SET CURRENT PROJECT!!!
-                            //filestream 
-                            std::fstream  fstrm;
-                            fstrm.open(Target, std::ios::in);
-                            //Check file was opened  
-                            if (fstrm.is_open()) {
-                                while (fstrm.getline(lbuffer, 256))//read a line into a temorary buffer
+                        {
+                            hr = pFileOpen->GetResult(&pItem);
+                            if (SUCCEEDED(hr))
+                            {
+                                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                                if (SUCCEEDED(hr))
                                 {
-                                    //DNA file to open
-                                    //file name and path wide                         
-                                    str = A2T(lbuffer);
-                                    fstrm.getline(lbuffer, 256);//DNA file type to open
-                                    int xsw = atoi(lbuffer);
+                                    USES_CONVERSION;
+                                    LPCWSTR Target;
+                                    CString temp = "ProjectManifest.ptxt";
+                                    std::wstring str;
+                                    std::string  linebuffer;
+                                    char lbuffer[MAIN_TOTAL_BUFFER_SIZE];
 
-                                    // 1=Ancestory 2=FTNDA 3=23toM3
-                                    if (xsw == 1) {
-                                        int unsigned count;
-                                        if (x.Ancestory((PWSTR)str.c_str()))
+                                    Target = pszFilePath;
+                                    currentProject = pszFilePath;
+                                    currentProject = currentProject.substr(0, currentProject.length() - temp.GetLength());//SET CURRENT PROJECT!!!
+
+                                    // File stream 
+                                    std::fstream  fstrm;
+                                    fstrm.open(Target, std::ios::in);
+
+                                    // Check file was opened  
+                                    if (fstrm.is_open()) {
+                                        while (fstrm.getline(lbuffer, 256))//read a line into a temporary buffer
                                         {
-                                            LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                            SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                            //Update count and path per normal
-                                            count = x.SNPCount();
-                                            //New code Beta 0.2
-                                            std::string strx;
-                                            strx = x.NCBIBuild();
-                                            CA2CT pszConvertedAnsiString(strx.c_str());
-                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                            //New code Beta 0.2
-                                            SourceFilePath = str;
-                                            loadedFiletype = 1;
-                                            mergeLoad = mergeTotal = 0;
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                            // DNA file to open
+                                            // file name and path wide                         
+                                            str = A2T(lbuffer);
+                                            fstrm.getline(lbuffer, 256);//DNA file type to open
+                                            int xsw = atoi(lbuffer);
+
+                                            // 1=Ancestry 2=FTNDA 3=23toM3
+                                            if (xsw == 1) {
+                                                unsigned int count;
+                                                if (x.Ancestory((PWSTR)str.c_str()))
+                                                {
+                                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                                    // Update count and path per normal
+                                                    count = x.SNPCount();
+                                                    // New code Beta 0.2
+                                                    std::string strx;
+                                                    strx = x.NCBIBuild();
+                                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                                    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
+                                                    // New code Beta 0.2
+                                                    SourceFilePath = str;
+                                                    loadedFiletype = 1;
+                                                    mergeLoad = mergeTotal = 0;
+                                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                }
+                                            }
+                                            else  if (xsw == 2) {
+                                                unsigned int count;
+                                                unsigned int tranlated;
+                                                unsigned int untranslated;
+                                                if (x.FTDNA((PWSTR)str.c_str()))
+                                                {
+                                                    count = x.SNPCount();
+                                                    tranlated = x.IllumTransVG();
+                                                    untranslated = x.IllumUntransVG();
+                                                    // Updated translated VG to RSID
+                                                    std::string s = std::to_string(tranlated);
+                                                    USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
+                                                    LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                                    // Update remaining discarded VG code lines
+                                                    s = std::to_string(untranslated);
+                                                    lp = A2W_EX(s.c_str(), s.length());
+                                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                                    // Update count and path per normal
+                                                    // New code Beta 0.2
+                                                    std::string strx;
+                                                    strx = x.NCBIBuild();
+                                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                                    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
+                                                    // New code Beta 0.2
+                                                    SourceFilePath = str;
+                                                    loadedFiletype = 2;
+                                                    mergeLoad = mergeTotal = 0;
+                                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                }
+                                            }
+                                            else if (xsw == 3) {
+                                                unsigned int count;
+                                                unsigned int tranlated;
+                                                unsigned int untranslated;
+                                                if (x.f23andMe((PWSTR)str.c_str()))
+                                                {
+                                                    count = x.SNPCount();
+                                                    tranlated = x.IllumTransVG();
+                                                    untranslated = x.IllumUntransVG();
+                                                    // Updated translated VG to RSID
+                                                    std::string s = std::to_string(tranlated);
+                                                    USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
+                                                    LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                                    // Update remaining discarded VG code lines
+                                                    s = std::to_string(untranslated);
+                                                    lp = A2W_EX(s.c_str(), s.length());
+                                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                                    // Update count and path per normal
+                                                    // New code Beta 0.2
+                                                    std::string strx;
+                                                    strx = x.NCBIBuild();
+                                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                                    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+                                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
+                                                    // New code Beta 0.2
+                                                    SourceFilePath = str;
+                                                    loadedFiletype = 3;
+                                                    mergeLoad = mergeTotal = 0;
+                                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                }
+                                            }
+
+                                            fstrm.getline(lbuffer, 256);
+                                            xsw = atoi(lbuffer);
+                                            if (xsw == 0) {
+                                                fstrm.close();
+                                                break;
+                                            }
+
+                                            HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox                          
+
+                                            for (int lst = 0; lst < xsw; lst++) {
+                                                fstrm.getline(lbuffer, 256);//read project line
+                                                std::string s = lbuffer;
+                                                std::wstring str2(s.length(), L' '); // Make room for characters
+                                                // Copy string to wstring.
+                                                std::copy(s.begin(), s.end(), str2.begin());
+                                                wcsncpy_s(global_s, str2.c_str(), 255);
+                                                SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+                                                if (lst == 1) EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
+                                            }
+                                            fstrm.close();
+
+                                            InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                            UpdateWindow(aDiag);
+                                            break;
                                         }
                                     }
-                                    else  if (xsw == 2) {
-                                        unsigned int count;
-                                        unsigned int tranlated;
-                                        unsigned int untranslated;
-                                        if (x.FTDNA((PWSTR)str.c_str()))
-                                        {
-                                            count = x.SNPCount();
-                                            tranlated = x.IllumTransVG();
-                                            untranslated = x.IllumUntransVG();
-                                            //Updated translated VG to RSID
-                                            std::string s = std::to_string(tranlated);
-											USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
-                                            LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                            //Unpdate ramining disgarded VG code lines
-                                            s = std::to_string(untranslated);
-                                            lp = A2W_EX(s.c_str(), s.length());
-                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                            //Update count and path per normal
-                                             //New code Beta 0.2
-                                            std::string strx;
-                                            strx = x.NCBIBuild();
-                                            CA2CT pszConvertedAnsiString(strx.c_str());
-                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                            //New code Beta 0.2
-                                            SourceFilePath = str;
-                                            loadedFiletype = 2;
-                                            mergeLoad = mergeTotal = 0;
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                        }
-                                    }
-                                    else if (xsw == 3) {
-                                        unsigned int count;
-                                        unsigned int tranlated;
-                                        unsigned int untranslated;
-                                        if (x.f23andMe((PWSTR)str.c_str()))
-                                        {
-                                            count = x.SNPCount();
-                                            tranlated = x.IllumTransVG();
-                                            untranslated = x.IllumUntransVG();
-                                            //Updated translated VG to RSID
-                                            std::string s = std::to_string(tranlated);
-											USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
-                                            LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                            //Undate remaining disgarded VG code lines
-                                            s = std::to_string(untranslated);
-                                            lp = A2W_EX(s.c_str(), s.length());
-                                            if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                            //Update count and path per normal
-                                            //New code Beta 0.2
-                                            std::string strx;
-                                            strx = x.NCBIBuild();
-                                            CA2CT pszConvertedAnsiString(strx.c_str());
-                                            HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
-                                             //New code Beta 0.2
-                                            SourceFilePath = str;
-                                            loadedFiletype = 3;
-                                            mergeLoad = mergeTotal = 0;
-                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                        }
-
-                                    }
-
-                                    fstrm.getline(lbuffer, 256);
-                                    xsw = atoi(lbuffer);
-                                    if (xsw == 0) {
-                                        fstrm.close();
-                                        if (pItem)       { pItem->Release(); pItem = nullptr; }//release COM object nightmare fix 01/29/2026
-										if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; } //another COM memory release fix 1/19/2026
-                                        if (pFileOpen)   { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-                                        CoUninitialize(); //Needed to be moved here
-                                        break;
-                                    }
-
-                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox                          
-
-                                    for (int lst = 0; lst < xsw; lst++) {
-                                        fstrm.getline(lbuffer, 256);//read project line
-                                        int i = 0; // moved outside loop scope
-                                        std::string s = lbuffer;
-                                        std::wstring str2(s.length(), L' '); // Make room for characters
-                                        // Copy string to wstring.
-                                        std::copy(s.begin(), s.end(), str2.begin());
-                                        wcsncpy_s(global_s, str2.c_str(), 255);
-                                        SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-                                        if(lst==1)EnableMenuItem(GetMenu(hWnd), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
-                                    }
-                                    fstrm.close();
-                                    if (pItem)       { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
-                                    if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }//release COM object nightmare fix 01/29/2026
-                                    if (pFileOpen)   { pFileOpen->Release(); pFileOpen = nullptr; };
-                                    CoUninitialize();
-                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
-                                    UpdateWindow(aDiag);
-                                    break;
                                 }
-                                
-                              }
                             }
-                        else {
-                              // Release COM objects in REVERSE order of creation
-                              if (pItem) { pItem->Release(); pItem = nullptr; }
-                              if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
-                              CoUninitialize();
-                              break;
-                              }
-                        
-                    } else {
-                            // Handle error
-                            pFileOpen->Release();
-                            CoUninitialize();
-                            break;
-                           }
-                    
+                        }
+                    }
                 }
-            }
-            else
-            {
+
+                // === CLEANUP SECTION (Always executed) ===
+                // Clean up in REVERSE order of creation
+
+                if (pszFilePath) {
+                    CoTaskMemFree(pszFilePath);
+                    pszFilePath = nullptr;
+                }
+
+                if (pItem) {
+                    pItem->Release();
+                    pItem = nullptr;
+                }
+
                 if (pFileOpen) {
                     pFileOpen->Release();
                     pFileOpen = nullptr;
                 }
-				CoUninitialize();
-                break;
+
+                CoUninitialize();
             }
-            if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object 12/20/2025
+
+            break;
         }
-		else break;//break if coinit failed 1/19/2026
-        CoUninitialize();//Was Missing
-        break;
-        }
+      
         case ID_FILE_SAVEPROJECT:
         { 
         if (currentProject.length() == 0) {
@@ -870,7 +851,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     //Fixed Missing Error Handling
                     if (FAILED(hr)) {
                         // Handle error: log, show message, cleanup, return
-                        pFileOpen->Release();
+                        if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };
                         CoUninitialize();
                         break;
                     }
@@ -960,7 +941,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     };
                     //set file type options
                     hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-
                     // Show the Open dialog box.
                     hr = pFileOpen->Show(NULL);
 
@@ -1014,11 +994,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
+                        else if (pItem != nullptr) {
+                            // GetResult succeeded but GetDisplayName failed
+                            pItem->Release();  // pItem exists, must release!
+                            // pszFilePath is NULL, no cleanup needed
+                            // Fall through to pFileOpen cleanup
+                        }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-				CoUninitialize();//needed to be moved here
-            }
+				    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
+				    CoUninitialize();//needed to be moved here
+                }
+                else {
+                      CoUninitialize();
+                     }
             break;
         }
         case ID_OPENFILE:
@@ -2881,11 +2870,15 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                     }
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
-                            }
-                        }
+                                if (pItem != nullptr) pItem->Release();
+                            } else {
+                                    if (pszFilePath) CoTaskMemFree(pszFilePath);
+                                    if (pItem != nullptr) pItem->Release();
+                                   }
+                         } 
+                       
                     }
-                    pFileWrite->Release();
+                    if (pFileWrite) pFileWrite->Release();
                 }
                 CoUninitialize();
             }
@@ -2940,7 +2933,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
+                        IShellItem* pItem = nullptr;
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
@@ -3003,11 +2996,12 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                     }
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pItem != nullptr) pItem->Release();
                             }
                         }
+                        else { if (pItem != nullptr) pItem->Release(); }
                     }
-                    pFileWrite->Release();
+                    if(pFileWrite) pFileWrite->Release();
                 }
                 CoUninitialize();
             }
@@ -3036,7 +3030,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
+                        IShellItem* pItem = nullptr;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
@@ -3077,7 +3071,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         //Read first reference lines
                                         fstrm.getline(lbuffer, 256);
                                         s = lbuffer;
-                                        str2.resize(s.length(), L' '); // Make room for characters                                            // Copy string to wstring.
+                                        str2.resize(s.length(), L' '); // Make room for characters                  // Copy string to wstring.
                                         std::copy(s.begin(), s.end(), str2.begin());
                                         wcsncpy_s(global_s, str2.c_str(), 255);
                                         SetWindowText(GetDlgItem(hDlg, IDC_NCBIref), global_s);
@@ -3095,12 +3089,22 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                     }
                                 }
                                 if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                pItem->Release();
+                                if (pItem != nullptr) {
+                                    pItem->Release();
+                                    pItem = nullptr;
+                                }
                             }
+                        }
+                        else {
+                              if (pItem != nullptr) {
+                                 pItem->Release();
+                                 pItem = nullptr;
+                                }
                         }
                     }
 
                 }
+
 				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };//Release
                 CoUninitialize(); //needed to be moved here
             }
@@ -3180,7 +3184,6 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskallele + "  " + s_oddsratio;
             std::wstring str2(s.length(), L' '); // Make room for characters
             int lcount, lindex = -1;
-
 
             // Copy string to wstring.
             std::copy(s.begin(), s.end(), str2.begin());
