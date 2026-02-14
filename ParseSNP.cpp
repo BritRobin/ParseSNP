@@ -33,9 +33,9 @@
 namespace fs = std::filesystem; // In C++17 
 
 // Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+HINSTANCE hInst;                                 // current instance
+WCHAR szTitle[MAX_LOADSTRING] = { L'\0' };       // The title bar text
+WCHAR szWindowClass[MAX_LOADSTRING] = { L'\0' }; // the main window class name
 
 //Global class instance
 SnipParser x;
@@ -49,10 +49,10 @@ int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
 int mergeTotal = 0;
 char chromosome[8] = { '\0','\0','\0','\0','\0','\0','\0','\0' };//chromosome number
 char allele1 = '\0', allele2 = '\0';
-wchar_t global_s[MAIN_TOTAL_BUFFER_SIZE];
-std::wstring currentProject;
-std::wstring myPath;
-std::wstring SourceFilePath;
+wchar_t global_s[MAIN_TOTAL_BUFFER_SIZE] = { L'\0' };
+std::wstring currentProject; // strings are empty by default
+std::wstring myPath;         // strings are empty by default
+std::wstring SourceFilePath; // strings are empty by default
 //END:Global returned values
 
 // Forward declarations of functions included in this code module:
@@ -540,13 +540,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
         case ID_FILE_LOADPROJECT:
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
             if (SUCCEEDED(hr))
-            {
+			{   // Declare pointers and variables in main scope to ensure they are properly released in all cases
                 IFileOpenDialog* pFileOpen = nullptr;
                 IShellItem* pItem = nullptr;
                 PWSTR pszFilePath = nullptr;
+                // Declare pointers and variables in main scope to ensure they are properly released in all cases
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
@@ -830,10 +831,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
+			{   //Declare all pointers to be released here to ensure they are released in all cases
                 IFileOpenDialog* pFileOpen = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
+
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
@@ -861,11 +865,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -903,29 +905,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
-                            else {
-                                  // GetDisplayName failed
-                                  if (pItem) pItem->Release();  // pItem exists, must release!
-                                  // pszFilePath is NULL, no cleanup needed
-                                  // Fall through to pFileOpen cleanup
-                                 }
+                            
                         }
                     }
                 }
-            	if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-				CoUninitialize(); //Needed to be moved here
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+
+                if (pszFilePath) {
+                    CoTaskMemFree(pszFilePath);
+                    pszFilePath = nullptr;
+                }
+
+                if (pItem) {
+                    pItem->Release();
+                    pItem = nullptr;
+                }
+
+                if (pFileOpen) {
+                    pFileOpen->Release();
+                    pFileOpen = nullptr;
+                }
+
+                CoUninitialize();
             }
             break;
         }
         case ID_FILE_OPENFTDNA:
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileOpen;
+			{   //Declare all pointers to be released here to ensure they are released at the end! Assign nullptr to ensure they are in a known state for cleanup
+                IFileOpenDialog* pFileOpen = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -947,11 +961,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
+
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -990,32 +1003,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
+
                             }
                         }
-                        else if (pItem != nullptr) {
-                            // GetResult succeeded but GetDisplayName failed
-                            pItem->Release();  // pItem exists, must release!
-                            // pszFilePath is NULL, no cleanup needed
-                            // Fall through to pFileOpen cleanup
-                        }
+                       
                     }
                 }
-				    if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-				    CoUninitialize();//needed to be moved here
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+
+                if (pszFilePath) {
+                    CoTaskMemFree(pszFilePath);
+                    pszFilePath = nullptr;
                 }
-                else {
-                      CoUninitialize();
-                     }
+
+                if (pItem) {
+                    pItem->Release();
+                    pItem = nullptr;
+                }
+
+                if (pFileOpen) {
+                    pFileOpen->Release();
+                    pFileOpen = nullptr;
+                }
+
+                CoUninitialize();
+            }
             break;
         }
         case ID_OPENFILE:
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileOpen;
+                IFileOpenDialog* pFileOpen = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -1038,12 +1061,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
-                            hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -1071,23 +1092,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                     UpdateWindow(aDiag);                                    
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-                CoUninitialize(); //was in the wrong place
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+
+                if (pszFilePath) {
+                    CoTaskMemFree(pszFilePath);
+                    pszFilePath = nullptr;
+                }
+
+                if (pItem) {
+                    pItem->Release();
+                    pItem = nullptr;
+                }
+
+                if (pFileOpen) {
+                    pFileOpen->Release();
+                    pFileOpen = nullptr;
+                }
+
+                CoUninitialize();
             }
         }
         break;
         case ID_FILE_MERGEANCESTORYDNATXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileOpen;
+			{   //define at known state and scope to ensure they are released in all cases
+                IFileOpenDialog* pFileOpen = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -1110,11 +1148,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileOpen->GetResult(&pItem);
+
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1146,23 +1183,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                   EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                   InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                   UpdateWindow(aDiag);
-                                  if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                  if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-                CoUninitialize(); //needed to be moved here
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+
+                if (pszFilePath) {
+                    CoTaskMemFree(pszFilePath);
+                    pszFilePath = nullptr;
+                }
+
+                if (pItem) {
+                    pItem->Release();
+                    pItem = nullptr;
+                }
+
+                if (pFileOpen) {
+                    pFileOpen->Release();
+                    pFileOpen = nullptr;
+                }
+
+                CoUninitialize();
             }
         }
         break;
         case ID_FILE_MERGE23TOMETXTFILE: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileOpen;
+			{   //define and initialize all pointers to be released here to ensure they are released in all cases
+                IFileOpenDialog* pFileOpen = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -1185,11 +1239,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1219,28 +1271,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-				CoUninitialize(); //needed to be moved here
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+               if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+               if (pItem) { pItem->Release(); pItem = nullptr; }
+               if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
+               CoUninitialize();
             }
         }
         break;
         case ID_FILE_MERGEFTDNA: {
 
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileOpen;
+			{
+             //def. known state and scope to ensure they are released in all cases
+             IFileOpenDialog* pFileOpen = nullptr;
+             PWSTR pszFilePath = nullptr;
+             IShellItem* pItem = nullptr;
+             // Create the FileOpenDialog object.
+             hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
-                // Create the FileOpenDialog object.
-                hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
-                if (SUCCEEDED(hr))
+             if (SUCCEEDED(hr))
                 {
                     LPCWSTR a = L"Text Files";
                     LPCWSTR b = L"All Files";
@@ -1251,18 +1307,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     };
                     //set file type options
                     hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-
                     // Show the Open dialog box.
                     hr = pFileOpen->Show(NULL);
-
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1291,23 +1343,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
                                 InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
                                 UpdateWindow(aDiag);
-                                if (pszFilePath) if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                             }
                         }
                     }
                 }
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }; //another COM object release fix
-				CoUninitialize(); //needed to be moved here
+             // === CLEANUP SECTION (Always executed) ===
+             // Clean up in REVERSE order of creation
+             if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+             if (pItem) { pItem->Release(); pItem = nullptr; }
+             if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
+             CoUninitialize();
             }
         }
         break;
+
         case ID_FILE_EXPORT:
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
+				// Initialize all pointers to be released here to ensure they are released in all cases
                 IFileOpenDialog* pFileWrite = nullptr;
+                PWSTR pszFilePath = nullptr; 
+                IShellItem* pItem = nullptr;
+
                 hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL,
                     IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
 
@@ -1324,36 +1383,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem = nullptr;
-                        hr = pFileWrite->GetResult(&pItem);
+                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr) && pItem)  // Added && pItem check
                         {
-                            PWSTR pszFilePath = nullptr;  // Initialize
+                            
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             if (SUCCEEDED(hr) && pszFilePath)  // Added && pszFilePath check
                             {
                                 x.AncestoryWriter(pszFilePath);
-                                CoTaskMemFree(pszFilePath);
                                 InvalidateRect(aDiag, NULL, FALSE);
                                 UpdateWindow(aDiag);
                             }
 
-                            if (pItem) { pItem->Release(); pItem = nullptr; };//release COM object nightmare fix 01/29/2026
                         }
                     }
-
-                    if (pFileWrite) pFileWrite->Release();
+   
                 }
-                CoUninitialize();  // Always called (moved outside if)
+				//Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
+                if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+                if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+                if (pItem) { pItem->Release(); pItem = nullptr; };
+                CoUninitialize();  // Always called 
             }
         }
         break;
         case ID_PROJEX: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileWrite;
+				// Initialize all pointers to be released here to ensure they are released in all cases
+                IFileOpenDialog* pFileWrite = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
@@ -1376,11 +1438,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                             // Display the file name to the user.
@@ -1417,11 +1477,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                             }
                         }
-                        if (pItem) pItem->Release();
+                        
                     }
-                    if (pFileWrite) pFileWrite->Release();
+                    
                 }
-                CoUninitialize();
+             //Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
+             if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+             if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+             if (pItem) { pItem->Release(); pItem = nullptr; };
+             CoUninitialize();
             }
         }
         break;
@@ -1485,11 +1549,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-        Cleanup:
-            if (pszFilePath) CoTaskMemFree(pszFilePath);
-            if (pItem) pItem->Release();
-            if (pDefaultFolder) pDefaultFolder->Release();
-            if (pFileOpen) pFileOpen->Release();
+        Cleanup: //added reassign nullptr
+			if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+			if (pItem) { pItem->Release(); pItem = nullptr; }
+			if (pDefaultFolder) { pDefaultFolder->Release(); pDefaultFolder = nullptr; }
+			if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
             CoUninitialize();
         }
         break;
@@ -1502,12 +1566,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_DISABLED); //Disable export to export to text of clear
 		}
 		break;
+
         case ID_PATHOGENICS_EXPORTRESULTSTO:
         {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
             if (SUCCEEDED(hr))
             {
-                IFileOpenDialog* pFileWrite;
+                IFileOpenDialog* pFileWrite = nullptr;
+                PWSTR pszFilePath = nullptr;
+				IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
@@ -1530,13 +1598,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
                             {//Open file for write 
@@ -1576,9 +1641,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             }
                         }
                     }
-                    pFileWrite->Release();
                 }
+                //Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
+                if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+                if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+                if (pItem) { pItem->Release(); pItem = nullptr; };
                 CoUninitialize();
+ 
             }
         }
         break;
@@ -2757,10 +2826,12 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (s_ncbiref.length() == 0) s_ncbiref = "--";
 
             //name and write file
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileWrite;
+			{   //all COM objects must be released in REVERSE order of creation and checked for nullptr before releasing to avoid crashes
+                IFileOpenDialog* pFileWrite = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
@@ -2781,13 +2852,11 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem;
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
                             WCHAR filename[MAIN_TOTAL_BUFFER_SIZE];
-                            WCHAR ext[5];
+                            WCHAR ext[6] = {L'\0'};
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -2796,7 +2865,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 ext[1] = 'P';
                                 ext[2] = 'P';
                                 ext[3] = 'I';
-                                ext[4] = '\0';
+                                ext[4] = L'\0';
                                 StrCpyW(filename, pszFilePath);//we know 
                                 wcscat_s(filename, ext);
                                 {//Write the file
@@ -2869,17 +2938,17 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem != nullptr) pItem->Release();
-                            } else {
-                                    if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                    if (pItem != nullptr) pItem->Release();
-                                   }
+                            }
                          } 
                        
                     }
-                    if (pFileWrite) pFileWrite->Release();
+
                 }
+
+                //Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
+                if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+                if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+                if (pItem) { pItem->Release(); pItem = nullptr; };
                 CoUninitialize();
             }
             break;
@@ -2908,17 +2977,18 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             if (s_ncbiref.length() == 0) s_ncbiref = "--";
 
             //name and write file
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileWrite = NULL;
+			{   //All Com initialized objects must be released in REVERSE order of creation and checked for nullptr before releasing to avoid crashes
+                IFileOpenDialog* pFileWrite = nullptr;
+                PWSTR pszFilePath = nullptr;
+                IShellItem* pItem = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(::CLSID_FileSaveDialog, NULL, CLSCTX_ALL, ::IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileWrite));
 
                 if (SUCCEEDED(hr))
                 {
-
                     LPCWSTR a = L"DRFT Files";
                     COMDLG_FILTERSPEC rgSpec[] =
                     {
@@ -2933,12 +3003,10 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem = nullptr;
                         hr = pFileWrite->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
-                            WCHAR ext[6];
+                            WCHAR ext[6] = { L'\0' };
                             WCHAR filename[MAIN_TOTAL_BUFFER_SIZE];
 
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
@@ -2950,14 +3018,13 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 ext[2] = 'R';
                                 ext[3] = 'F';
                                 ext[4] = 'T';
-                                ext[5] = NULL;
+                                ext[5] = L'\0';
                                 StrCpyW(filename, pszFilePath);//we know 
                                 wcscat_s(filename, ext);
                                 {//Write the file
                                     //Open file for write 
                                     std::fstream  fstrm;
                                     {   //filestream 
-                                        //fstrm.open(pszFilePath, std::ios::out);
                                         fstrm.open(filename, std::ios::out);
                                         if (fstrm.is_open()) {
                                             HWND plst = GetDlgItem(hDlg, IDC_LIST1);
@@ -2995,23 +3062,27 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem != nullptr) pItem->Release();
                             }
                         }
-                        else { if (pItem != nullptr) pItem->Release(); }
+
                     }
-                    if(pFileWrite) pFileWrite->Release();
                 }
-                CoUninitialize();
+                
+             //Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
+             if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+             if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+             if (pItem) { pItem->Release(); pItem = nullptr; };
+             CoUninitialize();
             }
             break;
         }
         case IDC_LOAD_DRAFT: {
-            HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
-            {
-                IFileOpenDialog* pFileOpen;
+			{   //All Com initialized objects must be released in REVERSE order of creation and checked for nullptr before releasing to avoid crashes
+                IFileOpenDialog* pFileOpen = nullptr;
+                IShellItem* pItem = nullptr;
+                PWSTR pszFilePath = nullptr;
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
@@ -3030,12 +3101,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                     // Get the file name from the dialog box.
                     if (SUCCEEDED(hr))
                     {
-                        IShellItem* pItem = nullptr;
                         hr = pFileOpen->GetResult(&pItem);
                         if (SUCCEEDED(hr))
                         {
-                            PWSTR pszFilePath = nullptr;
-
                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
                             // Display the file name to the user.
                             if (SUCCEEDED(hr))
@@ -3088,25 +3156,18 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                         }
                                     }
                                 }
-                                if (pszFilePath) CoTaskMemFree(pszFilePath);
-                                if (pItem != nullptr) {
-                                    pItem->Release();
-                                    pItem = nullptr;
-                                }
                             }
                         }
-                        else {
-                              if (pItem != nullptr) {
-                                 pItem->Release();
-                                 pItem = nullptr;
-                                }
-                        }
                     }
-
                 }
 
-				if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; };//Release
-                CoUninitialize(); //needed to be moved here
+                // === CLEANUP SECTION (Always executed) ===
+               // Clean up in REVERSE order of creation
+
+                if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+                if (pItem) { pItem->Release(); pItem = nullptr; }
+                if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
+                CoUninitialize();
             }
         }
                            break;
