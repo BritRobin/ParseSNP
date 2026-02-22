@@ -40,6 +40,8 @@ WCHAR szWindowClass[MAX_LOADSTRING] = { L'\0' }; // the main window class name
 //Global class instance
 SnipParser x;
 //START:Global returned values
+// Global to store the base ParseSNP path
+
 HWND ghWnd = nullptr;   // Add initialization
 HWND aDiag = nullptr;   // Add initialization
 int rs_number = 0;      // RS Number 
@@ -50,9 +52,10 @@ int mergeTotal = 0;
 char chromosome[8] = { '\0','\0','\0','\0','\0','\0','\0','\0' };//chromosome number
 char allele1 = '\0', allele2 = '\0';
 wchar_t global_s[MAIN_TOTAL_BUFFER_SIZE] = { L'\0' };
-std::wstring currentProject; // strings are empty by default
-std::wstring myPath;         // strings are empty by default
-std::wstring SourceFilePath; // strings are empty by default
+std::wstring currentProject;      // strings are empty by default
+std::wstring myPath;              // strings are empty by default
+std::wstring SourceFilePath;      // strings are empty by default
+std::wstring PathogenicsFilePath; // strings are empty by default
 //END:Global returned values
 
 // Forward declarations of functions included in this code module:
@@ -67,7 +70,6 @@ INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    SearchFailmsg(HWND, UINT, WPARAM, LPARAM);
-//bool RawTextToPrinter(const std::string& text);
 static bool IsLocaleUS();
 static int GetTextWidth(HDC hdc, const std::wstring& s);
 bool PrintPlainText(const std::wstring& text);
@@ -150,6 +152,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
+/*
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
@@ -192,6 +195,96 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
            CoTaskMemFree(ppszPath);    // free up the path memory block
    }
    return TRUE;
+}*/
+//
+//   FUNCTION: InitInstance(HINSTANCE, int)
+//
+//   PURPOSE: Saves instance handle and creates main window
+//
+//   COMMENTS:
+//
+//        In this function, we save the instance handle in a global variable and
+//        create and display the main program window.
+//
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+{
+    hInst = hInstance; // Store instance handle in our global variable
+
+    const int width = 1000;
+    const int height = 700;
+
+    // Calculate centered position
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    int x = (screenWidth - width) / 2;
+    int y = (screenHeight - height) / 2;
+
+    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
+
+    if (!hWnd)
+    {
+        return FALSE;
+    }
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    // ===== SETUP WORKING DIRECTORY AND FOLDER STRUCTURE =====
+    PWSTR ppszPath;
+    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &ppszPath);
+
+    if (SUCCEEDED(hr)) {
+        std::wstring documentsPath = ppszPath;
+
+        // Define your paths
+        std::wstring parseSNPPath = documentsPath + L"\\ParseSNP";
+        std::wstring projectsPath = parseSNPPath + L"\\Projects";
+        std::wstring pathogenicsPath = parseSNPPath + L"\\Pathogenics";
+
+        // === Start - STORE THE PATHs IN YOUR EXISTING GLOBAL ===
+        myPath = parseSNPPath;                 // This now holds "C:\Users\...\Documents\ParseSNP"
+		PathogenicsFilePath = pathogenicsPath; // Store Pathogenics path in global
+        currentProject = projectsPath;         // Store Projects Path in global
+		SourceFilePath = documentsPath;        // Store Source for RAW DNA txt file to documents in global
+        // === End - STORE THE PATHs IN YOUR EXISTING GLOBAL ===
+
+        try {
+            // Create both subdirectories
+            fs::create_directories(projectsPath);
+            fs::create_directories(pathogenicsPath);
+
+            // Set the working directory to the PARENT ParseSNP folder
+            if (SetCurrentDirectoryW(parseSNPPath.c_str())) {
+                // Success! Working directory is now Documents\ParseSNP
+
+#ifdef _DEBUG
+                wchar_t currentDir[MAX_PATH];
+                GetCurrentDirectoryW(MAX_PATH, currentDir);
+                OutputDebugStringW(L"Working directory set to: ");
+                OutputDebugStringW(currentDir);
+                OutputDebugStringW(L"\n");
+
+                // Also output myPath to verify
+                OutputDebugStringW(L"myPath global set to: ");
+                OutputDebugStringW(myPath.c_str());
+                OutputDebugStringW(L"\n");
+#endif
+            }
+            else {
+                // Handle error if needed
+                DWORD error = GetLastError();
+                // Log or handle
+            }
+        }
+        catch (std::exception& e) {
+            std::cout << e.what() << std::endl;
+        }
+
+        CoTaskMemFree(ppszPath);
+    }
+    // ===== END WORKING DIRECTORY SETUP =====
+
+    return TRUE;
 }
 
 //Form Control Message Handler
@@ -252,7 +345,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                 //as an entry been double clicked
             case LBN_DBLCLK:
                 int signed lcount = 0;
-                int gselected;
+                int gselected = 0;
                 int local_rs_number = 0;
                 HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                 lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
@@ -358,7 +451,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
              //as an enry been double clicked
              case LBN_DBLCLK:
              int signed lcount = 0;
-             int gselected;
+             int gselected = 0;
              HWND plst = GetDlgItem(aDiag, IDC_LIST3);
              lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
              if(lcount > 0 && lcount != -1)//Ensure on left double click there are entries to delete!
@@ -743,7 +836,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             break;
         }
-      
+    
         case ID_FILE_SAVEPROJECT:
         { 
         if (currentProject.length() == 0) {
@@ -1504,24 +1597,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PWSTR pszFilePath = nullptr;
             std::fstream fstrm;
 
+            
             hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (FAILED(hr))
             {
                 break;
             }
 
-            // ========== MISSING COM DIALOG CODE START ==========
-            hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
-                IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+            hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
             if (FAILED(hr)) goto Cleanup;
-
+           
             hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
             if (FAILED(hr)) goto Cleanup;
 
-            hr = SHGetKnownFolderItem(FOLDERID_Desktop, KF_FLAG_DEFAULT, nullptr,
-                IID_IShellItem, reinterpret_cast<void**>(&pDefaultFolder));
+           /* hr = SHGetKnownFolderItem(FOLDERID_Desktop, KF_FLAG_DEFAULT, nullptr, IID_IShellItem, reinterpret_cast<void**>(&pDefaultFolder));*/
+            hr = SHCreateItemFromParsingName(PathogenicsFilePath.c_str(), NULL, IID_PPV_ARGS(&pDefaultFolder));
+
             if (SUCCEEDED(hr) && pDefaultFolder) {
-                pFileOpen->SetDefaultFolder(pDefaultFolder);
+				pFileOpen->SetFolder(pDefaultFolder);  // Set initial folder to Pathogenics file path 2/21/2026 
             }
 
             hr = pFileOpen->Show(NULL);
