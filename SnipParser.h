@@ -68,10 +68,11 @@ private:
 	std::mutex merge_mutex_;
 	std::mutex global_mutex_;
 	bool abortMerge_ = false;
-	static constexpr int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
+	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	//more defensive code for invalid files
-	static constexpr int TOTAL_BUFFER_SIZE = MAX_PATH;
-	static constexpr int READ_LIMIT = 256;
+	static constexpr unsigned int TOTAL_BUFFER_SIZE   = MAX_PATH;
+	static constexpr unsigned int MAX_RSID_NUMBER_LEN = 23;
+	static constexpr unsigned int READ_LIMIT          = 256;
 	//more defensive code for invalid files
 	unsigned int end_index_ = 0;
 	unsigned int allcecked_ = 0;
@@ -83,7 +84,7 @@ private:
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_ = '-';
 	std::string NCBIBuild_ = "";
-	std::string Pversion_ = "1.0.0"; //SET **VERSION** HERE
+	std::string Pversion_ = "1.0.1"; //SET **VERSION** HERE
 	std::string PAbouttxt_ = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
 	unsigned int illuminaU_ = 0;
 	unsigned int illuminaT_ = 0;

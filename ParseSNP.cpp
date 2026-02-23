@@ -116,7 +116,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-
 //
 //  FUNCTION: MyRegisterClass()
 //
@@ -142,60 +141,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-/*
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // Store instance handle in our global variable
-
-   const int width = 1000;
-   const int height = 700;
-
-   //Thanks to DeepSeek for centering code
-   // Calculate centered position
-   int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-   int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-   int x = (screenWidth - width) / 2;
-   int y = (screenHeight - height) / 2;
-
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-       return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-   PWSTR   ppszPath;    // variable to receive the path memory block pointer.
-
-   HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &ppszPath);
-
-   //if first run create parsesnp projects folder!
-   if (SUCCEEDED(hr)) {
-       std::wstring addit = L"\\ParseSNP\\Projects";
-       myPath = ppszPath;// +,";      // make a local copy of the path
-       myPath = myPath + addit;
-  
-      try {
-           fs::create_directories(myPath);
-       }
-       catch (std::exception& e) { // Not using fs::filesystem_error since std::bad_alloc can throw too.
-           std::cout << e.what() << std::endl;
-       }
-           CoTaskMemFree(ppszPath);    // free up the path memory block
-   }
-   return TRUE;
-}*/
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
 //
@@ -236,10 +181,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     if (SUCCEEDED(hr)) {
         std::wstring documentsPath = ppszPath;
 
-        // Define your paths
-        std::wstring parseSNPPath = documentsPath + L"\\ParseSNP";
-        std::wstring projectsPath = parseSNPPath + L"\\Projects";
-        std::wstring pathogenicsPath = parseSNPPath + L"\\Pathogenics";
+        // Define Default paths
+		std::wstring parseSNPPath = documentsPath + L"\\ParseSNP";       //Documents\ParseSNP
+		std::wstring projectsPath = parseSNPPath + L"\\Projects";        //Documents\ParseSNP\Projects   
+		std::wstring pathogenicsPath = parseSNPPath + L"\\Pathogenics";  //Documents\ParseSNP\Pathogenics
 
         // === Start - STORE THE PATHs IN YOUR EXISTING GLOBAL ===
         myPath = parseSNPPath;                 // This now holds "C:\Users\...\Documents\ParseSNP"
@@ -626,12 +571,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
          // other commands
     case WM_COMMAND:
-    {
-        int wmId = LOWORD(wParam);
-        // Parse the menu selections:
-        switch (wmId)
-        {
-        case ID_FILE_LOADPROJECT://Load file from default path 2/21/2026
+    {// START : WM_COMMAND switch case :
+      int wmId = LOWORD(wParam);
+      // Parse the menu selections:
+     switch (wmId)
+      { //Load file from default path 2/21/2026
+        case ID_FILE_LOADPROJECT:
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
@@ -937,6 +882,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         }
+
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1040,6 +986,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
+
         case ID_FILE_OPENFTDNA:
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1139,93 +1086,95 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
-        case ID_OPENFILE:
+
+        case ID_OPENFILE: //Set the default source folder to Documents root as a standard documents folder.
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
             {
                 IFileOpenDialog* pFileOpen = nullptr;
-                PWSTR pszFilePath = nullptr;
-                IShellItem* pItem = nullptr;
+                PWSTR pszFilePath          = nullptr;
+                IShellItem* pItem          = nullptr;
+                IShellItem* pDefaultFolder = nullptr; //needed for default folder
 
                 // Create the FileOpenDialog object.
                 hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
-                if (SUCCEEDED(hr))
+				if (FAILED(hr)) // Nothing allocated, exit
                 {
-                    LPCWSTR a = L"Text Files";
-                    LPCWSTR b = L"All Files";
-                    COMDLG_FILTERSPEC rgSpec[] =
-                    {
-                        {a, L"*.txt" },
-                        {b, L"*.*" },
-                    };
-                    //set file type options
-                    hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                    break;
+                }
 
-                    // Show the Open dialog box.
-                    hr = pFileOpen->Show(NULL);
+				//Set the default source folder to Documents root as a standard documents folder. 
+                //The user may have their RAW DNA file in downloads or desktop but documents is a common default location for user files! 
+                hr = SHCreateItemFromParsingName(SourceFilePath.c_str(), NULL, IID_PPV_ARGS(&pDefaultFolder));
 
-                    // Get the file name from the dialog box.
+                if (SUCCEEDED(hr) && pDefaultFolder)
+                {
+                    hr = pFileOpen->SetFolder(pDefaultFolder);  // Set initial folder to Pathogenics file path 2/21/2026 
                     if (SUCCEEDED(hr))
-                    {
-                        hr = pFileOpen->GetResult(&pItem);
-                        if (SUCCEEDED(hr))
                         {
-                             hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
-                            // Display the file name to the user.
+                            LPCWSTR a = L"Text Files";
+                            LPCWSTR b = L"All Files";
+                            COMDLG_FILTERSPEC rgSpec[] =
+                            {
+                                {a, L"*.txt" },
+                                {b, L"*.*" },
+                            };
+                            //set file type options
+                            hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+                            // Show the Open dialog box.
+                            hr = pFileOpen->Show(NULL);
+                            // Get the file name from the dialog box.
                             if (SUCCEEDED(hr))
                             {
-                                int unsigned count;
-                                if (x.Ancestory(pszFilePath))
+                              hr = pFileOpen->GetResult(&pItem);
+                              if (SUCCEEDED(hr))
+                              {
+                                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                                // Display the file name to the user.
+                                if (SUCCEEDED(hr))
                                 {
-                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                    //Update count and path per normal
-                                    count = x.SNPCount();
-                                    //New code Beta 0.2
-                                    std::string strx;
-                                    strx = x.NCBIBuild();
-                                    CA2CT pszConvertedAnsiString(strx.c_str());
-                                    //New code Beta 0.2
-                                    SourceFilePath = pszFilePath;
-                                    loadedFiletype = 1;
-                                    mergeLoad = mergeTotal = 0;
-                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
-                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
-                                    UpdateWindow(aDiag);                                    
+                                    int unsigned count;
+                                    if (x.Ancestory(pszFilePath))
+                                    {
+                                      LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                      SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                      SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                      //Update count and path per normal
+                                      count = x.SNPCount();
+                                      //New code Beta 0.2
+                                      std::string strx;
+                                      strx = x.NCBIBuild();
+                                      CA2CT pszConvertedAnsiString(strx.c_str());
+                                      //New code Beta 0.2
+                                      SourceFilePath = pszFilePath;
+                                      loadedFiletype = 1;
+                                      mergeLoad = mergeTotal = 0;
+                                      ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                      HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                      SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                      EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                      InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                      UpdateWindow(aDiag);
+                                    }
                                 }
+                              }
                             }
-                        }
-                    }
-                }
-                // === CLEANUP SECTION (Always executed) ===
-               // Clean up in REVERSE order of creation
+                         }
 
-                if (pszFilePath) {
-                    CoTaskMemFree(pszFilePath);
-                    pszFilePath = nullptr;
                 }
 
-                if (pItem) {
-                    pItem->Release();
-                    pItem = nullptr;
-                }
-
-                if (pFileOpen) {
-                    pFileOpen->Release();
-                    pFileOpen = nullptr;
-                }
-
-                CoUninitialize();
+             // === CLEANUP SECTION (Always executed) ===
+             // Clean up in REVERSE order of creation
+             if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
+             if (pItem) { pItem->Release(); pItem = nullptr; }
+             if (pDefaultFolder) { pDefaultFolder->Release(); pDefaultFolder = nullptr; }
+             if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
+             CoUninitialize();
             }
+            break;
         }
-        break;
+
         case ID_FILE_MERGEANCESTORYDNATXTFILE: {
 
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1315,8 +1264,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 CoUninitialize();
             }
+            break;
         }
-        break;
+
         case ID_FILE_MERGE23TOMETXTFILE: {
 
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1390,8 +1340,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
                CoUninitialize();
             }
+         break;
         }
-        break;
+  
         case ID_FILE_MERGEFTDNA: {
 
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1462,9 +1413,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
              CoUninitialize();
             }
+          break;
         }
-        break;
-
+ 
         case ID_FILE_EXPORT:
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1514,8 +1465,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (pItem) { pItem->Release(); pItem = nullptr; };
                 CoUninitialize();  // Always called 
             }
+          break;
         }
-        break;
+
         case ID_PROJEX: {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (SUCCEEDED(hr))
@@ -1595,13 +1547,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              if (pItem) { pItem->Release(); pItem = nullptr; };
              CoUninitialize();
             }
+         break;
         }
-        break;
+
         case ID_PATHOGENICS_CREATE: {
              DialogBox(hInst, MAKEINTRESOURCE(136), aDiag, Pathogen);
+         break;
         }
-        break;
-        case ID_PATHOGENICS_LOAD://Default Folder set 2/21/2026
+        //Default Folder set 2/21/2026
+        case ID_PATHOGENICS_LOAD:
         {
             char utf8Path[MAX_PATH * 4] = { 0 };
             COMDLG_FILTERSPEC rgSpec[] = { { L"PPI file", L"*.PPI" } };
@@ -1611,8 +1565,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             IShellItem* pItem = nullptr;
             PWSTR pszFilePath = nullptr;
             std::fstream fstrm;
-
-            
+                        
             hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
             if (FAILED(hr))
             {
@@ -1663,17 +1616,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pDefaultFolder) { pDefaultFolder->Release(); pDefaultFolder = nullptr; }
 			if (pFileOpen) { pFileOpen->Release(); pFileOpen = nullptr; }
             CoUninitialize();
+            break;
         }
-        break;
 
-        case ID_CLEARRESULTS: {// Clear Pathogenic Results
+        // Clear Pathogenic Results
+        case ID_CLEARRESULTS: {
 			HWND plst = GetDlgItem(aDiag, IDC_LIST2);//Get Pathogenic List Box
             SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
 			EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_DISABLED); //Disable print on clear
             EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_DISABLED); //Disable clear results on clear 
             EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_DISABLED); //Disable export to export to text of clear
+            break;
 		}
-		break;
 
         case ID_PATHOGENICS_EXPORTRESULTSTO:
         {
@@ -1757,23 +1711,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 CoUninitialize();
  
             }
+         break;
         }
-        break;
-        case ID_PRINT_RESULTS:
-			//Print functions write by AI becuase I'm lazy
+        //Print functions write by AI becuase I'm lazy
+        case ID_PRINT_RESULTS: {
             PathoPrint();
-		break;
-        case IDM_ABOUT:
+            break;
+        }
+
+        case IDM_ABOUT: {
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-        break;
-        case IDM_EXIT:
+            break;
+        }
+
+        case IDM_EXIT: {
             DestroyWindow(hWnd);
-        break;
+            break;
+        }
+
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-     }
-     break; 
+       }
+       break;
+	} // END : WM_COMMAND switch case :
+ 
     case WM_SIZE:
             InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
            // UpdateWindow(aDiag);            
@@ -1829,8 +1790,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
  }
-
-
 
  bool ProcessPpiFile(HWND aDiag, std::fstream* fp , const char* utf8Path)
  {

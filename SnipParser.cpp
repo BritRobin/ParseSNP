@@ -24,7 +24,6 @@
 //Read an Ancestory.com/23t0me and FtDNA RAW DNA file and create a 'standard array'
 bool  SnipParser::Ancestory(wchar_t* fi_)
 {
-  
     std::lock_guard<std::mutex> lock(global_mutex_);
     std::fstream  fs;
     {
@@ -69,7 +68,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     loopbreak = 0;
                     num[0] = '\0';
                     rdindex += 2;
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < 23)
+                    while (isdigit((int)nbuffer[rdindex]) && rdindex < MAX_RSID_NUMBER_LEN) //23 is the Maximum 
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
@@ -80,13 +79,15 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     snp[inx].rs = atoi(num);
                     //move past tab or spaces to next numeric data chromosone number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                    {//wrote whith braces for readablility
+                    {//wrote with braces for readablility
                         rdindex++;
                     }
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue; 
+
                     //re-init 
                     nmindex = 0;
                     num[0] = '\0';
-
                     // 23 is the X, 24 is Y, 25 is the (Pseudoautosomal region) PAR region, and 26 is mtDNA.
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                     {
@@ -100,7 +101,11 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         num[nmindex] = '\0';
                         strcpy_s(snp[inx].ch, num);
                     }
-
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+                    //EVIL Bug! Missing '\t'
+                    rdindex++; //Fixed 2/22/2026!
+                    //EVIL Bug! Missing '\t' 
                     //move past tab or spaces to next numeric data position number
                     //read position
                     //re-init 
@@ -113,9 +118,16 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         nmindex++;
                     }
                     num[nmindex] = '\0';
-                    //second in the line is the chromosone number
-                    snp[inx].pos = atoi(num);
 
+                    //second in the line is the chromosone position
+                    snp[inx].pos = atoi(num);
+                    //DEBUG
+                    if (snp[inx].pos == 0) {
+                        int a = 1;
+                    }
+                    //DEBUG
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
                         && nbuffer[rdindex] != 'D' && nbuffer[rdindex] != 'I' && nbuffer[rdindex] != '0' && nbuffer[rdindex] != '-' && rdindex < READ_LIMIT)
@@ -133,7 +145,10 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     //Is Char
                     snp[inx].b = nbuffer[rdindex];
                     //Determine Sex
-                    if ((snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4') && snp[inx].a == '0' && snp[inx].b == '0') noreadcount++;
+                    if ((snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4') && snp[inx].a == '0' && snp[inx].b == '0')
+                    {
+                        noreadcount++;
+                    }
                     if (noY == true && (snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4'))
                     {
                         noY = false;
@@ -242,7 +257,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     loopbreak = 0;
                     num[0] = '\0';
                     rdindex += 2;
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < 23)
+                    while (isdigit((int)nbuffer[rdindex]) && rdindex < MAX_RSID_NUMBER_LEN)
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
