@@ -797,23 +797,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
     
-        case ID_FILE_SAVEPROJECT:
+        case ID_FILE_SAVEPROJECT://Default path and user inputed project file name added and tested 2/26/2026
         { 
-        if (currentProject.length() == 0) {
+         if (currentProject.length() == 0)
+         {
             DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), aDiag, ProjectDlgProc);
             if (currentProject.length() == 0) break;
             //create project folder
             fs::create_directory(currentProject);
-        }
+           }
         //Copy Source File
         if (SourceFilePath.length() > 0)
         {   /* Derive the target path from source file and project path */
             // Extract filename safely using filesystem
-			//ChatGPT4 suggested method start
+		
             std::filesystem::path fullpath(SourceFilePath);
             std::wstring filename = fullpath.filename().wstring();   // Always safe
-			//ChatGPT4 suggested method end
-            // Build final project file path
+			// Build final project file path
             std::wstring pathfilname = currentProject + filename;
             //Copy the original DNA file retaining its original name to the project folder
             LPCWSTR Source = SourceFilePath.c_str();
@@ -826,17 +826,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                        loadedFiletype = 1;
                       }
             //Write Project configuration files
-            //Open file for write 
-            std::fstream  fstrm;
-            {
-                CString temp = "\\ProjectManifest.ptxt", configPath;
-                std::string  lbuffer, linebuffer;
-                int lcount;
-                char tc[3];
-                configPath = currentProject.c_str() + temp;
-                Target = configPath;
+            //Got a little help from DeepSeek for file name selection as I want to get to a working release soon!
+            CString temp = "\\ProjectManifest.ptxt", configPath;
+            std::string lbuffer, linebuffer;
+            int lcount;
+            char tc[3];
+            OPENFILENAME ofn = { 0 };
+            wchar_t szFile[MAX_PATH] = L"";  // Start empty
+
+            // Construct the FULL default path including filename
+            std::wstring defaultPath = currentProject + L"\\ProjectManifest.ptxt";
+            wcsncpy_s(szFile, defaultPath.c_str(), MAX_PATH - 1);
+
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = hWnd;
+            ofn.lpstrFilter = L"Project Manifest Files\0*.ptxt\0Text Files\0*.txt\0All Files\0*.*\0";
+            ofn.lpstrFile = szFile;
+            ofn.nMaxFile = MAX_PATH;
+            ofn.lpstrInitialDir = currentProject.c_str();  // Still set this
+            ofn.lpstrTitle = L"Save Project Manifest";
+            // CRITICAL FLAGS - note the addition:
+            ofn.Flags = OFN_OVERWRITEPROMPT |
+                OFN_PATHMUSTEXIST |
+                OFN_NOCHANGEDIR |
+                OFN_ENABLESIZING;  // Better behavior
+            ofn.lpstrDefExt = L"ptxt";
+
+            if (GetSaveFileName(&ofn))
+            {   // File stream 
+                std::fstream  fstrm;
                 //filestream 
-                fstrm.open(Target, std::ios::out);
+                fstrm.open(szFile, std::ios::out);
                 //Check file was opened  
                 if (fstrm.is_open()) {
                     // Convert a TCHAR string to a LPCSTR
@@ -846,9 +866,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     //Protection for alteration to the code overflowing tc[] buffer should ALWAYS work in existing code
                     if (loadedFiletype < 9) _itoa_s(loadedFiletype, tc, 10); //the function to use to load it
                     else {
-                           tc[0] = '1';
-                           tc[1] = '\0';
-                          }
+                        tc[0] = '1';
+                        tc[1] = '\0';
+                    }
                     lbuffer += tc;
                     lbuffer += "\n";
                     //Get Project window entry count
@@ -858,7 +878,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     lbuffer += tc;
                     lbuffer += "\n";
                     TCHAR text[MAIN_READ_LIMIT];
-                    
+
                     for (int x = 0; x < lcount; x++)
                     {
                         int ln = (int)SendMessage(plst, LB_GETTEXTLEN, x, 0);
@@ -877,7 +897,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     const char* write_it = lbuffer.c_str();
                     fstrm.write(write_it, lbuffer.length());
                     fstrm.close();
-                }
+                        
+                    }
             }
         }
         break;
