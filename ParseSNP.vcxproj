@@ -172,6 +172,7 @@
     <Image Include="ParseSNP.ico" />
     <Image Include="small.ico" />
     <Image Include="SNPedia_logo.bmp" />
+    <Image Include="SNPedia_logoDeActivated.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RibbonFile.mfcribbon-ms" />

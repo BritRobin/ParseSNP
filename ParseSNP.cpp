@@ -242,13 +242,17 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     {
 
     case WM_INITDIALOG:
-    {   
-        HBITMAP hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
+    {   //Disabled Bitmap
+        HBITMAP hBmp = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP3), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
         //check operation suceeded
         if(hBmp != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
-        
+		//Enabled Bitmap
+		HBITMAP hBmp2 = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
+        if (hBmp2 != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+
         // Store the bitmap handle so we can delete it later
-        SetProp(hwnd, L"BUTTONBITMAP", hBmp);
+        SetProp(hwnd, L"BUTTONBITMAP_NORMAL", hBmp2);
+        SetProp(hwnd, L"BUTTONBITMAP_DISABLED", hBmp);
 
         LOGFONT lf = { 0 };
         GetObject(GetStockObject(DEFAULT_GUI_FONT), sizeof(LOGFONT), &lf);
@@ -540,10 +544,16 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     case WM_DESTROY:
     {
          // Cleanup code - moved to proper location
-         HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP");
+         HBITMAP hBmp = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP_DISABLED");
         if (hBmp) {
           DeleteObject(hBmp);
          }
+
+        // Cleanup code - moved to proper location
+        HBITMAP hBmp2 = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP_NORMAL");
+        if (hBmp) {
+            DeleteObject(hBmp2);
+        }
 
          HFONT hFont = (HFONT)RemoveProp(hwnd, L"LIST2FONT");
         if (hFont) {
@@ -2077,24 +2087,35 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
         SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), FilePath);
         //show NCBI BUILD
         SetWindowTextW(GetDlgItem(aDiag, IDC_BUILD), build);
+        //Enable RSID lookup Button 
+          // Enable the button
+        EnableWindow(GetDlgItem(aDiag, IDC_BUTTON1), TRUE);
+        // Swap to normal enabled image
+        HBITMAP hBmp = (HBITMAP)GetProp(aDiag, L"BUTTONBITMAP_NORMAL");
+        if (hBmp) {
+            SendMessage(GetDlgItem(aDiag, IDC_BUTTON1), BM_SETIMAGE,
+                (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+        }
+
         // Add error handling for unexpected values
-        if (sx == 'F' && fp != NULL) {
+        if (sx == 'F' && fp != NULL) 
+         {
             SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), fp);
-        }
-        else if (sx == 'M' && mp != NULL) {
-            SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp);
-        }
-        else {
-            // Handle unexpected case
-            USES_CONVERSION_EX;
-            std::string unknown = "Unknown";
-            LPWSTR lp = A2W_EX(unknown.c_str(), unknown.length());
-            if (lp != NULL) {
-                SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), lp);
-            }
-            // Optionally log this for debugging
-            OutputDebugString(L"Unexpected sex value encountered");
-        }
+          } else if (sx == 'M' && mp != NULL) 
+                  {
+                     SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), mp);
+                   } else {
+                            // Handle unexpected case
+                            USES_CONVERSION_EX;
+                            std::string unknown = "Unknown";
+                            LPWSTR lp = A2W_EX(unknown.c_str(), unknown.length());
+                            if (lp != NULL)
+                                {
+                                SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), lp);
+                                }
+                            // Optionally log this for debugging
+                            OutputDebugString(L"Unexpected sex value encountered");
+                           }
 
         EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_ENABLED);
         //optimized ver 0.3 beta
@@ -2118,21 +2139,30 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
              if (mergeLoad & 2) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_DISABLED);
              else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
            }
-        } else {
-                 std::string s = "0";
-                 mergeLoad = mergeTotal = 0;
-                 USES_CONVERSION_EX;
-                 LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                 if(lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
-                 EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), FALSE);
-                 EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH),   FALSE);
-                 //Set a limit on rs field
-                 SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
-                 //Show source path
-                 SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL); 
-                 SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), NULL);
-                 EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_GRAYED);  //ensure export is deactivated
-                 EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_GRAYED);
+	}
+	else {//NO FILE LOADED, DISABLE EVERYTHING
+            std::string s = "0";
+            mergeLoad = mergeTotal = 0;
+            USES_CONVERSION_EX;
+            LPWSTR lp = A2W_EX(s.c_str(), s.length());
+            if(lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT), lp);
+            EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), FALSE);
+            EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH),   FALSE);
+            //Set a limit on rs field
+            SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
+            //Show source path
+            SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL); 
+            SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), NULL);
+            EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_GRAYED);  //ensure export is deactivated
+            EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_GRAYED);
+         
+
+            // Swap to grayscale image No Need to disable the button as you loose the bitmap and the button is protected
+            HBITMAP hBmp = (HBITMAP)GetProp(aDiag, L"BUTTONBITMAP_DISABLED");
+            if (hBmp) {
+                SendMessage(GetDlgItem(aDiag, IDC_BUTTON1), BM_SETIMAGE,
+                    (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+            }
     }
     //Covert RS number for display
     std::string s = "";
