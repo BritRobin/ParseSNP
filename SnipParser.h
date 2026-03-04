@@ -70,7 +70,7 @@ private:
 	bool abortMerge_ = false;
 	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	//more defensive code for invalid files
-	static constexpr unsigned int TOTAL_BUFFER_SIZE   = MAX_PATH;
+	static constexpr unsigned int TOTAL_BUFFER_SIZE = MAX_PATH + 20; //Allow for poaiblw overun in corrupt or malicious files
 	static constexpr unsigned int MAX_RSID_NUMBER_LEN = 23;
 	static constexpr unsigned int READ_LIMIT          = 256;
 	//more defensive code for invalid files

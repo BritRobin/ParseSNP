@@ -37,7 +37,6 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         if (fs.is_open()) {
             int inx = 0;
             //START: reset loadcount_ and vector for next file for next file
-            
             snp.clear();
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
@@ -477,6 +476,9 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     nmindex = 0;
                     num[0] = '\0';
 
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+
                     if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                     {
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
@@ -490,13 +492,15 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         strcpy_s(snp[inx].ch, num);
                     }
                     else {
-                        snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
-                        if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
-                        if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                        snp[inx].ch[1] = '\0';
+                            snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
+                            if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
+                            if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                            snp[inx].ch[1] = '\0';
+                         }
 
-                    }
-                    
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+
                     //move past tab or spaces to next numeric data posotion number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote whith braces for readablility
@@ -506,6 +510,10 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         //re-init 
                     nmindex = 0;
                     num[0] = '\0';
+
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+
                     while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {
                         num[nmindex] = nbuffer[rdindex];
@@ -515,7 +523,9 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     num[nmindex] = '\0';
                     //second in the line is the chromosone number
                     snp[inx].pos = atoi(num);
-     
+
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
 
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
                     while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
@@ -766,7 +776,8 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
-        if (fs.is_open()) {
+        if (fs.is_open())
+        {
             int inx = 0;
             singleAllele = false;
             //START: reset loadcount_ and vector for next file for next file
@@ -847,6 +858,9 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         nmindex = 0;
                         num[0] = '\0';
 
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
+
                         if (isdigit((int)nbuffer[rdindex])) //if autosomal chr
                         {
                             while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nmindex < 3)//last clause is to prevent overflow on corrupt file
@@ -877,6 +891,9 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                         }
 
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
+
                         //move past tab or spaces to next numeric data posotion number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
@@ -892,6 +909,10 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
+
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
+
                         num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
