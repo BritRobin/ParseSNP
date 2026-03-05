@@ -266,7 +266,9 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     mergefile_++; //get the total merge import count so a percentage difference can be calculated
                     //First in the line is the RS number
                     rst = atoi(num);
-                       
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+
                     if (rst > 0 && mergeRs(rst, vercheck))
                     {
                         snp[inx].rs = rst;
@@ -294,6 +296,9 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                             strcpy_s(snp[inx].ch, num);
                         }
 
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
+
                         //move past tab or spaces to next numeric data position number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
@@ -312,6 +317,9 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
+
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
@@ -674,6 +682,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         rdindex = fdind;                  //set read index
                         rst = FTDNADecode(num); //ver 0.3 beta separate decode function!
                     }
+
                     if (rst > 0 && mergeRs(rst, vercheck)) //stop line load of uniterpreted VG codes
                     {
                         snp[inx].rs = rst;
@@ -706,6 +715,9 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 
                         }
 
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
+
                         //move past tab or spaces to next numeric data posotion number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
@@ -724,6 +736,9 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
+
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
@@ -1103,6 +1118,8 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         //re-init 
                         nmindex = 0;
                         num[0] = '\0';
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
                         while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {
                             num[nmindex] = nbuffer[rdindex];
@@ -1112,6 +1129,9 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         num[nmindex] = '\0';
                         //second in the line is the chromosone number
                         snp[inx].pos = atoi(num);
+
+                        //If we had run out of data restart loop read next line
+                        if (rdindex >= READ_LIMIT) continue;
 
                         //As the last two values are not numeric we have to rely on the file still being TAB delimited
                         while (nbuffer[rdindex] != 'A' && nbuffer[rdindex] != 'C' && nbuffer[rdindex] != 'G' && nbuffer[rdindex] != 'T'
