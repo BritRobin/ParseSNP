@@ -395,6 +395,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             }
             return TRUE;
         }
+
         case IDC_LIST3:
         {
           switch (HIWORD(wParam))
@@ -421,6 +422,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             }
             return TRUE;
         }
+
         case IDC_BUTTON_SEARCH:
         {
            TCHAR buffer[16] = { 0 };
@@ -483,6 +485,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                }
                return TRUE;
         }
+
         case IDC_COPYPROJ:
         {
          TCHAR buffer[16] = { 0 };
@@ -528,9 +531,9 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          );
 
          lcount = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_GETCOUNT, 0, 0);
-         if(lcount > 0)   lindex = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
-         if(lindex == -1)  SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
-         if(lcount == 0) EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
+         if(lcount > 0)     lindex = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
+         if(lindex == -1)   SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
+         if(lcount == 0)    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_ENABLED);
 
             //trigger WM_PAINT              
          InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
@@ -1898,9 +1901,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      //reset display area
      HWND plst = GetDlgItem(aDiag, IDC_LIST2);
      //more defensice code for invalid files
-     constexpr int TOTAL_BUFFER_SIZE = 260;
-     constexpr int READ_LIMIT = 256;
-     constexpr int PROCESS_LIMIT = 253;        // Process 253, 7-byte safety margin
+     constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
+     constexpr int READ_LIMIT = MAIN_READ_LIMIT;
+     constexpr int PROCESS_LIMIT = 255;        // leave a byte for NULL MAIN_TOTAL_BUFFER_SIZE is padded to protected against overruns
+     const int GENE_PADDING = 8;
+     const int SHORT_ODDS_THRESHOLD = 4;
+     int PaddingSpaces = 0;
      //more defensice code for invalid files
      char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
      char filename[TOTAL_BUFFER_SIZE] = { 0 };
@@ -1913,7 +1919,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      std::wstring str2(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      //Read first reference lines
      fp->getline(lbuffer, 256);
@@ -1922,7 +1928,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      //Read first reference lines
      fp->getline(lbuffer, READ_LIMIT);
@@ -1931,14 +1937,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      //init redraw
      s = "-- Comparison With Loaded SNP Data --";
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      float* flp;
      float  sumoddsratio = 0.0;
@@ -1949,7 +1955,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
          int rsid = 0;
          char riskallele = '\0';
          float oddsratio = 0.0;
-
+         PaddingSpaces = 0;
          //Read first reference lines
          for (int i = 0; i <= READ_LIMIT;) {
              //***Obtain RSid number***
@@ -1972,22 +1978,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              {
                  i++;
              }
+
              //Skip Chromosone number or letters
              while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
              {
                  i++;
              }
+
              /*skip spaces, could be wrtten in one line but this is more readable*/
              //Skip spaces to Gene
              while (lbuffer[i] == ' ' && i < PROCESS_LIMIT)
              {
                  i++;
              }
-             /*Skip Gene*/
+             int c = i;             /*Skip Gene*/
              while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
              {
                  i++;
              }
+             //Here we can cacluate padding spaces
+             int x = (i - c); // Gene Name Length
+             int genePadding = GENE_PADDING - x;
+             if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
+             else PaddingSpaces = PaddingSpaces + 1;
              /*skip spaces, could be wrtten in one line but this is more readable*/
              while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT)
              {
@@ -2012,6 +2025,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                      i++;
                      n++;
                  }
+                 if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++; //Add an extra space for 1.1 vs 1.11  except when we have long fusion naming
                  number[n] = '\0';
                  if (strlen(number) > 0) oddsratio = atof(number);
                  else oddsratio = 0.0;
@@ -2024,12 +2038,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
          std::string ret_result;
          if (rsid > 0) {
              ret_result = x.PathogenicCall(rsid, riskallele, oddsratio, flp);
+             if (ret_result == "N/A") PaddingSpaces++; // Visual alligment of found alelles / with the / of N/A even though it is actually a one space indent the perception is cleaner
              s = lbuffer;
-             s += "   " + ret_result;
+             //Adding limited dynamic formating code here
+             //START Formating Code
+             //   s += "   " + ret_result; //OLD CODE for reference only
+             for (int i = 0; i < PaddingSpaces;  i++)
+             {
+                 s += " ";
+			 }
+			 s += ret_result;
+             //END Formating Code
              str2.resize(s.length(), L' '); // Make room for characters
              // Copy string to wstring.
              std::copy(s.begin(), s.end(), str2.begin());
-             wcsncpy_s(global_s, str2.c_str(), 255);
+             wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
              SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
          }
      }
@@ -2037,7 +2060,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      std::ostringstream ss;
      ss << sumoddsratio;
@@ -2046,7 +2069,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      std::string hash;
      MD5 md5;
@@ -2057,7 +2080,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      str2.resize(s.length(), L' '); // Make room for characters
      // Copy string to wstring.
      std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), 255);
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
      InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background 
      UpdateWindow(aDiag);
@@ -2068,7 +2091,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Clear Results option
      return true;
  }
-
+ /* SCREEN UPDATE */
 void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char sx)
 {
     if (x > 0)
@@ -2182,7 +2205,8 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
 }
 /*ChatGPT generated printing function I just could deal with 
 Windows UNICODE BS when I could just use plain text printing in ASCII before.
-I requsted the use of A4 standard with Letter for US hence the function below*/
+I requsted the use of A4 standard with Letter for US hence the function below
+But Now I would use it as they have signed on with the military!! 3/5/2026*/
 // Helper: returns true if user's locale country is "US"
 static bool IsLocaleUS()
 {
@@ -2464,8 +2488,6 @@ bool PrintPlainText(const std::wstring& text)
     return true;
 }
 
-
-
 void PathoPrint()
 {
     HWND plst = GetDlgItem(aDiag, IDC_LIST2);
@@ -2541,6 +2563,7 @@ std::wstring GetCurrentDateString(void)
     MultiByteToWideChar(CP_UTF8, 0, timeStr.c_str(), -1, &result[0], len);
     return result;
 }
+
 // Message handler for new project box.
 INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2586,6 +2609,7 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     }
     return (INT_PTR)FALSE;
 }
+
 INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
      UNREFERENCED_PARAMETER(lParam);
@@ -2629,6 +2653,7 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     }
     return (INT_PTR)FALSE;
 }
+
 INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -2669,6 +2694,7 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     }
     return (INT_PTR)FALSE;
 }
+
 INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -2719,6 +2745,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     }
     return (INT_PTR)FALSE;
 }
+
 INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
