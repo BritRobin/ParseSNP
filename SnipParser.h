@@ -9,7 +9,7 @@
 #include <ctime>
 #include <ctype.h>
 #include <windows.h>
-#include <mutex> //for multithreading
+#include <mutex> //For multithreading
 // Forward declarations or define structs SM and ST if needed
 struct SM;
 struct ST;
@@ -40,7 +40,8 @@ public:
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
-
+	//Error code
+	unsigned int errorCode_ = 0;
 private:
 	// === ALL YOUR MEMBER VARIABLES MUST BE HERE ===
     // Move these from global scope to private members:
@@ -70,9 +71,10 @@ private:
 	bool abortMerge_ = false;
 	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	//more defensive code for invalid files
-	static constexpr unsigned int TOTAL_BUFFER_SIZE = MAX_PATH + 20; //Allow for poaiblw overun in corrupt or malicious files
+	static constexpr unsigned int TOTAL_BUFFER_SIZE   = MAX_PATH + 20; //Allow for poaiblw overun in corrupt or malicious files
 	static constexpr unsigned int MAX_RSID_NUMBER_LEN = 23;
 	static constexpr unsigned int READ_LIMIT          = 256;
+	static constexpr unsigned int INVALID_LINE_LIMIT  = 2000;
 	//more defensive code for invalid files
 	unsigned int end_index_ = 0;
 	unsigned int allcecked_ = 0;
@@ -81,6 +83,13 @@ private:
 	unsigned int origloadcount_ = 0;
 	unsigned int mergefile_ = 0;
 	unsigned int loadCount_ = 0;
+	//Start: Very basic error handling
+	std::string errorMessage_ = "";
+	std::string error01_ = "File not found or could not be opened.";
+	std::string error02_ = "File read error possibly invalid or corrupt .";
+	std::string error03_ = "File read aborted possible partial data or corrupt file.";
+	std::string errorInfo(unsigned int error);
+	//Start: Very basic error handling
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_ = '-';
 	std::string NCBIBuild_ = "";

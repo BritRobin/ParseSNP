@@ -30,6 +30,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int noreadcount = 0;
+        errorCode_ = 0; //Reset Error Code
         bool noY = true;
         //Open file for read 
         fs.open(fi_, std::ios::in);
@@ -56,6 +57,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                 {
                     fs.close();
                     // Reject UTF-8 BOM encoded files
+					errorCode_ = 2; //File read error possibly invalid or corrupt. UNICODE!
                     return false;
                 }
 
@@ -202,11 +204,21 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                 }
              loopbreak++;
-             if (loopbreak == 2000) break;
+             if (loopbreak == INVALID_LINE_LIMIT)
+             {
+                 fs.close();//be sure to close the open filestream
+                 //now informs the user they may have data but the file read hit a lot of unprocessable data
+                 //the user can then check their file for corruption and redownload it if nessecary 
+                 errorCode_ = 3; 
+                 return false; 
+             }
             }
             fs.close();
         }
-        else return false;
+        else {
+			  errorCode_ = 1;//File not found or could not be opened.
+              return false;
+             }
     }
 
     return true;
@@ -222,6 +234,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         //merge variables
         mergefile_ = 0;
         merged_ = allcecked_ = 0;
+        errorCode_ = 0; //Reset Error Code
 		//initialize both variables to current loadcount_
         end_index_ = loadCount_;
         origloadcount_ = loadCount_;
@@ -366,7 +379,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     }
                 }
                 loopbreak++;
-                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
+                if (loopbreak == INVALID_LINE_LIMIT || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
             }
             fs.close();
         }
@@ -389,6 +402,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
+        errorCode_ = 0; //Reset Error Code
         int VG = 0; //illumina
         //Open file for read 
         fs.open(fi_, std::ios::in);
@@ -416,7 +430,8 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                 }
                 //Reject UTF-8 BOM encoded files
                 if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
-                {
+                {   // Reject UTF-8 BOM encoded files
+                    errorCode_ = 2; //File read error possibly invalid or corrupt. UNICODE!
                     fs.close();
                     // Reject UTF-8 BOM encoded files
                     return false;
@@ -567,11 +582,22 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                 }
             } //FTDNA do not ref NCBI build
                 loopbreak++;
-                if (loopbreak == 2000) break;
+                if (loopbreak == INVALID_LINE_LIMIT)
+                {
+                    fs.close();//be sure to close the open filestream
+                    //now informs the user they may have data but the file read hit a lot of unprocessable data
+                    //the user can then check their file for corruption and redownload it if nessecary 
+                    errorCode_ = 3;
+                    return false;
+                }
+
             }
             fs.close();
         }
-        else return false;
+        else {
+                errorCode_ = 1;//File not found or could not be opened.
+                return false;
+             }
     }
 
     return true;
@@ -586,6 +612,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int VG = 0; //illumina
+        errorCode_ = 0; //Reset Error Code
         //Open file for read 
         fs.open(fi_, std::ios::in);
         if (fs.is_open()) {
@@ -622,6 +649,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                 //Reject UTF-8 BOM encoded files
                 if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
                 {
+                    errorCode_ = 2;
                     fs.close();
                     // Reject UTF-8 BOM encoded files
                     return false;
@@ -707,13 +735,12 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
-                        else {
-                            snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
-                            if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
-                            if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
-                            snp[inx].ch[1] = '\0';
-
-                        }
+                         else {
+                                   snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
+                                   if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
+                                   if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                                   snp[inx].ch[1] = '\0';
+                               }
 
                         //If we had run out of data restart loop read next line
                         if (rdindex >= READ_LIMIT) continue;
@@ -768,11 +795,22 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     }
                 } //FTDNA do not ref NCBI build
                 loopbreak++;
-                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
+                if (loopbreak == INVALID_LINE_LIMIT || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
+                {
+                    fs.close();//be sure to close the open filestream
+                    //now informs the user they may have data but the file read hit a lot of unprocessable data
+                    //the user can then check their file for corruption and redownload it if nessecary 
+                    errorCode_ = 3;
+                    return false;
+                }
+
             }
             fs.close();
         }
-        else return false;
+        else {
+              errorCode_ = 1;
+              return false;
+             }
     }
 
     return true;
@@ -788,6 +826,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         bool singleAllele;
+        errorCode_ = 0; //Reset Error Code
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -816,7 +855,8 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                 //Reject UTF-8 BOM encoded files
                 if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
-                {
+                {   // Reject UTF-8 BOM encoded files
+                    errorCode_ = 2; //File read error possibly invalid or corrupt. UNICODE!
                     fs.close();
                     // Reject UTF-8 BOM encoded files
                     return false;
@@ -973,11 +1013,21 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                 }
                 //does not ref ncbi build
                 loopbreak++;
-                if (loopbreak == 2000 || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1))) break;
+                if (loopbreak == INVALID_LINE_LIMIT || loadCount_ == (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
+                {
+                    fs.close();//be sure to close the open filestream
+                    //now informs the user they may have data but the file read hit a lot of unprocessable data
+                    //the user can then check their file for corruption and redownload it if nessecary 
+                    errorCode_ = 3;
+                    return false;
+                }
             }
             fs.close();
         }
-        else return false;
+        else {
+                errorCode_ = 1;//File not found or could not be opened.
+                return false;
+             }
     }
     return true;
 };
@@ -991,6 +1041,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
+        errorCode_ = 0; //Reset Error Code
         //merge variables
         mergefile_ = 0;
         merged_ = allcecked_ = 0;
@@ -1168,11 +1219,21 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                 }
                 //does not ref ncbi build
                 loopbreak++;
-                if (loopbreak == 2000) break;
+                if (loopbreak == INVALID_LINE_LIMIT)
+                {
+                    fs.close();//be sure to close the open filestream
+                    //now informs the user they may have data but the file read hit a lot of unprocessable data
+                    //the user can then check their file for corruption and redownload it if nessecary 
+                    errorCode_ = 3;
+                    return false;
+                }
             }
             fs.close();
         }
-        else return false;
+        else {
+               errorCode_ = 1;
+               return false;
+             }
     }
     return true;
 };
@@ -1403,6 +1464,23 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
     }
     return false;
 }
+//return error string for disalog
+std::string SnipParser::errorInfo(unsigned int error)
+{
+    switch (error)
+    {
+    case 1: errorMessage_ = error01_;
+        break;
+    case 2: errorMessage_ = error02_;
+        break;
+    case 3: errorMessage_ = error03_;
+        break;
+    default:
+        errorMessage_ = "Undifined Error";
+    }
+
+    return errorMessage_;
+}
 
 //return version number
 std::string SnipParser::PVer(void)
@@ -1623,7 +1701,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
     if (loadCount_ > 0)
     {
         // Search for RS numer int rs
-        for (unsigned int i = 0; i <= loadCount_;)
+        for (unsigned int i = 0; i < loadCount_; i++) 
         {
             if (snp[i].rs == rsid)
             {    
@@ -1682,10 +1760,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 else result_message += "No Risk";
                 return result_message;
             }
-            //inceament loop
-            i++;
         }
-
     }
     return result_message;
 }
