@@ -15,6 +15,7 @@ struct SM;
 struct ST;
 class SnipParser
 {
+
 public:
 	std::string fi_ = "";
 	int SNPCount(void);
@@ -42,6 +43,7 @@ public:
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 	//Error code
 	unsigned int errorCode_ = 0;
+
 private:
 	// === ALL YOUR MEMBER VARIABLES MUST BE HERE ===
     // Move these from global scope to private members:
@@ -66,8 +68,8 @@ private:
 	// Default empty instances (if needed)
 	ST defaultST;
 	SM defaultSM;
-	std::mutex merge_mutex_;
-	std::mutex global_mutex_;
+	std::mutex mutex_;  // One mutex to rule them all!
+	
 	bool abortMerge_ = false;
 	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
 	//more defensive code for invalid files
@@ -76,27 +78,27 @@ private:
 	static constexpr unsigned int READ_LIMIT          = 256;
 	static constexpr unsigned int INVALID_LINE_LIMIT  = 2000;
 	//more defensive code for invalid files
-	unsigned int end_index_ = 0;
-	unsigned int allcecked_ = 0;
-	unsigned int failcheck_ = 0;
-	unsigned int merged_ = 0;
+	unsigned int end_index_		= 0;
+	unsigned int allcecked_		= 0;
+	unsigned int failcheck_		= 0;
+	unsigned int merged_        = 0;
 	unsigned int origloadcount_ = 0;
-	unsigned int mergefile_ = 0;
-	unsigned int loadCount_ = 0;
+	unsigned int mergefile_     = 0;
+	unsigned int loadCount_     = 0;
 	//Start: Very basic error handling
-	std::string errorMessage_ = "";
-	std::string error01_ = "File not found or could not be opened.";
-	std::string error02_ = "File read error possibly invalid or corrupt .";
-	std::string error03_ = "File read aborted possible partial data or corrupt file.";
+	std::string errorMessage_	= "";
+	std::string error01_		= "File not found or could not be opened.";
+	std::string error02_		= "File read error possibly invalid or corrupt .";
+	std::string error03_		= "File read aborted possible partial data or corrupt file.";
 	std::string errorInfo(unsigned int error);
 	//Start: Very basic error handling
 	wchar_t fileLoaded_[260] = { '\0' };
-	char sex_ = '-';
-	std::string NCBIBuild_ = "";
-	std::string Pversion_ = "1.0.1"; //SET **VERSION** HERE
-	std::string PAbouttxt_ = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
-	unsigned int illuminaU_ = 0;
-	unsigned int illuminaT_ = 0;
+	char sex_				 = '-';
+	std::string NCBIBuild_	 = "";
+	std::string Pversion_	 = "1.0.1"; //SET **VERSION** HERE
+	std::string PAbouttxt_	 = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
+	unsigned int illuminaU_  = 0;
+	unsigned int illuminaT_  = 0;
 	int FTDNADecode(std::string code);
 	int f23andMeDecode(std::string code);
 	void initMergeCopy(void);

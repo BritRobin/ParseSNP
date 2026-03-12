@@ -24,7 +24,7 @@
 //Read an Ancestory.com/23t0me and FtDNA RAW DNA file and create a 'standard array'
 bool  SnipParser::Ancestory(wchar_t* fi_)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -176,7 +176,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     // ALTERNATIVE SIMPLIFIED LOGIC (equally valid):
                     // sex_ = (noY == true) ? 'F' : 'M';
                     // ==============================================
-                    if (noreadcount > Y_CHROMOSOME_NO_READ_THRESHOLD || noY == true) sex_ = 'F';
+					if (noY == true || noreadcount > Y_CHROMOSOME_NO_READ_THRESHOLD) sex_ = 'F'; //3/12/2026 - evaluation logic updated
                     else sex_ = 'M';
                     //Determine Sex
                     //increment the primary index
@@ -226,7 +226,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
 bool  SnipParser::MergeAncestory(wchar_t* fi_)
 { 
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[260] = { '\0' };
@@ -352,10 +352,23 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         snp[inx].b = nbuffer[rdindex];
                         //increment count of lines loaded
                         loadCount_++; //Fixed 12/31/2025
+                        // Check against merge-specific limits
+                        if (loadCount_ >= (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
+                        {
+                            fs.close();
+                            errorCode_ = 3;
+                            return false;
+                        }
                     }//END MERGE SCOPE!
-                    
                     //increment the primary index
                     inx++;
+                    if (inx >= DNA_SNP_BUFFER_SIZE)
+                    {
+                        fs.close();
+                        errorCode_ = 3; // Buffer overflow during merge
+                        abortMerge_ = true;  // Signal merge failure
+                        return false;
+                    }
                 }
                 else
                 {
@@ -397,7 +410,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::FTDNA(wchar_t* fi_)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -576,6 +589,13 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         sex_ = 'M';
                     }
                     inx++;
+                    if (inx >= DNA_SNP_BUFFER_SIZE)
+                    {
+                        //Buffer overflow protection
+                        fs.close();
+                        errorCode_ = 3; //File read error possibly invalid or corrupt. Too much data.
+                        return false;
+                    }
                     //increment count of lines loaded
                     loadCount_++;
 
@@ -606,7 +626,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 //FTDNA has VG numbers that may corespond to RS numbers
 bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 {  
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -789,8 +809,21 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         if (snp[inx].b == '-') snp[inx].b = '0';
                         //increment the primary index
                         inx++;
+                        if (inx >= DNA_SNP_BUFFER_SIZE)
+                        {
+                            fs.close();
+                            errorCode_ = 3; // Buffer overflow during merge
+                            abortMerge_ = true;  // Signal merge failure
+                            return false;
+                        }
                         //increment count of lines loaded
                         loadCount_++;
+                        if (loadCount_ >= (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
+                        {
+                            fs.close();
+                            errorCode_ = 3;
+                            return false;
+                        }
 
                     }
                 } //FTDNA do not ref NCBI build
@@ -820,7 +853,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 //has VG numbers that may corespond to RS numbers
 bool  SnipParser::f23andMe(wchar_t* fi_)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -1006,8 +1039,29 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         }
                         //increment the primary index
                         inx++;
+                        if (inx >= DNA_SNP_BUFFER_SIZE)
+                        {
+                            fs.close();
+                            errorCode_ = 3; // Buffer overflow during merge
+                            abortMerge_ = true;  // Signal merge failure
+                            return false;
+                        }
+                        if (inx >= DNA_SNP_BUFFER_SIZE)
+                        {
+                            //Buffer overflow protection
+                            fs.close();
+                            errorCode_ = 3; //File read error possibly invalid or corrupt. Too much data.
+                            return false;
+                        }
                         //increment count of lines loaded
                         loadCount_++;
+                        // Check against merge-specific limits
+                        if (loadCount_ >= (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
+                        {
+                            fs.close();
+                            errorCode_ = 3;
+                            return false;
+                        }
 
                     }
                 }
@@ -1036,7 +1090,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 //has VG numbers that may corespond to RS numbers
 bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
@@ -1213,6 +1267,13 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         }
                         //increment the primary index
                         inx++;
+                        if(inx >= DNA_SNP_BUFFER_SIZE)
+                        {
+                            //Buffer overflow protection
+                            fs.close();
+                            errorCode_ = 3; //File read error possibly invalid or corrupt. Too much data.
+                            return false;
+						}
                         //increment count of lines loaded
                         loadCount_++;
                     }
@@ -1266,7 +1327,7 @@ unsigned int SnipParser::merged(void)
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
         // Ensure snpM is large enough for existing data + some headroom
         unsigned int newSize = loadCount_ + 16;
@@ -1301,7 +1362,7 @@ bool SnipParser::MergeState(void)
 /*Revert a failed merge*/
 void SnipParser::revertMerge(void)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     //Reset rsid to '\0'
     for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
     {
@@ -1320,7 +1381,7 @@ unsigned int SnipParser::MergeProcessed(void)
 Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!! */
 bool SnipParser::mergeRs(int code, const std::string& line) {
-   std::lock_guard<std::mutex> lock(merge_mutex_);
+   std::lock_guard<std::mutex> lock(mutex_);
 
     if (abortMerge_) return false;
     // SAFETY CHECK 1
@@ -1409,7 +1470,7 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
 {
     // Check you have SNP data loaded
 	// Check we have SNP data loaded && valid load count
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     if (loadCount_ > 0 && loadCount_ <= snp.size()) //fixed 1/17/2026
     { 
 		//For Sanity check ensure '\0' termination
@@ -1501,7 +1562,7 @@ std::string SnipParser::NCBIBuild(void)
 /*Major Work in porgress*/
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     char timebufd[128], timebuft[128];
     std::string  lbuffer;
@@ -1614,7 +1675,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 //INTERNAL code generator not of use 
 void  SnipParser::FConvert(void)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     wchar_t  codeIn_[] = L"f:\\icode.txt";
     wchar_t  codeOut_[] = L"f:\\ccode.txt";
 
@@ -1693,7 +1754,7 @@ void  SnipParser::FConvert(void)
 If it is found it updates the odds ratio                       */
 std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     float denominator = 0.0; //to prevent div by zero
     std::string result_message = "N/A";
 
@@ -1701,7 +1762,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
     if (loadCount_ > 0)
     {
         // Search for RS numer int rs
-        for (unsigned int i = 0; i < loadCount_; i++) 
+		for (unsigned int i = 0; i < loadCount_; i++) //Bug fix 3/09/2026(US date format)
         {
             if (snp[i].rs == rsid)
             {    
@@ -1766,7 +1827,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
 }
 int SnipParser::FTDNADecode(std::string code)
 {
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     int rs = 0,num;
 
     num = atoi(code.c_str()); //in example  VG01S1077 ftdna will equal numeric 11007
@@ -2301,7 +2362,7 @@ int SnipParser::FTDNADecode(std::string code)
 }
 int SnipParser::f23andMeDecode(std::string code)
 { 
-    std::lock_guard<std::mutex> lock(global_mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     int num, rs = 0;
 
     num = atoi(code.c_str());
