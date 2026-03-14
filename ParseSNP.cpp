@@ -1,5 +1,5 @@
 ﻿// ParseSNP.cpp : Defines the entry point for the application.
-//Visual Studio 2022 build
+// Visual Studio 2022 build.
 
 #define NOMINMAX
 #include "framework.h"
@@ -37,18 +37,17 @@ HINSTANCE hInst;                                 // current instance
 WCHAR szTitle[MAX_LOADSTRING] = { L'\0' };       // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING] = { L'\0' }; // the main window class name
 
-//Global class instance
+// Global class instance
 SnipParser x;
-//START:Global returned values
+// START:Global returned values
 // Global to store the base ParseSNP path
-
-HWND ghWnd = nullptr;   // Add initialization
-HWND aDiag = nullptr;   // Add initialization
-int rs_number = 0;      // RS Number 
-int position = 0;       // relative position
-int loadedFiletype = 0; // 1=Ancestory 2=FTNDA 3=23toM3
-int mergeLoad = 0;      // 1=Ancestory 2=FTNDA 4=23toM3
-int mergeTotal = 0;
+HWND ghWnd = nullptr;    // Add initialization
+HWND aDiag = nullptr;    // Add initialization
+int rs_number       = 0; // RS Number 
+int position        = 0; // relative position
+int loadedFiletype  = 0; // 1=Ancestory 2=FTNDA 3=23toM3
+int mergeLoad       = 0; // 1=Ancestory 2=FTNDA 4=23toM3
+int mergeTotal      = 0;
 char chromosome[8] = { '\0','\0','\0','\0','\0','\0','\0','\0' };//chromosome number
 char allele1 = '\0', allele2 = '\0';
 wchar_t global_s[MAIN_TOTAL_BUFFER_SIZE] = { L'\0' };

@@ -42,7 +42,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
 			wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
-            while (fs.getline(nbuffer, READ_LIMIT)) //read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT)) //read a line into a temporary buffer
             {   //More parser hardening
                 if (fs.fail() && !fs.eof())
                 {
@@ -69,7 +69,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     loopbreak = 0;
                     num[0] = '\0';
                     rdindex += 2;
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < MAX_RSID_NUMBER_LEN) //23 is the Maximum 
+                    while (rdindex < READ_LIMIT && nmindex < MAX_RSID_NUMBER_LEN - 1 && isdigit((unsigned char)nbuffer[rdindex])) //23 is the Maximum  the equal to READ_LIMIT so the continue clauses hits!
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
@@ -78,7 +78,9 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     num[nmindex] = '\0';
                     //First in the line is the RS number
                     snp[inx].rs = atoi(num);
-                    //move past tab or spaces to next numeric data chromosone number
+                    //If we had run out of data restart loop read next line
+                    if (rdindex >= READ_LIMIT) continue;
+                    //move past tab or spaces to next numeric data chromosome number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote with braces for readablility
                         rdindex++;
@@ -98,7 +100,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         num[nmindex] = '\0';
                         strcpy_s(snp[inx].ch, num);
                     }
@@ -120,7 +122,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                     num[nmindex] = '\0';
 
-                    //second in the line is the chromosone position
+                    //second in the line is the chromosome position
                     snp[inx].pos = atoi(num);
                     //DEBUG
                     if (snp[inx].pos == 0) {
@@ -229,7 +231,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
     std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
-        char nbuffer[260] = { '\0' };
+        char nbuffer[BUFFER_SIZE] = { '\0' };
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
@@ -246,7 +248,6 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
             int inx = loadCount_ + 1,rst = 0, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
-            nbuffer[257] = '\0';        //more efficient
             char num[24] = { '\0' };    //fixed size 11/12/2025
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
@@ -269,7 +270,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     loopbreak = 0;
                     num[0] = '\0';
                     rdindex += 2;
-                    while (isdigit((int)nbuffer[rdindex]) && rdindex < MAX_RSID_NUMBER_LEN)
+                    while (rdindex < READ_LIMIT && nmindex < MAX_RSID_NUMBER_LEN - 1 && isdigit((unsigned char)nbuffer[rdindex])) //23 is the Maximum  the equal to READ_LIMIT so the continue clauses hits!
                     {
                         num[nmindex] = nbuffer[rdindex];
                         rdindex++;
@@ -286,7 +287,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                     {
                         snp[inx].rs = rst;
               
-                        //move past tab or spaces to next numeric data chromosone number
+                        //move past tab or spaces to next numeric data chromosome number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -304,7 +305,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                                 rdindex++;
                                 nmindex++;
                             }
-                            //second in the line is the chromosone number
+                            //second in the line is the chromosome number
                             num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
@@ -328,7 +329,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                             nmindex++;
                         }
                         num[nmindex] = '\0';
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         snp[inx].pos = atoi(num);
 
                         //If we had run out of data restart loop read next line
@@ -416,7 +417,6 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         errorCode_ = 0; //Reset Error Code
-        int VG = 0; //illumina
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -432,7 +432,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             //END: reset loadcount_ and vecotr for next file for next file
-            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temporary buffer
             {   //More parseer hardening
                 if (fs.fail() && !fs.eof())
                 {
@@ -456,7 +456,6 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                 if (((nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's') || (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')) && isdigit((int)nbuffer[fdind + 2]))
                 {//ftdna-illumina
-                    int ftdna = 0;
 					char num[25];//fixed size 11/12/2025
                     int  nmindex = 0;
                     loopbreak = 0;
@@ -478,14 +477,14 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                     else
                     {
-                        //FTDNA MyHeritage name : VG01S1077  VG Chromosone number S numeric  rs77931234
+                        //FTDNA MyHeritage name : VG01S1077  VG chromosome number S numeric  rs77931234
                         nmindex = 0;
                         if (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')
                         {
-                            fdind += 2; //Get first chromosone digit
+                            fdind += 2; //Get first chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
-                            fdind++; //Get second chromosone digit
+                            fdind++; //Get second chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
                             fdind++;
@@ -503,7 +502,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     }
                  if (snp[inx].rs > 0) //stop line load of uniterpreted VG codes
                  {
-                   //move past tab or spaces to next numeric data chromosone number
+                   //move past tab or spaces to next numeric data chromosome number
                    while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
                     {//wrote whith braces for readablility
                       rdindex++;
@@ -523,7 +522,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             rdindex++;
                             nmindex++;
                         }
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         num[nmindex] = '\0';
                         strcpy_s(snp[inx].ch, num);
                     }
@@ -537,7 +536,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     //If we had run out of data restart loop read next line
                     if (rdindex >= READ_LIMIT) continue;
 
-                    //move past tab or spaces to next numeric data posotion number
+                    //move past tab or spaces to next numeric data position number
                     while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                     {//wrote whith braces for readablility
                         rdindex++;
@@ -557,7 +556,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         nmindex++;
                     }
                     num[nmindex] = '\0';
-                    //second in the line is the chromosone number
+                    //second in the line is the chromosome number
                     snp[inx].pos = atoi(num);
 
                     //If we had run out of data restart loop read next line
@@ -629,7 +628,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
     std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
-        char nbuffer[TOTAL_BUFFER_SIZE];
+        char nbuffer[TOTAL_BUFFER_SIZE] = { '\0' };
         int loopbreak = 0;
         int VG = 0; //illumina
         errorCode_ = 0; //Reset Error Code
@@ -650,12 +649,11 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
-            nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
       
-			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temorary buffer and ensure not aborting merge
+			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_) //read a line into a temporary buffer and ensure not aborting merge
             {   //More parseer hardening
                 if (fs.fail() && !fs.eof())
                 {
@@ -707,14 +705,14 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     }
                     else
                     {
-                        //FTDNA MyHeritage name : VG01S1077  VG Chromosone number S numeric  rs77931234
+                        //FTDNA MyHeritage name : VG01S1077  VG chromosome number S numeric  rs77931234
                         nmindex = 0;
                         if (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')
                         {
-                            fdind += 2; //Get first chromosone digit
+                            fdind += 2; //Get first chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
-                            fdind++; //Get second chromosone digit
+                            fdind++; //Get second chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
                             fdind++;
@@ -734,7 +732,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     if (rst > 0 && mergeRs(rst, vercheck)) //stop line load of uniterpreted VG codes
                     {
                         snp[inx].rs = rst;
-                        //move past tab or spaces to next numeric data chromosone number
+                        //move past tab or spaces to next numeric data chromosome number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y')
                         {//wrote with braces for readablility
                             rdindex++;
@@ -751,7 +749,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                                 rdindex++;
                                 nmindex++;
                             }
-                            //second in the line is the chromosone number
+                            //second in the line is the chromosome number
                             num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
@@ -765,7 +763,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         //If we had run out of data restart loop read next line
                         if (rdindex >= READ_LIMIT) continue;
 
-                        //move past tab or spaces to next numeric data posotion number
+                        //move past tab or spaces to next numeric data position number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -781,7 +779,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             nmindex++;
                         }
                         num[nmindex] = '\0';
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         snp[inx].pos = atoi(num);
 
                         //If we had run out of data restart loop read next line
@@ -858,7 +856,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
-        bool singleAllele;
+        bool singleAllele = false;
         errorCode_ = 0; //Reset Error Code
         //Open file for read 
         fs.open(fi_, std::ios::in);
@@ -866,7 +864,6 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
         if (fs.is_open())
         {
             int inx = 0;
-            singleAllele = false;
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
             sex_ = 'F'; //Set sex to female will change if 'Y' is found!
@@ -876,7 +873,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             //END: reset loadcount_ and vector for next file for next file
-            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temorary buffer
+            while (fs.getline(nbuffer, READ_LIMIT))//read a line into a temporary buffer
             {   //More parser hardening
                 if (fs.fail() && !fs.eof())
                 {
@@ -937,7 +934,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
 
                     if (snp[inx].rs > 0) //stop line load of uniterpreted i codes
                     {
-                        //move past tab or spaces to next numeric data chromosone number below bug fix 3/11/21
+                        //move past tab or spaces to next numeric data chromosome number below bug fix 3/11/21
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -957,7 +954,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                                 rdindex++;
                                 nmindex++;
                             }
-                            //second in the line is the chromosone number
+                            //second in the line is the chromosome number
                             num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
@@ -982,7 +979,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         //If we had run out of data restart loop read next line
                         if (rdindex >= READ_LIMIT) continue;
 
-                        //move past tab or spaces to next numeric data posotion number
+                        //move past tab or spaces to next numeric data position number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -1002,7 +999,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         if (rdindex >= READ_LIMIT) continue;
 
                         num[nmindex] = '\0';
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         snp[inx].pos = atoi(num);
 
 
@@ -1093,7 +1090,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
     std::lock_guard<std::mutex> lock(mutex_);
     std::fstream  fs;
     {
-        char nbuffer[TOTAL_BUFFER_SIZE];
+        char nbuffer[TOTAL_BUFFER_SIZE] = { '\0' };
         int loopbreak = 0;
         errorCode_ = 0; //Reset Error Code
         //merge variables
@@ -1101,24 +1098,22 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         merged_ = allcecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
         //merge variables
-        bool singleAllele;
+        bool singleAllele = false;
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open()) {
-            singleAllele = false;
-			// sex_ = 'F'; //Wrong you are merging you alrady know the Sex of the subject
+ 			// sex_ = 'F'; //Wrong you are merging you alrady know the Sex of the subject
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //NO!!!: reset loadcount_ and vector for next file for next file
             int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
-            nbuffer[257] = '\0';        //more efficient
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
             //END:
-			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_)//read a line into a temorary buffer and ensure not aborting merge
+			while (fs.getline(nbuffer, READ_LIMIT) && !abortMerge_)//read a line into a temporary buffer and ensure not aborting merge
             {   //More parser hardening
                 if (fs.fail() && !fs.eof())
                 {
@@ -1174,7 +1169,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                     if (rst > 0 && mergeRs(rst, vercheck)) //stop line load of uniterpreted i codes
                     {
                         snp[inx].rs = rst;
-                        //move past tab or spaces to next numeric data chromosone number below bug fix 3/11/21
+                        //move past tab or spaces to next numeric data chromosome number below bug fix 3/11/21
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT && nbuffer[rdindex] != 'X' && nbuffer[rdindex] != 'Y' && nbuffer[rdindex] != 'x' && nbuffer[rdindex] != 'y' && nbuffer[rdindex] != 'm' && nbuffer[rdindex] != 'M')
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -1191,7 +1186,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                                 rdindex++;
                                 nmindex++;
                             }
-                            //second in the line is the chromosone number
+                            //second in the line is the chromosome number
                             num[nmindex] = '\0';
                             strcpy_s(snp[inx].ch, num);
                         }
@@ -1214,7 +1209,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 
                         }
 
-                        //move past tab or spaces to next numeric data posotion number
+                        //move past tab or spaces to next numeric data position number
                         while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                         {//wrote whith braces for readablility
                             rdindex++;
@@ -1232,7 +1227,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                             nmindex++;
                         }
                         num[nmindex] = '\0';
-                        //second in the line is the chromosone number
+                        //second in the line is the chromosome number
                         snp[inx].pos = atoi(num);
 
                         //If we had run out of data restart loop read next line
@@ -1300,26 +1295,26 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 };
 
 //Return the number of translated VG codes
-unsigned int  SnipParser::IllumTransVG(void)
+unsigned int  SnipParser::IllumTransVG(void) const
 {
     return illuminaT_;
 }
 //Return the number of untranslated VG codes
-unsigned int  SnipParser::IllumUntransVG(void)
+unsigned int  SnipParser::IllumUntransVG(void) const
 {
     return illuminaU_;
 }
 //return the number of lines loaded
-int SnipParser::SNPCount(void)
+int SnipParser::SNPCount(void) const
 {
     return loadCount_;
 }
 //return sex
-wchar_t SnipParser::sex(void)
+wchar_t SnipParser::sex(void) const
 {
     return sex_;
 }
-unsigned int SnipParser::merged(void)
+unsigned int SnipParser::merged(void) const
 {
     return merged_;
 }
@@ -1355,7 +1350,7 @@ void SnipParser::initMergeCopy(void)
 }
 
 //returns if merge failed
-bool SnipParser::MergeState(void)
+bool SnipParser::MergeState(void) const
 {
     return abortMerge_;
 }
@@ -1379,7 +1374,8 @@ unsigned int SnipParser::MergeProcessed(void)
 
 /*Check the subject is the same to prevent the generation of garbage genetic files
 Even though this is the most effiecent self resizing inlined loop I could write
-the shear amount of comparisons involved in unsorted data makes this a slow job!! */
+the shear amount of comparisons involved in unsorted data makes this a slow job!!
+Note the logic is sort of inverse in that logic true indicates replace or add!*/
 bool SnipParser::mergeRs(int code, const std::string& line) {
    std::lock_guard<std::mutex> lock(mutex_);
 
@@ -1394,7 +1390,7 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
         {//yes we already have it!
             allcecked_++;
 
-            if (snpM[i].a == '0') return true;
+            if (snpM[i].a == '0') return true;// Original had no-read, so KEEP new data
 
             // ---- NEW: BACKWARDS SEARCH ----
             // Start from end of line
@@ -1483,9 +1479,9 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
                 //match found! populate and return the structure
                 snp[i].ch[3] = '\0'; //there should be a '\0' before this in all cases BUT this is the safety to ensure no buffer overrun
                 *rs = snp[i].rs;         // RS number
-                *chr1 = snp[i].ch[0];    // Chromosone array as string
-                *chr2 = snp[i].ch[1];    // Chromosone array as string
-                *chr3 = snp[i].ch[2];    // Chromosone array as string
+                *chr1 = snp[i].ch[0];    // chromosome array as string
+                *chr2 = snp[i].ch[1];    // chromosome array as string
+                *chr3 = snp[i].ch[2];    // chromosome array as string
                 *chr4 = '\0';            // ALWAYS '\0' made more efficient(sp) 1/17/2026 
                 *pos = snp[i].pos;       // Position
                 *a = snp[i].a;           // first nucleotide
@@ -1544,18 +1540,18 @@ std::string SnipParser::errorInfo(unsigned int error)
 }
 
 //return version number
-std::string SnipParser::PVer(void)
+std::string SnipParser::PVer(void) const
 {
     return  Pversion_;
 }
 
-std::string SnipParser::PAbout(void)
+std::string SnipParser::PAbout(void) const
 {
     return PAbouttxt_;
 }
 /*return the NCBI Build the file was based on gives position a referance
   as well as being a clue to the age of the files contents */
-std::string SnipParser::NCBIBuild(void)
+std::string SnipParser::NCBIBuild(void) const
 {
     return NCBIBuild_;
 }
@@ -1567,7 +1563,6 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
     char timebufd[128], timebuft[128];
     std::string  lbuffer;
     std::time_t t = std::time(nullptr);
-    int loopbreak = 0;
     // Convert the wchar_t string to a char* string. Record
     // the length of the original string and add 1 to it to
     // account for the terminating null character.
@@ -1610,7 +1605,16 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
              lbuffer += "#on the forward(+) strand with respect to the human reference.\n";
              lbuffer += "   rsID    Chromosome  Position    Allele1 Allele2\n";
              const char* write_it = lbuffer.c_str();
-             fs.write(write_it, lbuffer.length());
+             try {
+                 fs.write(write_it, lbuffer.length());
+             }
+             catch (...)//catch any exception from the string to char* conversion
+             {
+                 delete[] nstring;
+                 fs.close();
+                 return false;
+			 }
+
              //End:Write Header
              char c_num[50] = {'0'};//Added 0 padding as NULL terminator
              bool over22;
@@ -1659,7 +1663,15 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                  lbuffer = "rs" + rsID + "\t" + Chromosome + "\t" + Position + "\t" + allele1 + "\t" + allele2 + "\n";
                  //write the line
                  const char* write_it = lbuffer.c_str();
-                 fs.write(write_it, lbuffer.length());
+                 try {
+                     fs.write(write_it, lbuffer.length());
+                 }
+                 catch (...)//catch any exception from the string to char* conversion
+                 {
+                     delete[] nstring;
+                     fs.close();
+                     return false;
+				 }
                  inx++; //increment inx to the next values / line
              }
 			 delete[] nstring;//11/12/2025
@@ -1705,7 +1717,7 @@ void  SnipParser::FConvert(void)
                 }
                 int rdindex = 0;
                 int nmindex = 0;
-                //move past tab or spaces to next numeric data posotion number
+                //move past tab or spaces to next numeric data position number
                 while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
                 {//wrote with braces for readablility
                     rdindex++;
@@ -1791,7 +1803,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 result_message = buffer;
                 //fixed logic in ver 0.9 Beta
 				denominator = (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio))); //protect from diversion by zero
-                //Match of risk  allele on both chromosones!
+                //Match of risk  allele on both chromosomes!
                 if (snp[i].a == riskallele && snp[i].b == riskallele)
                 {
                     if (check_Y[0] == 'X' && sex_ == 'M') 
@@ -1809,7 +1821,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
 					else  if (denominator > 0.0) *sumoddsratio += (float)((*sumoddsratio * oddsratio) / denominator) * (float)2.0; //for homozygous fix logic ver 0.9 Beta
                     return result_message;
                 }
-                //Match in one chromosone
+                //Match in one chromosome
                 if (snp[i].a == riskallele || snp[i].b == riskallele)
                 {
                     result_message += "Risk Heterozygous";
@@ -2355,7 +2367,7 @@ int SnipParser::FTDNADecode(std::string code)
         illuminaT_++;
         break;
 
-    default:illuminaU_++; //untranslaned lines
+    default:illuminaU_++; //untranslated lines
         break;
     }
     return rs;
@@ -4009,7 +4021,7 @@ int SnipParser::f23andMeDecode(std::string code)
         break;
 	//ALL RSID's from SNPedia Illumina to dbSNP mapping file included above as of 12/9/2025
     default:
-        illuminaU_++; //untranslaned lines
+        illuminaU_++; //untranslated lines
         break;
     }
     return rs;

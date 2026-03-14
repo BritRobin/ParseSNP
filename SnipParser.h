@@ -18,8 +18,8 @@ class SnipParser
 
 public:
 	std::string fi_ = "";
-	int SNPCount(void);
-	std::string NCBIBuild(void);
+	int SNPCount(void) const;
+	std::string NCBIBuild(void) const;
 	bool Ancestory(wchar_t* fi_);
 	bool MergeAncestory(wchar_t* fi_);
 	bool FTDNA(wchar_t* fi_);
@@ -28,15 +28,15 @@ public:
 	bool f23andMe(wchar_t* fi_);
 	bool Mergef23andMe(wchar_t* fi_);
 	void FConvert(void);  //<- One off internal development code generator
-	wchar_t sex(void);
-	unsigned int merged(void);
-	bool MergeState(void);
-	unsigned int IllumTransVG(void);
-	unsigned int IllumUntransVG(void);
+	wchar_t sex(void) const;
+	unsigned int merged(void) const;
+	bool MergeState(void) const;
+	unsigned int IllumTransVG(void) const;
+	unsigned int IllumUntransVG(void) const;
 	unsigned int MergeProcessed(void);
 	bool mergeRs(int code, const std::string& line);
-	std::string PVer(void); //return version
-	std::string PAbout(void); //return program/class about info
+	std::string PVer(void) const; //return version
+	std::string PAbout(void) const; //return program/class about info
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
@@ -71,12 +71,16 @@ private:
 	std::mutex mutex_;  // One mutex to rule them all!
 	
 	bool abortMerge_ = false;
-	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 15; // Empirical threshold for sex determination in Ancestory files
+	// ====================================================
+    // CONFIGURABLE PARAMETERS - Adjust for your needs
+    // ====================================================
+	static constexpr unsigned int Y_CHROMOSOME_NO_READ_THRESHOLD = 16; // Empirical threshold for sex determination in Ancestory files
 	//more defensive code for invalid files
-	static constexpr unsigned int TOTAL_BUFFER_SIZE   = MAX_PATH + 20; //Allow for poaiblw overun in corrupt or malicious files
-	static constexpr unsigned int MAX_RSID_NUMBER_LEN = 23;
-	static constexpr unsigned int READ_LIMIT          = 256;
-	static constexpr unsigned int INVALID_LINE_LIMIT  = 2000;
+	static constexpr unsigned int TOTAL_BUFFER_SIZE				 = MAX_PATH + 20; //Allow for poaiblw overun in corrupt or malicious files
+	static constexpr unsigned int MAX_RSID_NUMBER_LEN			 = 23;
+	static constexpr unsigned int READ_LIMIT					 = 256;
+	static constexpr unsigned int INVALID_LINE_LIMIT			 = 2000;
+	static constexpr unsigned int BUFFER_SIZE					 = 260;
 	//more defensive code for invalid files
 	unsigned int end_index_		= 0;
 	unsigned int allcecked_		= 0;
