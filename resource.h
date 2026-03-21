@@ -20,6 +20,7 @@
 #define IDB_BITMAP2                     141
 #define IDD_NOTFOUND                    142
 #define IDB_BITMAP3                     143
+#define IDD_FILE_ERROR                  144
 #define IDC_STATIC_RS                   1001
 #define IDC_STATIC_SEARCHGROUP          1002
 #define IDC_EDIT_SEARCH                 1003
@@ -71,6 +72,8 @@
 #define IDC_RSIDNF1                     1062
 #define IDC_RSIDNF3                     1063
 #define IDC_ABTTXT                      1064
+#define IDC_FSERROR                     1065
+#define IDOKFS                          1066
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -97,9 +100,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        144
+#define _APS_NEXT_RESOURCE_VALUE        145
 #define _APS_NEXT_COMMAND_VALUE         32795
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_CONTROL_VALUE         1067
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

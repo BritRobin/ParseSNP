@@ -38,6 +38,7 @@ public:
 	std::string PVer(void) const; //return version
 	std::string PAbout(void) const; //return program/class about info
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
+	std::string errorInfo(unsigned int error); //return error message for error code
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
@@ -94,7 +95,6 @@ private:
 	std::string error01_		= "File not found or could not be opened.";
 	std::string error02_		= "File read error possibly invalid or corrupt .";
 	std::string error03_		= "File read aborted possible partial data or corrupt file.";
-	std::string errorInfo(unsigned int error);
 	//Start: Very basic error handling
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_				 = '-';

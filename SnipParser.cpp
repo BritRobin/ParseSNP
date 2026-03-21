@@ -30,6 +30,9 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         int noreadcount = 0;
+		//RE-INIT loadCount_ !!!!!! 3/21/2026 - was missing in original code and caused merge issues as loadcount_ was not reset on new file load!
+		loadCount_ = 0;
+        //RE-INIT loadCount_ !!!!!! 3/21/2026 - was missing in original code and caused merge issues as loadcount_ was not reset on new file load!
         errorCode_ = 0; //Reset Error Code
         bool noY = true;
         //Open file for read 
@@ -216,6 +219,12 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
              }
             }
             fs.close();
+            //File had no valid data but may have been too small to trigger the invalid line limit!
+            if(loadCount_ == 0)
+            {
+              errorCode_ = 3;
+              return false;
+             }
         }
         else {
 			  errorCode_ = 1;//File not found or could not be opened.
@@ -612,6 +621,12 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
             }
             fs.close();
+            //File had no valid data but may have been too small to trigger the invalid line limit!
+            if (loadCount_ == 0)
+            {
+                errorCode_ = 3;
+                return false;
+            }
         }
         else {
                 errorCode_ = 1;//File not found or could not be opened.
@@ -1073,6 +1088,12 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     return false;
                 }
             }
+            //File had no valid data but may have been too small to trigger the invalid line limit!
+            if (loadCount_ == 0)
+            {
+                errorCode_ = 3;
+                return false;
+            }
             fs.close();
         }
         else {
@@ -1523,7 +1544,10 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
 }
 //return error string for disalog
 std::string SnipParser::errorInfo(unsigned int error)
-{
+{  
+    //No error state default when called
+    if (error == 0) return "";
+
     switch (error)
     {
     case 1: errorMessage_ = error01_;

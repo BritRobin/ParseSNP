@@ -70,6 +70,7 @@ INT_PTR CALLBACK    MergeWarnmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeAbortmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MergeReportmsg(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    SearchFailmsg(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    ErrorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam); //For file I/O errors added 3/21/2026
 static bool IsLocaleUS();
 static int GetTextWidth(HDC hdc, const std::wstring& s);
 bool PrintPlainText(const std::wstring& text);
@@ -977,36 +978,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     unsigned int count;
                                     unsigned int tranlated;
                                     unsigned int untranslated;
-                                    if (x.f23andMe(pszFilePath))
+									std::string errorMsg;
+                                    x.f23andMe(pszFilePath);
+                                    //START: Handle potential error state from file load attempt
+                                    errorMsg = x.errorInfo(x.errorCode_);
+                                    if (errorMsg.length() > 0)
                                     {
-                                        count = x.SNPCount();
-                                        tranlated = x.IllumTransVG();
-                                        untranslated = x.IllumUntransVG();
-                                        //Updated translated VG to RSID
-                                        std::string s = std::to_string(tranlated);
-                                        USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
-                                        LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                        if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                        //Update remaining disgarded VG code lines
-                                        s = std::to_string(untranslated);
-                                        lp = A2W_EX(s.c_str(), s.length());
-                                        if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                        //Update count and path per normal
-                                        //New code Beta 0.2
-                                        std::string strx;
-                                        strx = x.NCBIBuild();
-                                        CA2CT pszConvertedAnsiString(strx.c_str());
-                                        //New code Beta 0.2
-                                        g_SourceFilePath = pszFilePath;
-                                        loadedFiletype = 3;
-                                        mergeLoad = mergeTotal = 0;
-                                        ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                        HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
-                                        EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                        InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
-                                        UpdateWindow(aDiag);
+                                        std::string* errPtr = &errorMsg;  // Get pointer to string
+                                        // Pass the pointer to the returned error string as LPARAM
+                                        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
                                     }
+                                    //Do not exit as it may of errored out after a lot of useful data was loaded.
+                                    //Just show the error and allow the user to continue using the program with whatever data was loaded successfully.
+                                    //END: Handle potential error state from file load attempt
+                                    count = x.SNPCount();
+                                    tranlated = x.IllumTransVG();
+                                    untranslated = x.IllumUntransVG();
+                                    //Updated translated VG to RSID
+                                    std::string s = std::to_string(tranlated);
+                                    USES_CONVERSION_EX; //Added NULL pointer check 11-22-2025
+                                    LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    //Update remaining disgarded VG code lines
+                                    s = std::to_string(untranslated);
+                                    lp = A2W_EX(s.c_str(), s.length());
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    //Update count and path per normal
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    //New code Beta 0.2
+                                    g_SourceFilePath = pszFilePath;
+                                    loadedFiletype = 3;
+                                    mergeLoad = mergeTotal = 0;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                    UpdateWindow(aDiag);
                                 }
 
                             }
@@ -1078,37 +1089,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                     unsigned int count;
                                     unsigned int tranlated;
                                     unsigned int untranslated;
-                                    if (x.FTDNA(pszFilePath))
+									std::string errorMsg;
+                                    x.FTDNA(pszFilePath);
+                                    //START: Handle potential error state from file load attempt
+                                    errorMsg = x.errorInfo(x.errorCode_);
+                                    if (errorMsg.length() > 0)
                                     {
-                                        count = x.SNPCount();
-                                        tranlated = x.IllumTransVG();
-                                        untranslated = x.IllumUntransVG();
-                                        //Updated translated VG to RSID
-                                        std::string s = std::to_string(tranlated);
-                                        USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
-                                        LPWSTR lp = A2W_EX(s.c_str(), s.length());
-                                        if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                        //Unpadate ramining disgarded VG code lines
-                                        s = std::to_string(untranslated);
-                                        lp = A2W_EX(s.c_str(), s.length());
-                                        if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                        //Update count and path per normal
-                                        //New code Beta 0.2
-                                        std::string strx;
-                                        strx = x.NCBIBuild();
-                                        CA2CT pszConvertedAnsiString(strx.c_str());
-                                        //New code Beta 0.2
-                                        g_SourceFilePath = pszFilePath;
-                                        loadedFiletype = 2;
-                                        mergeLoad = mergeTotal = 0;
-                                        ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                        HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                        SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
-                                        EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                        InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
-                                        UpdateWindow(aDiag);
+                                        std::string* errPtr = &errorMsg;  // Get pointer to string
+                                        // Pass the pointer to the returned error string as LPARAM
+                                        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
                                     }
-
+                                    //Do not exit as it may of errored out after a lot of useful data was loaded.
+                                    //Just show the error and allow the user to continue using the program with whatever data was loaded successfully.
+                                    //END: Handle potential error state from file load attempt
+                                    count = x.SNPCount();
+                                    tranlated = x.IllumTransVG();
+                                    untranslated = x.IllumUntransVG();
+                                    //Updated translated VG to RSID
+                                    std::string s = std::to_string(tranlated);
+                                    USES_CONVERSION_EX;//Added NULL pointer check 11-22-2025
+                                    LPWSTR lp = A2W_EX(s.c_str(), s.length());
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    //Unpadate ramining disgarded VG code lines
+                                    s = std::to_string(untranslated);
+                                    lp = A2W_EX(s.c_str(), s.length());
+                                    if (lp != NULL) SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    //Update count and path per normal
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    //New code Beta 0.2
+                                    g_SourceFilePath = pszFilePath;
+                                    loadedFiletype = 2;
+                                    mergeLoad = mergeTotal = 0;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox  
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                    UpdateWindow(aDiag);
                                 }
                             }
 
@@ -1175,28 +1195,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 if (SUCCEEDED(hr))
                                 {
                                     int unsigned count;
-                                    if (x.Ancestory(pszFilePath))
+                                    std::string errorMsg;
+                                    x.Ancestory(pszFilePath);
+								    //START: Handle potential error state from file load attempt
+									errorMsg = x.errorInfo(x.errorCode_);    
+                                    if(errorMsg.length() > 0)
                                     {
-                                      LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
-                                      SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
-                                      SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
-                                      //Update count and path per normal
-                                      count = x.SNPCount();
-                                      //New code Beta 0.2
-                                      std::string strx;
-                                      strx = x.NCBIBuild();
-                                      CA2CT pszConvertedAnsiString(strx.c_str());
-                                      //New code Beta 0.2
-                                      g_SourceFilePath = pszFilePath;
-                                      loadedFiletype = 1;
-                                      mergeLoad = mergeTotal = 0;
-                                      ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
-                                      HWND plst = GetDlgItem(aDiag, IDC_LIST3);
-                                      SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
-                                      EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
-                                      InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
-                                      UpdateWindow(aDiag);
+                                    std::string* errPtr = &errorMsg;  // Get pointer to string
+                                    // Pass the pointer to the returned error string as LPARAM
+                                    DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
                                     }
+									//Do not exit as it may of errored out after a lot of useful data was loaded.
+                                    //Just show the error and allow the user to continue using the program with whatever data was loaded successfully.
+                                    //END: Handle potential error state from file load attempt
+                                    LPWSTR lp = const_cast<LPTSTR>(TEXT("0"));
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS), lp);
+                                    SetWindowTextW(GetDlgItem(aDiag, IDC_COUNT_TRANS2), lp);
+                                    //Update count and path per normal
+                                    count = x.SNPCount();
+                                    //New code Beta 0.2
+                                    std::string strx;
+                                    strx = x.NCBIBuild();
+                                    CA2CT pszConvertedAnsiString(strx.c_str());
+                                    //New code Beta 0.2
+                                    g_SourceFilePath = pszFilePath;
+                                    loadedFiletype = 1;
+                                    mergeLoad = mergeTotal = 0;
+                                    ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                    HWND plst = GetDlgItem(aDiag, IDC_LIST3);
+                                    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR listbox
+                                    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PROJEX, MF_BYCOMMAND | MF_GRAYED);
+                                    InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background
+                                    UpdateWindow(aDiag);
+                                    
                                 }
                               }
                             }
@@ -2607,6 +2638,33 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK ErrorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_INITDIALOG:
+    {
+        // Cast LPARAM back to string pointer
+        std::string* pErrorText = reinterpret_cast<std::string*>(lParam);
+
+        if (pErrorText)
+        {
+            // Use the string
+            SetDlgItemTextA(hDlg, IDC_FSERROR, pErrorText->c_str());
+        }
+        return TRUE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOKFS)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
 }
 
 INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
