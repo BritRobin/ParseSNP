@@ -1343,7 +1343,7 @@ unsigned int SnipParser::merged(void) const
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+ //removed Mutex do to recursive lock issue! 03/22/2026
     if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
         // Ensure snpM is large enough for existing data + some headroom
         unsigned int newSize = loadCount_ + 16;
@@ -1378,7 +1378,7 @@ bool SnipParser::MergeState(void) const
 /*Revert a failed merge*/
 void SnipParser::revertMerge(void)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    //removed Mutex do to recursive lock issue! 03/22/2026
     //Reset rsid to '\0'
     for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
     {
@@ -1398,7 +1398,7 @@ Even though this is the most effiecent self resizing inlined loop I could write
 the shear amount of comparisons involved in unsorted data makes this a slow job!!
 Note the logic is sort of inverse in that logic true indicates replace or add!*/
 bool SnipParser::mergeRs(int code, const std::string& line) {
-   std::lock_guard<std::mutex> lock(mutex_);
+    //removed Mutex do to recursive lock issue! 03/22/2026
 
     if (abortMerge_) return false;
     // SAFETY CHECK 1
