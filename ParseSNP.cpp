@@ -1388,8 +1388,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                 {
                                     DialogBox(hInst, MAKEINTRESOURCE(IDD_MERWAR), aDiag, MergeWarnmsg);
                                     int unsigned count;
+                                    std::string errorMsg;
                                     x.Mergef23andMe(pszFilePath);
-
+                                    //START: Handle potential error state from file load attempt
+                                    errorMsg = x.errorInfo(x.errorCode_);
+                                    if (errorMsg.length() > 0)
+                                    {
+                                        std::string* errPtr = &errorMsg;  // Get pointer to string
+                                        // Pass the pointer to the returned error string as LPARAM
+                                        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
+                                    }
                                     if (x.MergeState())
                                     {
                                         DialogBox(hInst, MAKEINTRESOURCE(IDD_MERGABORT), aDiag, MergeAbortmsg);

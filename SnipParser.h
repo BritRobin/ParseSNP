@@ -95,6 +95,7 @@ private:
 	std::string error01_		= "File not found or could not be opened.";
 	std::string error02_		= "File read error possibly invalid or corrupt .";
 	std::string error03_		= "File read aborted possible partial data or corrupt file.";
+	std::string error04_		= "File is empty a 0 byte file!";
 	//Start: Very basic error handling
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_				 = '-';

@@ -39,6 +39,18 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open()) {
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+                return false;
+            }
+            // END: Check if file has content using fs
             int inx = 0;
             //START: reset loadcount_ and vector for next file for next file
             snp.clear();
@@ -254,6 +266,18 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open()) {
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+                return false;
+            }
+            // END: Check if file has content using fs
             int inx = loadCount_ + 1,rst = 0, rdindex = 0;
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
@@ -430,6 +454,18 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open()) {
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+                return false;
+            }
+            // END: Check if file has content using fs
             int inx = 0;
             int fdind = 0; //ftdna-illumina
             //START: reset loadcount_ and vector for next file for next file
@@ -650,6 +686,18 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
         //Open file for read 
         fs.open(fi_, std::ios::in);
         if (fs.is_open()) {
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+                return false;
+            }
+            // END: Check if file has content using fs
         //Check file was opened  
             int fdind = 0; //ftdna-illumina
             //merge variables
@@ -877,7 +925,19 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open())
-        {
+        {   
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+                return false;
+            }
+            // END: Check if file has content using fs
             int inx = 0;
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
@@ -1124,7 +1184,19 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         fs.open(fi_, std::ios::in);
         //Check file was opened  
         if (fs.is_open()) {
- 			// sex_ = 'F'; //Wrong you are merging you alrady know the Sex of the subject
+
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+             {
+               errorCode_ = 4;  // Empty file error
+               fs.close();
+               return false;
+             }
+            // END: Check if file has content using fs
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
@@ -1556,10 +1628,13 @@ std::string SnipParser::errorInfo(unsigned int error)
         break;
     case 3: errorMessage_ = error03_;
         break;
+    case 4: errorMessage_ = error03_;
+        break;
     default:
-        errorMessage_ = "Undifined Error";
+        errorMessage_ = "Undefined Error";
     }
-
+	// reset and return error message
+	errorCode_ = 0; //Reset Error Code after retrieval 3/22/2026
     return errorMessage_;
 }
 
@@ -1709,6 +1784,7 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                 }
  }
 //INTERNAL code generator not of use 
+ /*
 void  SnipParser::FConvert(void)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1729,6 +1805,19 @@ void  SnipParser::FConvert(void)
         fsOut.open(codeOut_, std::ios::out);
         //Check file was opened  
         if (fs.is_open() && fsOut.is_open()) {
+            // START: Check if file has content using fs
+            fs.seekg(0, std::ios::end);
+            std::streampos size = fs.tellg();
+            fs.seekg(0, std::ios::beg);  // Reset to beginning
+
+            if (size == 0)
+            {
+                errorCode_ = 4;  // Empty file error
+                fs.close();
+				fsOut.close();
+                return;
+            }
+            // END: Check if file has content using fs
             fdind = 0;
             while (fs.getline(nbuffer, READ_LIMIT))
             {   //More parser hardening
@@ -1786,6 +1875,7 @@ void  SnipParser::FConvert(void)
         fsOut.close();
     }
 }  
+*/
 /* Searches all loaded data for matching rsID then checks for risk  allele.
 If it is found it updates the odds ratio                       */
 std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
