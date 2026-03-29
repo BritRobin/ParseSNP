@@ -278,7 +278,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                 return false;
             }
             // END: Check if file has content using fs
-            int inx = loadCount_ + 1,rst = 0, rdindex = 0;
+            int inx = loadCount_,rst = 0, rdindex = 0;//nasty bug loadCount_+1 created a hole 3/28/2026
             //NO!!!: reset loadcount_ and vector for next file for next file
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             char num[24] = { '\0' };    //fixed size 11/12/2025
@@ -710,7 +710,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
-            int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
+            int inx = loadCount_, rst, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
@@ -967,6 +967,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                     return false;
                 }
                 int rdindex = 0;
+                singleAllele = false; //MAJOR BUG found in QA 3/28/2026
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]) )) && isdigit((int)nbuffer[rdindex + 2]))
                 {//ftdna-illumina
@@ -1201,7 +1202,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //NO!!!: reset loadcount_ and vector for next file for next file
-            int inx = loadCount_ + 1, rst, rdindex = 0;  //merge code
+            int inx = loadCount_, rst, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
@@ -1219,6 +1220,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                 vercheck = nbuffer;
                 //Merge code
                 int rdindex = 0;
+                singleAllele = false; //MAJOR BUG found in QA 3/28/2026
                 //GET RS Number numeric part only 
                 if (((nbuffer[rdindex] == 'r' && nbuffer[rdindex + 1] == 's') || (nbuffer[rdindex] == 'i' && isdigit((int)nbuffer[rdindex + 1]))) && isdigit((int)nbuffer[rdindex + 2]))
                 {//ftdna-illumina
@@ -1238,7 +1240,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         }
                         num[nmindex] = '\0';
                         //First in the line is the RS number
-                         rst = atoi(num);
+                          rst = atoi(num);
 
                     }
                     else
@@ -1365,6 +1367,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                         //increment count of lines loaded
                         loadCount_++;
                     }
+
                 }
                 //does not ref ncbi build
                 loopbreak++;
@@ -1483,7 +1486,10 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
         {//yes we already have it!
             allcecked_++;
 
-            if (snpM[i].a == '0') return true;// Original had no-read, so KEEP new data
+            if (snpM[i].a == '0') {
+                int doesnothing = 0;  // ← Put breakpoint HERE instead!
+                return false;// Original had no-read, so KEEP new data
+            }
 
             // ---- NEW: BACKWARDS SEARCH ----
             // Start from end of line
@@ -1511,9 +1517,9 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                 if (!foundB) failcheck_++;
             }
             else {
-                // No second allele (male X chromosome, etc.)
-                foundB = true;  // Consider it "found"
-            }
+                  // No second allele (male X chromosome, etc.)
+                  foundB = true;  // Consider it "found"
+                 }
 
             // Check first allele (search in remaining part)
             bool foundA = false;
