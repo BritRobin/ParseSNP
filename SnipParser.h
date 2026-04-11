@@ -44,7 +44,7 @@ public:
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 	//Error code
 	unsigned int errorCode_ = 0;
-
+//Note I am aware this program does not currently support trisomy I am not sure if ancestry files squence the extra SNP from the 3 chromosome! 
 private:
 	// === ALL YOUR MEMBER VARIABLES MUST BE HERE ===
     // Move these from global scope to private members:

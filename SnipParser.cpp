@@ -117,7 +117,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         }
                         //second in the line is the chromosome number
                         num[nmindex] = '\0';
-                        strcpy_s(snp[inx].ch, num);
+                        strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                     }
                     //If we had run out of data restart loop read next line
                     if (rdindex >= READ_LIMIT) continue;
@@ -340,7 +340,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                             }
                             //second in the line is the chromosome number
                             num[nmindex] = '\0';
-                            strcpy_s(snp[inx].ch, num);
+                            strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                         }
 
                         //If we had run out of data restart loop read next line
@@ -386,6 +386,8 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                         snp[inx].b = nbuffer[rdindex];
                         //increment count of lines loaded
                         loadCount_++; //Fixed 12/31/2025
+                        //increment the primary index
+                        inx++; //Fixed 4/11/2026 (what an embarrasement!)
                         // Check against merge-specific limits
                         if (loadCount_ >= (DNA_SNP_BUFFER_SIZE - (origloadcount_ + 1)))
                         {
@@ -394,8 +396,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                             return false;
                         }
                     }//END MERGE SCOPE!
-                    //increment the primary index
-                    inx++;
+                    
                     if (inx >= DNA_SNP_BUFFER_SIZE)
                     {
                         fs.close();
@@ -569,7 +570,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         }
                         //second in the line is the chromosome number
                         num[nmindex] = '\0';
-                        strcpy_s(snp[inx].ch, num);
+                        strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                     }
                     else {
                             snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
@@ -689,7 +690,8 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             // START: Check if file has content using fs
             fs.seekg(0, std::ios::end);
             std::streampos size = fs.tellg();
-            fs.seekg(0, std::ios::beg);  // Reset to beginning
+            fs.clear();  // Clear any flags
+            fs.seekg(0, std::ios::beg);  // Force reset to beginning
 
             if (size == 0)
             {
@@ -709,7 +711,6 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 			//sex_ = 'F'; //Sex already set in original load
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
-            snp.resize(DNA_SNP_BUFFER_SIZE);
             int inx = loadCount_, rst, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             std::string vercheck;       //more efficient
@@ -726,21 +727,11 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     continue;
                 }
 
-
-                //Reject UTF-8 BOM encoded files
-                if (loadCount_ == 0 && (unsigned char)nbuffer[0] == 0xEF && (unsigned char)nbuffer[1] == 0xBB && (unsigned char)nbuffer[2] == 0xBF)
-                {
-                    errorCode_ = 2;
-                    fs.close();
-                    // Reject UTF-8 BOM encoded files
-                    return false;
-                }
-
                 fdind = 0;
                 //Merge code
                 vercheck = nbuffer;
                 //Merge code
-                int rdindex = 2;
+                rdindex = 2;  //shadow declaration 4/4/2026
                 if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
                 //GET RS Number numeric part only 
 
@@ -750,7 +741,6 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     char num[25];
                     int  nmindex = 0;
                     loopbreak = 0;
-                    rdindex += fdind;//ftdna-illumina
                     num[0] = '\0';
 
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
@@ -814,12 +804,12 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             }
                             //second in the line is the chromosome number
                             num[nmindex] = '\0';
-                            strcpy_s(snp[inx].ch, num);
+                            strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                         }
                          else {
-                                   snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
-                                   if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
-                                   if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                                   snp[inx].ch[0] = nbuffer[rdindex];               //X & Y sinle char so why waste a strcpy call!
+                                   if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia case fix
+                                   if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia case fix
                                    snp[inx].ch[1] = '\0';
                                }
 
@@ -1032,7 +1022,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             }
                             //second in the line is the chromosome number
                             num[nmindex] = '\0';
-                            strcpy_s(snp[inx].ch, num);
+                            strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                         }
                         else {//Bug fix 3/10/21
                                if((nbuffer[rdindex] == 'M' && nbuffer[rdindex + 1] == 'T') || (nbuffer[rdindex] == 'm' && nbuffer[rdindex + 1] == 't'))
@@ -1200,7 +1190,6 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
             // END: Check if file has content using fs
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
-            snp.resize(DNA_SNP_BUFFER_SIZE);
             //NO!!!: reset loadcount_ and vector for next file for next file
             int inx = loadCount_, rst, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
@@ -1283,7 +1272,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                             }
                             //second in the line is the chromosome number
                             num[nmindex] = '\0';
-                            strcpy_s(snp[inx].ch, num);
+                            strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                         }
                         else {//Bug fix 3/10/21
                             if ((nbuffer[rdindex] == 'M' && nbuffer[rdindex + 1] == 'T') || (nbuffer[rdindex] == 'm' && nbuffer[rdindex + 1] == 't'))
@@ -1474,7 +1463,7 @@ the shear amount of comparisons involved in unsorted data makes this a slow job!
 Note the logic is sort of inverse in that logic true indicates replace or add!*/
 bool SnipParser::mergeRs(int code, const std::string& line) {
     //removed Mutex do to recursive lock issue! 03/22/2026
-
+	//Altered all clauses from ptr >= line.c_str() to ptr > line.c_str() becuase if we are one character before the start of the line we are out of real data scope and should stop searching. 03/28/2026
     if (abortMerge_) return false;
     // SAFETY CHECK 1
 	if (end_index_ == 0 || end_index_ >= DNA_SNP_BUFFER_SIZE) {//fixed bug 1/25/2026
@@ -1485,19 +1474,83 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
         if (snpM[i].rs == code) //Does the code exist in the original dataset
         {//yes we already have it!
             allcecked_++;
-
-            if (snpM[i].a == '0') {
-                int doesnothing = 0;  // ← Put breakpoint HERE instead!
-                return false;// Original had no-read, so KEEP new data
-            }
-
-            // ---- NEW: BACKWARDS SEARCH ----
+            //FOR BACKWARDS SEARCH
             // Start from end of line
             const char* lineEnd = line.c_str() + line.length();
-			const char* ptr = lineEnd - 1;//point to last char
+            const char* ptr = lineEnd - 1;//point to last char
 
+            /* REPLACE NO READS! [START]
+               Here we don't ADD a new RSid we update a value that was a No Read in the original data.
+               Technically we are Adding an RSid as the oringinal entry was a failed read with no Data
+               think of it as a placeholder or a space where typically there would be data.
+			   So we are filling in the blanks with new data but not actually adding new entries to the dataset!
+               We use the first alelle because it could be a no read on X or Y chr etc. '0' and '-' designate No Read in differnt formats  */
+            if (snpM[i].a == '0' || snpM[i].a == '-')
+			{   //Temporary variables so we don't alter data in we knwo we have valid entries
+                char tempB  = '\0';
+				char tnum[2] = { '\0' };
+				int tempPos = 0;
+
+                while (ptr > line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {   ptr--;    } // Skip trailing whitespace
+				//get last allele in line decrementing pointer until we find a valid allele or hit the start of the line
+                while (ptr > line.c_str() && (*ptr != 'A' && *ptr != 'C' && *ptr != 'G' && *ptr != 'T' && *ptr != 'D' && *ptr != 'I' && *ptr != '-' && *ptr != '0')) {  ptr--;  }
+				if (*ptr == '\0' || *ptr == '-' || *ptr == '0') return false;    //if we have noread or found nothing valid return false
+				//assign first hit to tempB but it may be tempA value if there is only one allele in the line
+				if (*ptr == 'A' || *ptr == 'C' || *ptr == 'G' || *ptr == 'T') tempB = *ptr;     // tempB assigned the fisrt allele in a backward search which is the second allele in the line
+                //move back to check for a first allele OR position number!
+    			ptr--;                              
+                while (ptr > line.c_str() && (*ptr != 'A' && *ptr != 'C' && *ptr != 'G' && *ptr != 'T' && *ptr != 'D' && *ptr != 'I' && *ptr != '-' && *ptr != '0') && (*ptr < '0' || *ptr > '9')) {  ptr--; }
+				if (ptr == line.c_str()) return false; //Shouldn't happen but allows for corruption: if we have found nothing valid return false
+				//check if we have a number which would be position number for single allele X Y etc. 
+                if (*ptr >= '0' && *ptr <= '9') 
+				  {// we only found 1 allele check if this is consistent with the original data being replaced
+                    if (snpM[i].b == '0' || snpM[i].a == '-') return false;     // The original SNP had TWO alleles marked No Read and we only found one value!
+                    //Assign values!!
+					snpM[i].a = tempB; // assign our one value to the first allele position
+					snpM[i].b = '\0';  // assign second character to null as we only have one allele in the line
+                  } //Else we have a valid second allele
+                   else {
+                          if (*ptr == '\0' || *ptr == '-' || *ptr == '0') return false;    //Probably neven trigger but abundance of caution if we have noread or found nothing valid return false
+						  snpM[i].a = *ptr;      // assign first allele
+						  snpM[i].b = tempB;     // assign second allele
+                          while (ptr > line.c_str() && (*ptr < '0' || *ptr > '9')) { ptr--; }
+						  if (ptr == line.c_str()) return false; //Shouldn't happen but allows for corruption: if we have found nothing valid return false
+                        }
+				//We are now at the numeric postion value which will be differ depending on the Human Genome Build 
+                //first number will be < 10
+				tnum[0] = *ptr;
+                tempPos = atoi(tnum); //single digit
+                int multiplier = 10;  //for power of 10 multiplier
+				ptr--; //move the pointer to the 10s column if it exists which it should
+                while (ptr > line.c_str() && (*ptr >= '0' && *ptr <= '9'))
+                {
+                    tnum[0] = *ptr;
+                    tempPos += atoi(tnum) * multiplier;
+                    ptr--; 
+                    multiplier *= 10;
+                }
+                //ensure we at lease have a theoretically valid position data value
+                if (tempPos > 0)
+                {//THIS IS THE REALLY CORE CODE snpM[]=snp[] Therfore we can modify the snp[] data directly via RSID match!
+                    for (int j = 0; j < loadCount_; j++) {
+                        if (snp[j].rs == code) {
+                            // Update snp[j] directly
+                            snp[j].a = snpM[i].a;
+                            snp[j].b = snpM[i].b;
+                            snp[j].pos = tempPos;
+                            break;
+                        }
+                    }
+                 //The return FALSE ensure no modifcation in the file reader!
+                }
+                return false;// Original had no-read, so KEEP new data
+            }
+			// REPLACE NO READS! [END]
+            
+
+            // ---- NEW: BACKWARDS SEARCH ----
             // Skip trailing whitespace
-            while (ptr >= line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
+            while (ptr > line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
                 ptr--;
             }
 
@@ -1959,9 +2012,13 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
 }
 int SnipParser::FTDNADecode(std::string code)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    int rs = 0,num;
 
+    if (code.empty()) { //Code Hadening 4/4/2026
+        illuminaU_++;
+        return 0;
+    }
+    int rs = 0;
+    int num = atoi(code.c_str());
     num = atoi(code.c_str()); //in example  VG01S1077 ftdna will equal numeric 11007
     switch (num) {//rs equivelent ALL Illumina VG codes seem to realte to Cystic Fibrosis!
     case 11077:
@@ -2494,10 +2551,12 @@ int SnipParser::FTDNADecode(std::string code)
 }
 int SnipParser::f23andMeDecode(std::string code)
 { 
-    std::lock_guard<std::mutex> lock(mutex_);
-    int num, rs = 0;
-
-    num = atoi(code.c_str());
+    if (code.empty()) { //Code Hadening 4/4/2026
+        illuminaU_++;
+        return 0;
+    }
+    int rs = 0;
+    int num = atoi(code.c_str());
     switch (num) {//convert Illumina Internal codes to rsID equivelents
     case 3003626:  //CCR5 delta 32 mutation. imparts HIV1 immunity if Hetrozogous (but makes you more vunerable to flaviviruses and no immunity to HIV2
         rs = 333;
