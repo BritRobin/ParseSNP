@@ -591,6 +591,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       // Parse the menu selections:
      switch (wmId)
       { //Load file from default path 2/21/2026
+        case ID_PROJECT_LOADPROJECT:
         case ID_FILE_LOADPROJECT:
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -644,8 +645,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             char lbuffer[MAIN_TOTAL_BUFFER_SIZE];
 
                                             Target = pszFilePath;
-                                            g_currentProject = pszFilePath;
-                                            g_currentProject = g_currentProject.substr(0, g_currentProject.length() - temp.GetLength());//SET CURRENT PROJECT!!!
+                                            //Removed dead code that was wrong anyway lol
 
                                             // File stream 
                                             std::fstream  fstrm;
@@ -653,11 +653,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                                             // Check file was opened  
                                             if (fstrm.is_open()) {
-                                                while (fstrm.getline(lbuffer, 256))//read a line into a temporary buffer
+                                                while (!fstrm.eof())//BUG! 4/18/2026 Removed the getline() from the While clause I wish I could say I was stoned when I wrote that!!! 
                                                 {
                                                     // DNA file to open
+                                                    fstrm.getline(lbuffer, 256); //BUG! 4/18/2026
                                                     // file name and path wide                         
                                                     str = A2T(lbuffer);
+                                                    // Convert to std::filesystem::path explicitly
+                                                    std::filesystem::path filePath(str);
+                                                    if (!std::filesystem::exists(filePath)) {//IF we dont have a stored valid source file exit load 4/18/2026
+                                                        std::string errorMsg;
+                                                        errorMsg = x.errorInfo(4);
+                                                        std::string* errPtr = &errorMsg;  // Get pointer to string
+                                                        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+                                                        break;
+                                                    }
                                                     fstrm.getline(lbuffer, 256);//DNA file type to open
                                                     int xsw = atoi(lbuffer);
 
@@ -681,7 +691,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                             g_SourceFilePath = str;
                                                             loadedFiletype = 1;
                                                             mergeLoad = mergeTotal = 0;
-                                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                            ScreenUpdate(hWnd, count, const_cast<PWSTR>(str.c_str()), pszConvertedAnsiString, x.sex()); //BUG 4/18/2026 wrong source path!! 
                                                         }
                                                     }
                                                     else  if (xsw == 2) {
@@ -713,7 +723,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                             g_SourceFilePath = str;
                                                             loadedFiletype = 2;
                                                             mergeLoad = mergeTotal = 0;
-                                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                            ScreenUpdate(hWnd, count, const_cast<PWSTR>(str.c_str()), pszConvertedAnsiString, x.sex()); //BUG 4/18/2026 wrong source path!! 
                                                         }
                                                     }
                                                     else if (xsw == 3) {
@@ -745,7 +755,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                             g_SourceFilePath = str;
                                                             loadedFiletype = 3;
                                                             mergeLoad = mergeTotal = 0;
-                                                            ScreenUpdate(hWnd, count, pszFilePath, pszConvertedAnsiString, x.sex());
+                                                            ScreenUpdate(hWnd, count, const_cast<PWSTR>(str.c_str()), pszConvertedAnsiString, x.sex()); //BUG 4/18/2026 wrong source path!! 
                                                         }
                                                     }
 
@@ -812,6 +822,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         //Default path and user inputed project file name added and tested 2/26/2026
+        case ID_PROJECT_SAVEPROJECT:
         case ID_FILE_SAVEPROJECT:
         { 
          if (g_currentProject.length() == 0)
@@ -1759,6 +1770,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_DISABLED); //Disable export to export to text of clear
             break;
 		}
+        case ID_PROJECT_CLEARPROJECTWINDOW: {
+            HWND plst = GetDlgItem(aDiag, IDC_LIST3); //Get Project List Box
+            SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
+            break;
+        }
         //Default Folder set 2/21/2026
         case ID_PATHOGENICS_EXPORTRESULTSTO:
         {
@@ -1935,7 +1951,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
  }
 
  bool ProcessPpiFile(HWND aDiag, std::fstream* fp , const char* utf8Path)
- {
+ {//DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
      //reset display area
      HWND plst = GetDlgItem(aDiag, IDC_LIST2);
      //more defensice code for invalid files
@@ -1950,6 +1966,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      char filename[TOTAL_BUFFER_SIZE] = { 0 };
      strcpy_s(filename, _countof(filename), utf8Path);
      SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
+     //Check the filesteam is good!
+      // Check if stream is valid and not in failed state
+     if (fp == nullptr || !fp->good()) {
+         std::string errorMsg;
+         errorMsg = x.errorInfo(4);
+         std::string* errPtr = &errorMsg;  // Get pointer to string
+         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+         return false;
+     }
+     //Check for a zero byte file
+     // START: Check if file has content using fs
+     fp->seekg(0, std::ios::end);
+     std::streampos size = fp->tellg();
+     fp->seekg(0, std::ios::beg);  // Reset to beginning
+     if (size == 0)
+     {
+         std::string errorMsg;
+         errorMsg = x.errorInfo(4);
+         std::string* errPtr = &errorMsg;  // Get pointer to string
+         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+         return false;
+     }
+     // END: Check if file has content using fs
+
      //Read first reference lines
      fp->getline(lbuffer, READ_LIMIT);
      std::string s = "Title: ";
