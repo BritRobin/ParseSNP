@@ -1842,174 +1842,81 @@ bool  SnipParser::AncestoryWriter(wchar_t* fi_)
                 return false;
                 }
  }
-//INTERNAL code generator not of use 
- /*
-void  SnipParser::FConvert(void)
+
+/* Searches all loaded data for matching rsID then checks for risk allele.
+   If it is found it updates the odds ratio */ //rewrite 4/19/2026
+std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    wchar_t  codeIn_[] = L"f:\\icode.txt";
-    wchar_t  codeOut_[] = L"f:\\ccode.txt";
-
-    std::fstream  fs;
-    std::fstream  fsOut;
-    {
-        char nbuffer[TOTAL_BUFFER_SIZE];
-        std::string  lbuffer;
-        char num[100];
-        int loopbreak = 0;
-        int fdind = 0;
-        //Open file for read 
-        fs.open(codeIn_, std::ios::in);
-        //Open file for write
-        fsOut.open(codeOut_, std::ios::out);
-        //Check file was opened  
-        if (fs.is_open() && fsOut.is_open()) {
-            // START: Check if file has content using fs
-            fs.seekg(0, std::ios::end);
-            std::streampos size = fs.tellg();
-            fs.seekg(0, std::ios::beg);  // Reset to beginning
-
-            if (size == 0)
-            {
-                errorCode_ = 4;  // Empty file error
-                fs.close();
-				fsOut.close();
-                return;
-            }
-            // END: Check if file has content using fs
-            fdind = 0;
-            while (fs.getline(nbuffer, READ_LIMIT))
-            {   //More parser hardening
-                if (fs.fail() && !fs.eof())
-                {
-                    // Line was too long — discard remainder
-                    fs.clear();
-                    fs.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
-                    continue;
-                }
-                int rdindex = 0;
-                int nmindex = 0;
-                //move past tab or spaces to next numeric data position number
-                while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                {//wrote with braces for readablility
-                    rdindex++;
-                }
-                //read position
-                //re-init 
-                nmindex = 0;
-                num[0] = '\0';
-                while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                {
-                    num[nmindex] = nbuffer[rdindex];
-                    rdindex++;
-                    nmindex++;
-                }
-                num[nmindex] = '\0';
-                //START constructing the write line
-                lbuffer = "case " + std::string(num) + ":" + char(13) + "  snp[inx].rs = ";
-                //read second rsID number
-                //move past tab or spaces to next numeric data position number
-                while (!isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                {//wrote whith braces for readablility
-                    rdindex++;
-                }
-                //read position
-                //re-init 
-                nmindex = 0;
-                num[0] = '\0';
-                while (isdigit((int)nbuffer[rdindex]) && rdindex < READ_LIMIT)
-                {
-                    num[nmindex] = nbuffer[rdindex];
-                    rdindex++;
-                    nmindex++;
-                }
-                num[nmindex] = '\0';
-                //lbuffer= lbuffer + +=
-                lbuffer += std::string(num) + ";" + char(13) +"  illuminaT_++;" + char(13) + "  break;" + char(13) ;
-                const char* write_it = lbuffer.c_str();
-                fsOut.write(write_it , lbuffer.length());
-            }
-        }
-        fs.close();
-        fsOut.close();
-    }
-}  
-*/
-/* Searches all loaded data for matching rsID then checks for risk  allele.
-If it is found it updates the odds ratio                       */
-std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    float denominator = 0.0; //to prevent div by zero
     std::string result_message = "N/A";
 
-    // Check you have SNP data loaded
+    // Convert OR to log odds (beta)
+    float beta = log(oddsratio);
+
+    // Update theoretical maximum (all SNPs homozygous)
+    max_beta_ += 2.0f * beta;
+
     if (loadCount_ > 0)
     {
-        // Search for RS numer int rs
-		for (unsigned int i = 0; i < loadCount_; i++) //Bug fix 3/09/2026(US date format)
+        for (unsigned int i = 0; i < loadCount_; i++)
         {
             if (snp[i].rs == rsid)
-            {    
+            {
+                // No data
+                if (snp[i].a == '0' && snp[i].b == '0')
+                {
+                    return "No data for this SNP (0/0)";
+                }
+
+                // Count risk alleles
+                int riskCopies = 0;
+                if (snp[i].a == riskallele) riskCopies++;
+                if (snp[i].b == riskallele) riskCopies++;
+
+                // Format result message
                 char buffer[8];
-                char check_Y[4];
-                
-                if (!strcmp(snp[i].ch, "23"))
-                {
-                    check_Y[0] = 'X';
-                    check_Y[1] = '\0';
-                }
-                else
-                {
-                    check_Y[0] = snp[i].ch[0];
-                    check_Y[1] = snp[i].ch[1];
-                    check_Y[2] = snp[i].ch[2];
-                    check_Y[3] = snp[i].ch[3];
-                }
                 buffer[0] = '[';
-                buffer[1] = (char)snp[i].a;
+                buffer[1] = snp[i].a;
                 buffer[2] = '/';
-                buffer[3] = (char)snp[i].b;
+                buffer[3] = snp[i].b;
                 buffer[4] = ']';
                 buffer[5] = ' ';
                 buffer[6] = '\0';
                 result_message = buffer;
-                //fixed logic in ver 0.9 Beta
-				denominator = (float)((*sumoddsratio + 1) * (oddsratio + 1) - ((*sumoddsratio * oddsratio))); //protect from diversion by zero
-                //Match of risk  allele on both chromosomes!
-                if (snp[i].a == riskallele && snp[i].b == riskallele)
+
+                // No risk alleles
+                if (riskCopies == 0)
                 {
-                    if (check_Y[0] == 'X' && sex_ == 'M') 
-                    {
-                        buffer[3] = '-';
-                        result_message = buffer;
-                        result_message += "Risk Heterozygous";
-                        if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
-                        else if (denominator > 0.0) *sumoddsratio += (float)(*sumoddsratio * oddsratio) / denominator;
-                        return result_message;
-                    }
-                    result_message += "Risk Homozygous!";
-                    //from a post on statistics here https://stats.stackexchange.com/questions/187107/can-you-add-up-different-genes-odds-ratios-to-get-a-general-odds-ratio
-					if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio * (float)2.0; //for homozygous fix logic ver 0.9 Beta
-					else  if (denominator > 0.0) *sumoddsratio += (float)((*sumoddsratio * oddsratio) / denominator) * (float)2.0; //for homozygous fix logic ver 0.9 Beta
+                    result_message += "No risk alleles";
                     return result_message;
                 }
-                //Match in one chromosome
-                if (snp[i].a == riskallele || snp[i].b == riskallele)
+
+                // Add beta for each risk copy
+                total_beta_ += riskCopies * beta;
+
+                // X chromosome for males (hemizygous - only one copy possible)
+                if (snp[i].ch[0] == 'X' && sex_ == 'M')
+                {
+                    result_message += "Risk Hemizygous";
+                }
+                else if (riskCopies == 2)
+                {
+                    result_message += "Risk Homozygous!";
+                }
+                else
                 {
                     result_message += "Risk Heterozygous";
-                    if (*sumoddsratio == 0.0) *sumoddsratio = oddsratio;
-                    else if (denominator > 0.0) *sumoddsratio += (float)(*sumoddsratio * oddsratio) / denominator;
-                    return result_message;
                 }
-                if (snp[i].a == '0' && snp[i].b == '0')  result_message += "N/A (No Read)";
-                else result_message += "No Risk";
+
                 return result_message;
             }
         }
     }
-    return result_message;
+
+    // RSID not found
+    return "RSID not present in your file";
 }
+
 int SnipParser::FTDNADecode(std::string code)
 {
 

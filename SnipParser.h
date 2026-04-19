@@ -27,7 +27,6 @@ public:
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
 	bool f23andMe(wchar_t* fi_);
 	bool Mergef23andMe(wchar_t* fi_);
-	void FConvert(void);  //<- One off internal development code generator
 	wchar_t sex(void) const;
 	unsigned int merged(void) const;
 	bool MergeState(void) const;
@@ -39,7 +38,16 @@ public:
 	std::string PAbout(void) const; //return program/class about info
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	std::string errorInfo(unsigned int error); //return error message for error code
-	std::string PathogenicCall(int rsid, char riskallele, float oddsratio, float* sumoddsratio);
+	//New OR code more acurate more contained in the class
+	 // NEW getters for beta values //rewrite 4/19/2026
+	float GetTotalBeta(void) const { return total_beta_; }
+	float GetMaxBeta(void) const { return max_beta_; }
+	float GetCombinedOR() const { return exp(total_beta_); }
+	float GetMaxPossibleOR() const { return exp(max_beta_); }
+	float GetPercentile() const { return (total_beta_ / max_beta_) * 100.0f; }
+	void ResetRisk() { total_beta_ = 0.0f; max_beta_ = 0.0f; }
+
+	std::string PathogenicCall(int rsid, char riskallele, float oddsratio);
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 	//Error code
@@ -90,6 +98,10 @@ private:
 	unsigned int origloadcount_ = 0;
 	unsigned int mergefile_     = 0;
 	unsigned int loadCount_     = 0;
+	//Pathogenic value
+	float total_beta_			= 0.0f;    // Sum of log odds
+	float max_beta_				= 0.0f;    // Maximum possible sum
+	//Pathogenic value 
 	//Start: Very basic error handling
 	std::string errorMessage_	= "";
 	std::string error01_		= "File not found or could not be opened.";
@@ -100,8 +112,9 @@ private:
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_				 = '-';
 	std::string NCBIBuild_	 = "";
-	std::string Pversion_	 = "1.0.2"; //SET **VERSION** HERE
+	std::string Pversion_	 = "1.1.0"; //SET **VERSION** HERE
 	std::string PAbouttxt_	 = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
+
 	unsigned int illuminaU_  = 0;
 	unsigned int illuminaT_  = 0;
 	int FTDNADecode(std::string code);

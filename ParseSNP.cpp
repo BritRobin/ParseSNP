@@ -1950,225 +1950,259 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
  }
 
- bool ProcessPpiFile(HWND aDiag, std::fstream* fp , const char* utf8Path)
- {//DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), hWnd, ErrorDialog, (LPARAM)errPtr);
-     //reset display area
-     HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-     //more defensice code for invalid files
-     constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
-     constexpr int READ_LIMIT = MAIN_READ_LIMIT;
-     constexpr int PROCESS_LIMIT = 255;        // leave a byte for NULL MAIN_TOTAL_BUFFER_SIZE is padded to protected against overruns
-     const int GENE_PADDING = 8;
-     const int SHORT_ODDS_THRESHOLD = 4;
-     int PaddingSpaces = 0;
-     //more defensice code for invalid files
-     char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
-     char filename[TOTAL_BUFFER_SIZE] = { 0 };
-     strcpy_s(filename, _countof(filename), utf8Path);
-     SendMessage(plst, LB_RESETCONTENT, NULL, NULL); //Clear ListBox
-     //Check the filesteam is good!
-      // Check if stream is valid and not in failed state
-     if (fp == nullptr || !fp->good()) {
-         std::string errorMsg;
-         errorMsg = x.errorInfo(4);
-         std::string* errPtr = &errorMsg;  // Get pointer to string
-         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
-         return false;
-     }
-     //Check for a zero byte file
-     // START: Check if file has content using fs
-     fp->seekg(0, std::ios::end);
-     std::streampos size = fp->tellg();
-     fp->seekg(0, std::ios::beg);  // Reset to beginning
-     if (size == 0)
-     {
-         std::string errorMsg;
-         errorMsg = x.errorInfo(4);
-         std::string* errPtr = &errorMsg;  // Get pointer to string
-         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
-         return false;
-     }
-     // END: Check if file has content using fs
+bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite 4/19/2026
+{
+    //reset display area
+    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+    constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
+    constexpr int READ_LIMIT = MAIN_READ_LIMIT;
+    constexpr int PROCESS_LIMIT = 255;
+    const int GENE_PADDING = 8;
+    const int SHORT_ODDS_THRESHOLD = 4;
+    int PaddingSpaces = 0;
 
-     //Read first reference lines
-     fp->getline(lbuffer, READ_LIMIT);
-     std::string s = "Title: ";
-     s += lbuffer;
-     std::wstring str2(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     //Read first reference lines
-     fp->getline(lbuffer, 256);
-     s = "Source: ";
-     s += lbuffer;
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     //Read first reference lines
-     fp->getline(lbuffer, READ_LIMIT);
-     s = "NCBI Reference: ";
-     s += lbuffer;
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     //init redraw
-     s = "-- Comparison With Loaded SNP Data --";
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     float* flp;
-     float  sumoddsratio = 0.0;
-     flp = &sumoddsratio;
-     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
-     while (fp->getline(lbuffer, READ_LIMIT))//Read next line in
-     {
-         int rsid = 0;
-         char riskallele = '\0';
-         float oddsratio = 0.0;
-         PaddingSpaces = 0;
-         //Read first reference lines
-         for (int i = 0; i <= READ_LIMIT;) {
-             //***Obtain RSid number***
-             if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S')
-             {
-                 char number[MAIN_TOTAL_BUFFER_SIZE];
-                 int n = 0;
-                 while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58)
-                 {
-                     number[n] = lbuffer[i];
-                     i++;
-                     n++;
-                 }
-                 number[n] = '\0';
-                 rsid = atoi(number);
-             }
-             /*skip spaces, could be wrtten in one line but this is more readable*/
-             //Skip space between RSID and Chromosone number
-             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
+    char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
+    char filename[TOTAL_BUFFER_SIZE] = { 0 };
+    strcpy_s(filename, _countof(filename), utf8Path);
+    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);
 
-             //Skip Chromosone number or letters
-             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
+    // Check stream validity
+    if (fp == nullptr || !fp->good()) {
+        std::string errorMsg = x.errorInfo(4);
+        std::string* errPtr = &errorMsg;
+        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+        return false;
+    }
 
-             /*skip spaces, could be wrtten in one line but this is more readable*/
-             //Skip spaces to Gene
-             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
-             int c = i;             /*Skip Gene*/
-             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
-             //Here we can cacluate padding spaces
-             int x = (i - c); // Gene Name Length
-             int genePadding = GENE_PADDING - x;
-             if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
-             else PaddingSpaces = PaddingSpaces + 1;
-             /*skip spaces, could be wrtten in one line but this is more readable*/
-             while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
-             //if thechar is ivalid it will do nothing so no need to check it
-             riskallele = lbuffer[i];
-             i++;
-             /*skip spaces, could be wrtten in one line but this is more readable*/
-             while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT)
-             {
-                 i++;
-             }
-             /*Obtain Odds Ration if entered!*/
-             {
-                 char number[MAIN_TOTAL_BUFFER_SIZE];
-                 int n = 0;
-                 // getline null-terminates, so:
-                 while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.'))
-                 {
-                     number[n] = lbuffer[i];
-                     i++;
-                     n++;
-                 }
-                 if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++; //Add an extra space for 1.1 vs 1.11  except when we have long fusion naming
-                 number[n] = '\0';
-                 if (strlen(number) > 0) oddsratio = atof(number);
-                 else oddsratio = 0.0;
-             }
-             while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) {//std::fstream::getline() stops at '\n' consuming it and replacing with NULL
-                 i++;
-             }
-             break;
-         }
-         std::string ret_result;
-         if (rsid > 0) {
-             ret_result = x.PathogenicCall(rsid, riskallele, oddsratio, flp);
-             if (ret_result == "N/A") PaddingSpaces++; // Visual alligment of found alelles / with the / of N/A even though it is actually a one space indent the perception is cleaner
-             s = lbuffer;
-             //Adding limited dynamic formating code here
-             //START Formating Code
-             //   s += "   " + ret_result; //OLD CODE for reference only
-             for (int i = 0; i < PaddingSpaces;  i++)
-             {
-                 s += " ";
-			 }
-			 s += ret_result;
-             //END Formating Code
-             str2.resize(s.length(), L' '); // Make room for characters
-             // Copy string to wstring.
-             std::copy(s.begin(), s.end(), str2.begin());
-             wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-             SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-         }
-     }
-     s = " ";
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     std::ostringstream ss;
-     ss << sumoddsratio;
-     std::string sf(ss.str());
-     s = "Cumulative OR (?) " + sf;
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     std::string hash;
-     MD5 md5;
-     hash = md5.digestFile(filename);
-     std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
-     s = "PPI File's MD5 = ";
-     s = s + hash;
-     str2.resize(s.length(), L' '); // Make room for characters
-     // Copy string to wstring.
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     InvalidateRect(aDiag, NULL, FALSE); // FALSE = don't erase background 
-     UpdateWindow(aDiag);
-     RECT rc;
-     GetWindowRect(plst, &rc);
-     RedrawWindow(plst, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
-     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Print Option on Sucessful load
-     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_ENABLED); //Enable Clear Results option
-     return true;
- }
+    // Check for zero byte file
+    fp->seekg(0, std::ios::end);
+    std::streampos size = fp->tellg();
+    fp->seekg(0, std::ios::beg);
+    if (size == 0) {
+        std::string errorMsg = x.errorInfo(4);
+        std::string* errPtr = &errorMsg;
+        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+        return false;
+    }
+
+    // Read header lines
+    fp->getline(lbuffer, READ_LIMIT);
+    std::string s = "Title: ";
+    s += lbuffer;
+    std::wstring str2(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    fp->getline(lbuffer, 256);
+    s = "Source: ";
+    s += lbuffer;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    fp->getline(lbuffer, READ_LIMIT);
+    s = "NCBI Reference: ";
+    s += lbuffer;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    s = "-- Comparison With Loaded SNP Data --";
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Enable menu items
+    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
+
+    // RESET risk calculation
+    x.ResetRisk();
+
+    // Process each line
+    while (fp->getline(lbuffer, READ_LIMIT))
+    {
+        int rsid = 0;
+        char riskallele = '\0';
+        float oddsratio = 0.0;
+        PaddingSpaces = 0;
+
+        for (int i = 0; i <= READ_LIMIT;) {
+            // Parse RSID
+            if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S') {
+                char number[MAIN_TOTAL_BUFFER_SIZE];
+                int n = 0;
+                while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58) {
+                    number[n] = lbuffer[i];
+                    i++;
+                    n++;
+                }
+                number[n] = '\0';
+                rsid = atoi(number);
+            }
+
+            // Skip spaces to chromosome
+            while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
+            while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
+            while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
+
+            // Skip gene name
+            int c = i;
+            while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
+            int x = (i - c);
+            int genePadding = GENE_PADDING - x;
+            if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
+            else PaddingSpaces = PaddingSpaces + 1;
+
+            // Skip to risk allele
+            while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT) i++;
+            riskallele = lbuffer[i];
+            i++;
+            while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT) i++;
+
+            // Parse odds ratio
+            {
+                char number[MAIN_TOTAL_BUFFER_SIZE];
+                int n = 0;
+                while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
+                    number[n] = lbuffer[i];
+                    i++;
+                    n++;
+                }
+                if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++;
+                number[n] = '\0';
+                if (strlen(number) > 0) oddsratio = atof(number);
+            }
+
+            while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) i++;
+            break;
+        }
+
+        if (rsid > 0) {
+            std::string ret_result = x.PathogenicCall(rsid, riskallele, oddsratio);
+
+            // Visual alignment
+            if (ret_result == "RSID not present in your file" ||
+                ret_result == "No data for this SNP (0/0)") {
+                PaddingSpaces++;
+            }
+
+            s = lbuffer;
+            for (int i = 0; i < PaddingSpaces; i++) {
+                s += " ";
+            }
+            s += ret_result;
+
+            str2.resize(s.length(), L' ');
+            std::copy(s.begin(), s.end(), str2.begin());
+            wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+            SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+        }
+    }
+
+    // Display results
+    s = " ";
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Get risk results
+    float yourOR = x.GetCombinedOR();
+    float maxOR = x.GetMaxPossibleOR();
+    float totalBeta = x.GetTotalBeta();
+    float maxBeta = x.GetMaxBeta();
+
+    // Determine clinical risk level
+    std::string riskLevel;
+    std::string clinicalGuidance;
+
+    if (yourOR > 50.0f) {
+        riskLevel = "VERY HIGH";
+        clinicalGuidance = "Strong genetic predisposition!";
+    }
+    else if (yourOR > 20.0f) {
+        riskLevel = "HIGH";
+        clinicalGuidance = "Significant genetic risk!";
+    }
+    else if (yourOR > 10.0f) {
+        riskLevel = "MODERATELY HIGH";
+        clinicalGuidance = "Elevated genetic risk.";
+    }
+    else if (yourOR > 5.0f) {
+        riskLevel = "MODERATE";
+        clinicalGuidance = "Above average genetic risk.";
+    }
+    else if (yourOR > 2.0f) {
+        riskLevel = "SLIGHTLY ELEVATED";
+        clinicalGuidance = "Mildly increased genetic susceptibility.";
+    }
+    else {
+        riskLevel = "AVERAGE";
+        clinicalGuidance = "No significant genetic predisposition.";
+    }
+
+    // Display odds ratio
+    std::ostringstream s1;
+    s1 << yourOR;
+    std::string sf(s1.str());
+
+    s = "Your combined odds ratio: " + sf;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Display risk level
+    s = "Risk level: " + riskLevel;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Display clinical guidance
+    s = "Interpretation: " + clinicalGuidance;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Optional: Show log-risk for statistical context
+    std::ostringstream s2;
+    s2 << totalBeta;
+    std::string sbeta(s2.str());
+
+    s = "Log-risk score: " + sbeta + " (Range: 0 - " + std::to_string(maxBeta) + ")";
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // MD5 hash
+    MD5 md5;
+    std::string hash = md5.digestFile(filename);
+    std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
+    s = "PPI File's MD5 = " + hash;
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Redraw
+    InvalidateRect(aDiag, NULL, FALSE);
+    UpdateWindow(aDiag);
+    RECT rc;
+    GetWindowRect(plst, &rc);
+    RedrawWindow(plst, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+
+    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_ENABLED);
+    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_ENABLED);
+
+    return true;
+}
  /* SCREEN UPDATE */
 void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char sx)
 {
