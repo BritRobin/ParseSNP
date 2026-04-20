@@ -2146,16 +2146,30 @@ bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite
     }
 
     // Display odds ratio
-    std::ostringstream s1;
-    s1 << yourOR;
-    std::string sf(s1.str());
+//    std::ostringstream s1;
+//    s1 << yourOR;
+//    std::string sf(s1.str());
 
-    s = "Your combined odds ratio: " + sf;
+    //float percentOfMax = (totalBeta / maxBeta) * 100.0f;
+    //s = "Your genetic risk score: " + std::to_string(percentOfMax) + "%";
+    float percentOfMax = (totalBeta / maxBeta) * 100.0f;
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(2) << percentOfMax << "%";
+    std::string result = stream.str();
+    s = "Your combined odds ratio: " + result;
     str2.resize(s.length(), L' ');
     std::copy(s.begin(), s.end(), str2.begin());
     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
+   //ADD explaintion line as the maximum would nevver exist so you may have 30% of and achivable 70%
+
+
+    s = "(Percentage of theoretical maximum risk for this PPI file)";
+    str2.resize(s.length(), L' ');
+    std::copy(s.begin(), s.end(), str2.begin());
+    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
     // Display risk level
     s = "Risk level: " + riskLevel;
     str2.resize(s.length(), L' ');
@@ -2180,6 +2194,9 @@ bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite
     std::copy(s.begin(), s.end(), str2.begin());
     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+    // Add an empty row
+    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)L"");
 
     // MD5 hash
     MD5 md5;
