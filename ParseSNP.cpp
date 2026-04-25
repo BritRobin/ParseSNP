@@ -505,31 +505,10 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          if (chr_s.size() == 1) chr_s = " " + chr_s;  //Fixed 1/19/2026
 
          std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Position: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
-         std::wstring str2(s.length(), L' '); // Make room for characters
-
          // Copy string to wstring.
-		 //Added proper conversion for non-ASCII characters AI suggested code nence the formatting change
-         std::wstring ws;
-         int len = MultiByteToWideChar(
-             CP_ACP, 0,
-             s.c_str(), -1,
-             nullptr, 0
-         );
-
-         ws.resize(len - 1);
-
-         MultiByteToWideChar(
-             CP_ACP, 0,
-             s.c_str(), -1,
-             ws.data(), len
-         );
-         wcsncpy_s(
-             global_s,
-             _countof(global_s),
-             ws.c_str(),
-             _TRUNCATE
-         );
-
+         USES_CONVERSION_EX;
+         CA2W str2(s.c_str()); //Use Macro Like everywhere else cleaner 4/25/2026
+         wcsncpy_s(global_s, _countof(global_s), str2, _TRUNCATE);
          lcount = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_GETCOUNT, 0, 0);
          if(lcount > 0)     lindex = SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_FINDSTRING, 0, (LPARAM)global_s); //prevent dulpicates
          if(lindex == -1)   SendMessage(GetDlgItem(aDiag, IDC_LIST3), LB_ADDSTRING, 0, (LPARAM)global_s);
@@ -691,7 +670,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                             g_SourceFilePath = str;
                                                             loadedFiletype = 1;
                                                             mergeLoad = mergeTotal = 0;
-                                                            ScreenUpdate(hWnd, count, const_cast<PWSTR>(str.c_str()), pszConvertedAnsiString, x.sex()); //BUG 4/18/2026 wrong source path!! 
+                                                            ScreenUpdate(hWnd, count, const_cast<PWSTR>(g_SourceFilePath.c_str()), pszConvertedAnsiString, x.sex()); //BUG Sending LOCAL! Fixed 4/25/2026! 
                                                         }
                                                     }
                                                     else  if (xsw == 2) {
@@ -1950,254 +1929,249 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
  }
 
-bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite 4/19/2026
-{
-    //reset display area
-    HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-    constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
-    constexpr int READ_LIMIT = MAIN_READ_LIMIT;
-    constexpr int PROCESS_LIMIT = 255;
-    const int GENE_PADDING = 8;
-    const int SHORT_ODDS_THRESHOLD = 4;
-    int PaddingSpaces = 0;
+ bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite 4/19/2026
+ {
+     //reset display area
+     HWND plst = GetDlgItem(aDiag, IDC_LIST2);
+     constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
+     constexpr int READ_LIMIT = MAIN_READ_LIMIT;
+     constexpr int PROCESS_LIMIT = 255;
+     const int GENE_PADDING = 8;
+     const int SHORT_ODDS_THRESHOLD = 4;
+     int PaddingSpaces = 0;
 
-    char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
-    char filename[TOTAL_BUFFER_SIZE] = { 0 };
-    strcpy_s(filename, _countof(filename), utf8Path);
-    SendMessage(plst, LB_RESETCONTENT, NULL, NULL);
+     char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
+     char filename[TOTAL_BUFFER_SIZE] = { 0 };
+     strcpy_s(filename, _countof(filename), utf8Path);
+     SendMessage(plst, LB_RESETCONTENT, NULL, NULL);
 
-    // Check stream validity
-    if (fp == nullptr || !fp->good()) {
-        std::string errorMsg = x.errorInfo(4);
-        std::string* errPtr = &errorMsg;
-        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
-        return false;
-    }
+     // Check stream validity
+     if (fp == nullptr || !fp->good()) {
+         std::string errorMsg = x.errorInfo(4);
+         std::string* errPtr = &errorMsg;
+         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+         return false;
+     }
 
-    // Check for zero byte file
-    fp->seekg(0, std::ios::end);
-    std::streampos size = fp->tellg();
-    fp->seekg(0, std::ios::beg);
-    if (size == 0) {
-        std::string errorMsg = x.errorInfo(4);
-        std::string* errPtr = &errorMsg;
-        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
-        return false;
-    }
+     // Check for zero byte file
+     fp->seekg(0, std::ios::end);
+     std::streampos size = fp->tellg();
+     fp->seekg(0, std::ios::beg);
+     if (size == 0) {
+         std::string errorMsg = x.errorInfo(4);
+         std::string* errPtr = &errorMsg;
+         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+         return false;
+     }
 
-    // Read header lines
-    fp->getline(lbuffer, READ_LIMIT);
-    std::string s = "Title: ";
-    s += lbuffer;
-    std::wstring str2(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+     // Read header lines
+     fp->getline(lbuffer, READ_LIMIT);
+     std::string s = "Title: ";
+     s += lbuffer;
+     std::wstring str2(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
-    fp->getline(lbuffer, 256);
-    s = "Source: ";
-    s += lbuffer;
+     fp->getline(lbuffer, 256);
+     s = "Source: ";
+     s += lbuffer;
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     fp->getline(lbuffer, READ_LIMIT);
+     s = "NCBI Reference: ";
+     s += lbuffer;
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     s = "-- Comparison With Loaded SNP Data --";
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     // Enable menu items
+     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
+
+     // RESET risk calculation
+     x.ResetRisk();
+
+     // Process each line
+     while (fp->getline(lbuffer, READ_LIMIT))
+     {
+         int rsid = 0;
+         char riskallele = '\0';
+         float oddsratio = 0.0;
+         PaddingSpaces = 0;
+
+         for (int i = 0; i <= READ_LIMIT;) {
+             // Parse RSID
+             if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S') {
+                 char number[MAIN_TOTAL_BUFFER_SIZE];
+                 int n = 0;
+                 while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58) {
+                     number[n] = lbuffer[i];
+                     i++;
+                     n++;
+                 }
+                 number[n] = '\0';
+                 rsid = atoi(number);
+             }
+
+             // Skip spaces to chromosome
+             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
+             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
+             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
+
+             // Skip gene name
+             int c = i;
+             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
+             int x = (i - c);
+             int genePadding = GENE_PADDING - x;
+             if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
+             else PaddingSpaces = PaddingSpaces + 1;
+
+             // Skip to risk allele
+             while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT) i++;
+             riskallele = lbuffer[i];
+             i++;
+             while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT) i++;
+
+             // Parse odds ratio
+             {
+                 char number[MAIN_TOTAL_BUFFER_SIZE];
+                 int n = 0;
+                 while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
+                     number[n] = lbuffer[i];
+                     i++;
+                     n++;
+                 }
+                 if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++;
+                 number[n] = '\0';
+                 if (strlen(number) > 0) oddsratio = atof(number);
+             }
+
+             while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) i++;
+             break;
+         }
+
+         if (rsid > 0) {
+             std::string ret_result = x.PathogenicCall(rsid, riskallele, oddsratio);
+
+             // Visual alignment
+             if (ret_result == "RSID not present in your file" ||
+                 ret_result == "No data for this SNP (0/0)") {
+                 PaddingSpaces++;
+             }
+
+             s = lbuffer;
+             for (int i = 0; i < PaddingSpaces; i++) {
+                 s += " ";
+             }
+             s += ret_result;
+
+             str2.resize(s.length(), L' ');
+             std::copy(s.begin(), s.end(), str2.begin());
+             wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+             SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+         }
+     }
+
+     // Display results
+     s = " ";
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     // Get risk results
+     float yourOR = x.GetCombinedOR();
+     float maxOR = x.GetMaxPossibleOR();
+     float totalBeta = x.GetTotalBeta();
+     float maxBeta = x.GetMaxBeta();
+
+     // Determine clinical risk level
+     std::string riskLevel;
+     std::string clinicalGuidance;
+
+     if (yourOR > 50.0f) {
+         riskLevel = "VERY HIGH";
+         clinicalGuidance = "Strong genetic predisposition!";
+     }
+     else if (yourOR > 20.0f) {
+         riskLevel = "HIGH";
+         clinicalGuidance = "Significant genetic risk!";
+     }
+     else if (yourOR > 10.0f) {
+         riskLevel = "MODERATELY HIGH";
+         clinicalGuidance = "Elevated genetic risk.";
+     }
+     else if (yourOR > 5.0f) {
+         riskLevel = "MODERATE";
+         clinicalGuidance = "Above average genetic risk.";
+     }
+     else if (yourOR > 2.0f) {
+         riskLevel = "SLIGHTLY ELEVATED";
+         clinicalGuidance = "Mildly increased genetic susceptibility.";
+     }
+     else {
+         riskLevel = "AVERAGE";
+         clinicalGuidance = "No significant genetic predisposition.";
+     }
+
+     // Display odds ratio
+     {//Scope contains and destroys stream object better than a reset that could be forgotten
+         float percentOfMax = (totalBeta / maxBeta) * 100.0f;
+         std::ostringstream stream;
+         stream << std::fixed << std::setprecision(2) << percentOfMax << "%";
+         std::string result = stream.str();
+         s = "Your genetic risk score: " + result; //4/25/2026 Major FIX Pecentage LOG risk! as OR would be 96.33 and LOG % 47.74% OR would become unintuitively large for max!
+     }//Scope contains and destroys stream object better than a reset that could be forgotten
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     //ADD explaintion line as the maximum would nevver exist so you may have 30% of and achivable 70%
+     s = "(Percentage of theoretical maximum risk for this PPI file)";
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+     // Display risk level
+     s = "Risk level: " + riskLevel;
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+     // Display clinical guidance
+     s = "Interpretation: " + clinicalGuidance; //NOT putinng medical advise! Just risk and HOPE people at RISK follow up with Medical Professionals!
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+     {//Scope contains and destroys stream object better than a reset that could be forgotten
+     // Optional: Show log-risk for statistical context at 3 places of decimal for readablitly and sci should be based on medical testing!
+     std::ostringstream s2;
+     s2 << std::fixed << std::setprecision(3) << totalBeta;
+     std::string sbeta = s2.str();
+     std::ostringstream s3;
+     s3 << std::fixed << std::setprecision(3) << maxBeta;
+     std::string betaMax = s3.str(); //(naming old Guy video format joke!)
+     s = "Log-risk score: " + sbeta + " (Range: 0 - " + betaMax + ")";  
+     }//Scope contains and destroys stream object better than a reset that could be forgotten
     str2.resize(s.length(), L' ');
     std::copy(s.begin(), s.end(), str2.begin());
     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    fp->getline(lbuffer, READ_LIMIT);
-    s = "NCBI Reference: ";
-    s += lbuffer;
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    s = "-- Comparison With Loaded SNP Data --";
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    // Enable menu items
-    EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_EXPORTRESULTSTO, MF_BYCOMMAND | MF_ENABLED);
-
-    // RESET risk calculation
-    x.ResetRisk();
-
-    // Process each line
-    while (fp->getline(lbuffer, READ_LIMIT))
-    {
-        int rsid = 0;
-        char riskallele = '\0';
-        float oddsratio = 0.0;
-        PaddingSpaces = 0;
-
-        for (int i = 0; i <= READ_LIMIT;) {
-            // Parse RSID
-            if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S') {
-                char number[MAIN_TOTAL_BUFFER_SIZE];
-                int n = 0;
-                while ((int)(lbuffer[i]) > 47 && (int)(lbuffer[i]) < 58) {
-                    number[n] = lbuffer[i];
-                    i++;
-                    n++;
-                }
-                number[n] = '\0';
-                rsid = atoi(number);
-            }
-
-            // Skip spaces to chromosome
-            while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
-            while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
-            while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
-
-            // Skip gene name
-            int c = i;
-            while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
-            int x = (i - c);
-            int genePadding = GENE_PADDING - x;
-            if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
-            else PaddingSpaces = PaddingSpaces + 1;
-
-            // Skip to risk allele
-            while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT) i++;
-            riskallele = lbuffer[i];
-            i++;
-            while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT) i++;
-
-            // Parse odds ratio
-            {
-                char number[MAIN_TOTAL_BUFFER_SIZE];
-                int n = 0;
-                while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
-                    number[n] = lbuffer[i];
-                    i++;
-                    n++;
-                }
-                if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++;
-                number[n] = '\0';
-                if (strlen(number) > 0) oddsratio = atof(number);
-            }
-
-            while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) i++;
-            break;
-        }
-
-        if (rsid > 0) {
-            std::string ret_result = x.PathogenicCall(rsid, riskallele, oddsratio);
-
-            // Visual alignment
-            if (ret_result == "RSID not present in your file" ||
-                ret_result == "No data for this SNP (0/0)") {
-                PaddingSpaces++;
-            }
-
-            s = lbuffer;
-            for (int i = 0; i < PaddingSpaces; i++) {
-                s += " ";
-            }
-            s += ret_result;
-
-            str2.resize(s.length(), L' ');
-            std::copy(s.begin(), s.end(), str2.begin());
-            wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-            SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-        }
-    }
-
-    // Display results
-    s = " ";
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    // Get risk results
-    float yourOR = x.GetCombinedOR();
-    float maxOR = x.GetMaxPossibleOR();
-    float totalBeta = x.GetTotalBeta();
-    float maxBeta = x.GetMaxBeta();
-
-    // Determine clinical risk level
-    std::string riskLevel;
-    std::string clinicalGuidance;
-
-    if (yourOR > 50.0f) {
-        riskLevel = "VERY HIGH";
-        clinicalGuidance = "Strong genetic predisposition!";
-    }
-    else if (yourOR > 20.0f) {
-        riskLevel = "HIGH";
-        clinicalGuidance = "Significant genetic risk!";
-    }
-    else if (yourOR > 10.0f) {
-        riskLevel = "MODERATELY HIGH";
-        clinicalGuidance = "Elevated genetic risk.";
-    }
-    else if (yourOR > 5.0f) {
-        riskLevel = "MODERATE";
-        clinicalGuidance = "Above average genetic risk.";
-    }
-    else if (yourOR > 2.0f) {
-        riskLevel = "SLIGHTLY ELEVATED";
-        clinicalGuidance = "Mildly increased genetic susceptibility.";
-    }
-    else {
-        riskLevel = "AVERAGE";
-        clinicalGuidance = "No significant genetic predisposition.";
-    }
-
-    // Display odds ratio
-//    std::ostringstream s1;
-//    s1 << yourOR;
-//    std::string sf(s1.str());
-
-    //float percentOfMax = (totalBeta / maxBeta) * 100.0f;
-    //s = "Your genetic risk score: " + std::to_string(percentOfMax) + "%";
-    float percentOfMax = (totalBeta / maxBeta) * 100.0f;
-    std::ostringstream stream;
-    stream << std::fixed << std::setprecision(2) << percentOfMax << "%";
-    std::string result = stream.str();
-    s = "Your combined odds ratio: " + result;
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-   //ADD explaintion line as the maximum would nevver exist so you may have 30% of and achivable 70%
-
-
-    s = "(Percentage of theoretical maximum risk for this PPI file)";
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-    // Display risk level
-    s = "Risk level: " + riskLevel;
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    // Display clinical guidance
-    s = "Interpretation: " + clinicalGuidance;
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-    // Optional: Show log-risk for statistical context
-    std::ostringstream s2;
-    s2 << totalBeta;
-    std::string sbeta(s2.str());
-
-    s = "Log-risk score: " + sbeta + " (Range: 0 - " + std::to_string(maxBeta) + ")";
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
     // Add an empty row
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)L"");
-
     // MD5 hash
     MD5 md5;
     std::string hash = md5.digestFile(filename);
@@ -2207,19 +2181,18 @@ bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite
     std::copy(s.begin(), s.end(), str2.begin());
     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
     // Redraw
     InvalidateRect(aDiag, NULL, FALSE);
     UpdateWindow(aDiag);
     RECT rc;
     GetWindowRect(plst, &rc);
     RedrawWindow(plst, &rc, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
-
     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PRINT_RESULTS, MF_BYCOMMAND | MF_ENABLED);
     EnableMenuItem(GetMenu(GetParent(aDiag)), ID_CLEARRESULTS, MF_BYCOMMAND | MF_ENABLED);
 
     return true;
 }
+
  /* SCREEN UPDATE */
 void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char sx)
 {

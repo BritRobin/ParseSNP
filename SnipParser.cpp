@@ -1109,13 +1109,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             abortMerge_ = true;  // Signal merge failure
                             return false;
                         }
-                        if (inx >= DNA_SNP_BUFFER_SIZE)
-                        {
-                            //Buffer overflow protection
-                            fs.close();
-                            errorCode_ = 3; //File read error possibly invalid or corrupt. Too much data.
-                            return false;
-                        }
+
                         //increment count of lines loaded
                         loadCount_++;
                         // Check against merge-specific limits
@@ -1532,8 +1526,9 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                 //ensure we at lease have a theoretically valid position data value
                 if (tempPos > 0)
                 {//THIS IS THE REALLY CORE CODE snpM[]=snp[] Therfore we can modify the snp[] data directly via RSID match!
-                    for (int j = 0; j < loadCount_; j++) {
-                        if (snp[j].rs == code) {
+                    for (unsigned int j = 0; j < loadCount_; j++) {
+                        if (snp[j].rs == code) 
+                        {
                             // Update snp[j] directly
                             snp[j].a = snpM[i].a;
                             snp[j].b = snpM[i].b;
@@ -1687,7 +1682,7 @@ std::string SnipParser::errorInfo(unsigned int error)
         break;
     case 3: errorMessage_ = error03_;
         break;
-    case 4: errorMessage_ = error03_;
+    case 4: errorMessage_ = error04_; //C&P Error should return Error 4!!!
         break;
     default:
         errorMessage_ = "Undefined Error";
@@ -1925,8 +1920,8 @@ int SnipParser::FTDNADecode(std::string code)
         return 0;
     }
     int rs = 0;
-    int num = atoi(code.c_str());
-    num = atoi(code.c_str()); //in example  VG01S1077 ftdna will equal numeric 11007
+    int num = atoi(code.c_str());//in example  VG01S1077 ftdna will equal numeric 11007
+
     switch (num) {//rs equivelent ALL Illumina VG codes seem to realte to Cystic Fibrosis!
     case 11077:
         rs = 77931234;
