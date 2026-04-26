@@ -1847,9 +1847,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
 
     // Convert OR to log odds (beta)
     float beta = log(oddsratio);
-
-    // Update theoretical maximum (all SNPs homozygous)
-    max_beta_ += 2.0f * beta;
+    float copies = 2.0f;
 
     if (loadCount_ > 0)
     {
@@ -1857,16 +1855,21 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
         {
             if (snp[i].rs == rsid)
             {
+                // X Y chromosome for males (hemizygous - only one copy possible) MT DNA too
+                if ((snp[i].ch[0] == 'X' && sex_ == 'M') || (snp[i].ch[0] == 'Y' && sex_ == 'M') || (snp[i].ch[0] == 'M' && snp[i].ch[1] == 'T')) copies = 1.0f;
+
                 // No data
                 if (snp[i].a == '0' && snp[i].b == '0')
                 {
+                    max_beta_ += beta * copies; //theorical Max Updated at every return
+                    missing_beta_ += beta * copies; //throeretical maximum for missing data
                     return "No data for this SNP (0/0)";
                 }
 
                 // Count risk alleles
                 int riskCopies = 0;
                 if (snp[i].a == riskallele) riskCopies++;
-                if (snp[i].b == riskallele) riskCopies++;
+                if (snp[i].b == riskallele && copies == 2.0f) riskCopies++;
 
                 // Format result message
                 char buffer[8];
@@ -1882,6 +1885,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 // No risk alleles
                 if (riskCopies == 0)
                 {
+                    max_beta_ += beta * copies; //theorical Max Updated at every return
                     result_message += "No risk alleles";
                     return result_message;
                 }
@@ -1889,8 +1893,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 // Add beta for each risk copy
                 total_beta_ += riskCopies * beta;
 
-                // X chromosome for males (hemizygous - only one copy possible)
-                if (snp[i].ch[0] == 'X' && sex_ == 'M')
+                if(copies == 1.0f)
                 {
                     result_message += "Risk Hemizygous";
                 }
@@ -1902,13 +1905,15 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
                 {
                     result_message += "Risk Heterozygous";
                 }
-
+                max_beta_ += beta * copies; //theorical Max Updated at every return
                 return result_message;
             }
         }
     }
 
     // RSID not found
+    max_beta_ += beta * copies; //theorical Max Updated at every return
+    missing_beta_ += beta * copies; //throeretical maximum for missing data
     return "RSID not present in your file";
 }
 

@@ -41,11 +41,12 @@ public:
 	std::string errorInfo(unsigned int error); //return error message for error code
 	//New OR code more acurate more contained in the class
 	// NEW getters for beta values //rewrite 4/19/2026
-	void ResetRisk() { total_beta_ = 0.0f; max_beta_ = 0.0f; }
+	void ResetRisk() { total_beta_ = 0.0f; max_beta_ = 0.0f; missing_beta_ = 0.0f; }
 	float GetTotalBeta(void) const { return total_beta_; }
 	float GetMaxBeta(void) const { return max_beta_; }
 	float GetMaxPossibleOR() const { return exp(max_beta_); }
 	float GetPercentile() const { return (max_beta_ > 0.0f) ? (total_beta_ / max_beta_) * 100.0f : 0.0f;	}//Add bounds check 4/20/2026 
+	float GetMissing() const { return missing_beta_; } //return the max for Missing data!
 	double GetCombinedOR() const { return std::exp(total_beta_); } //Changed to double to avoid overflow
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio);
 	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
@@ -99,8 +100,9 @@ private:
 	unsigned int mergefile_     = 0;
 	unsigned int loadCount_     = 0;
 	//Pathogenic value // Changed to double in case of float overflow! - 4/20/2026
-	double total_beta_			= 0.0f;    // Sum of log odds
-	double max_beta_			= 0.0f;    // Maximum possible sum
+	double total_beta_			= 0.0f;		// Sum of log odds
+	double missing_beta_		= 0.0f;		// The Max for Missing or No-read data
+	double max_beta_			= 0.0f;		// Maximum possible sum
 	//Pathogenic value 
 	//Start: Very basic error handling
 	std::string errorMessage_	= "";

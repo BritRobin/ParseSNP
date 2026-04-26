@@ -2094,6 +2094,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      float maxOR = x.GetMaxPossibleOR();
      float totalBeta = x.GetTotalBeta();
      float maxBeta = x.GetMaxBeta();
+     float missingBeta = x.GetMissing();//return the max for Missing data!
 
      // Determine clinical risk level
      std::string riskLevel;
@@ -2143,6 +2144,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      std::copy(s.begin(), s.end(), str2.begin());
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+   
+     {//Added the Percentage max in missing data!
+         // Calculate how much of maxBeta comes from missing SNPs
+         float missingPercent = (missingBeta / maxBeta) * 100.0f;
+         std::ostringstream stream;
+         stream << std::fixed << std::setprecision(2) << missingPercent << "%";
+         std::string result = stream.str();
+         s = "Missing data accounts for a Maximum of " + result;
+     }
+     str2.resize(s.length(), L' ');
+     std::copy(s.begin(), s.end(), str2.begin());
+     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
      // Display risk level
      s = "Risk level: " + riskLevel;
      str2.resize(s.length(), L' ');
