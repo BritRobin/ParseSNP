@@ -19,8 +19,6 @@ class SnipParser
 
 public:
 	std::string fi_ = "";
-	int SNPCount(void) const;
-	std::string NCBIBuild(void) const;
 	bool Ancestory(wchar_t* fi_);
 	bool MergeAncestory(wchar_t* fi_);
 	bool FTDNA(wchar_t* fi_);
@@ -28,17 +26,19 @@ public:
 	bool AncestoryWriter(wchar_t* fi_); //output all loaded/parsed SNPs
 	bool f23andMe(wchar_t* fi_);
 	bool Mergef23andMe(wchar_t* fi_);
-	wchar_t sex(void) const;
-	unsigned int merged(void) const;
-	bool MergeState(void) const;
-	unsigned int IllumTransVG(void) const;
-	unsigned int IllumUntransVG(void) const;
-	unsigned int MergeProcessed(void);
-	bool mergeRs(int code, const std::string& line);
-	std::string PVer(void) const; //return version
-	std::string PAbout(void) const; //return program/class about info
+	wchar_t sex(void) const { return sex_; } //return sex as determined by XX or XY chromosones the sequences won't give data for non-typical cases
+	unsigned int IllumTransVG(void) const {	return illuminaT_;	} //Return the number of translated VG codes
+	unsigned int IllumUntransVG(void) const	{ return illuminaU_; } //Return the number of untranslated VG codes
+	int SNPCount(void) const { return loadCount_; } //return the number of lines loaded
+	unsigned int merged(void) const { return merged_; }
+	bool mergeRs(int code, const std::string& line);	
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
+	bool MergeState(void) const { return abortMerge_; } //returns if merge failed
+	unsigned int MergeProcessed(void) { return(allcecked_); }//Return Merged FIXED 12/31/2025
 	std::string errorInfo(unsigned int error); //return error message for error code
+	std::string PVer(void) const { return  Pversion_; } //return version number
+	std::string PAbout(void) const { return PAbouttxt_; } //return program/class about info
+	std::string NCBIBuild(void) const {	return NCBIBuild_; } //return the NCBI Build the file was based on gives position a referance as well as being a clue to the age of the files contents 
 	//New OR code more acurate more contained in the class
 	// NEW getters for beta values //rewrite 4/19/2026
 	void ResetRisk() { total_beta_ = 0.0f; max_beta_ = 0.0f; missing_beta_ = 0.0f; }
@@ -49,7 +49,7 @@ public:
 	float GetMissing() const { return missing_beta_; } //return the max for Missing data!
 	double GetCombinedOR() const { return std::exp(total_beta_); } //Changed to double to avoid overflow
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio);
-	// Conservative buffer size - double typical max to be safe was set to max human SNPs @ 10430639
+	// Conservative buffer size
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 	//Error code
 	unsigned int errorCode_ = 0;

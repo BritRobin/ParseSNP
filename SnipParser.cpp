@@ -1373,30 +1373,6 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
     return true;
 };
 
-//Return the number of translated VG codes
-unsigned int  SnipParser::IllumTransVG(void) const
-{
-    return illuminaT_;
-}
-//Return the number of untranslated VG codes
-unsigned int  SnipParser::IllumUntransVG(void) const
-{
-    return illuminaU_;
-}
-//return the number of lines loaded
-int SnipParser::SNPCount(void) const
-{
-    return loadCount_;
-}
-//return sex
-wchar_t SnipParser::sex(void) const
-{
-    return sex_;
-}
-unsigned int SnipParser::merged(void) const
-{
-    return merged_;
-}
 
 //make merge copy
 void SnipParser::initMergeCopy(void)
@@ -1428,11 +1404,6 @@ void SnipParser::initMergeCopy(void)
     }
 }
 
-//returns if merge failed
-bool SnipParser::MergeState(void) const
-{
-    return abortMerge_;
-}
 /*Revert a failed merge*/
 void SnipParser::revertMerge(void)
 {
@@ -1445,10 +1416,6 @@ void SnipParser::revertMerge(void)
     //reset load count
     loadCount_ = origloadcount_;
 
-}
-unsigned int SnipParser::MergeProcessed(void)
-{
-    return(allcecked_); //Return Merged FIXED 12/31/2025
 }
 
 /*Check the subject is the same to prevent the generation of garbage genetic files
@@ -1472,7 +1439,6 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             // Start from end of line
             const char* lineEnd = line.c_str() + line.length();
             const char* ptr = lineEnd - 1;//point to last char
-
             /* REPLACE NO READS! [START]
                Here we don't ADD a new RSid we update a value that was a No Read in the original data.
                Technically we are Adding an RSid as the oringinal entry was a failed read with no Data
@@ -1668,6 +1634,7 @@ bool SnipParser::RsSearch(int *rs, char* chr1, char* chr2, char* chr3, char* chr
     }
     return false;
 }
+
 //return error string for disalog
 std::string SnipParser::errorInfo(unsigned int error)
 {  
@@ -1692,22 +1659,6 @@ std::string SnipParser::errorInfo(unsigned int error)
     return errorMessage_;
 }
 
-//return version number
-std::string SnipParser::PVer(void) const
-{
-    return  Pversion_;
-}
-
-std::string SnipParser::PAbout(void) const
-{
-    return PAbouttxt_;
-}
-/*return the NCBI Build the file was based on gives position a referance
-  as well as being a clue to the age of the files contents */
-std::string SnipParser::NCBIBuild(void) const
-{
-    return NCBIBuild_;
-}
 /*Major Work in porgress*/
 bool  SnipParser::AncestoryWriter(wchar_t* fi_)
 {
