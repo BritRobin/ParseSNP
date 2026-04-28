@@ -1938,6 +1938,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      constexpr int PROCESS_LIMIT = 255;
      const int GENE_PADDING = 8;
      const int SHORT_ODDS_THRESHOLD = 4;
+     bool ORPresent = true;
+     int ORGood = 0;
+     int ORBad  = 0;
      int PaddingSpaces = 0;
 
      char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
@@ -2036,13 +2039,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
              if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
              else PaddingSpaces = PaddingSpaces + 1;
 
-             // Skip to risk allele
+             // Skip to risk allele space and left braket
              while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT) i++;
+             //Get risk Allele
              riskallele = lbuffer[i];
              i++;
+             // Skip to risk allele space and right braket
              while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT) i++;
 
-             // Parse odds ratio
+             // Parse odds ratio (the basis of our predictive statistics if it's isn't there we need to skip that output!
              {
                  char number[MAIN_TOTAL_BUFFER_SIZE];
                  int n = 0;
@@ -2054,6 +2059,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++;
                  number[n] = '\0';
                  if (strlen(number) > 0) oddsratio = atof(number);
+                 //This logic is in case someone took a study with OR numbers then add 1 or more RSIDs and Risk Alleles with no Odds Ratio
+                 //(or did not enter the OR as it was from another study)
+                 if (oddsratio > 0.0f) ORGood++;
+                 else ORBad++;
              }
 
              while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) i++;
@@ -2089,102 +2098,108 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
-     // Get risk results
-     float yourOR = x.GetCombinedOR();
-     float maxOR = x.GetMaxPossibleOR();
-     float totalBeta = x.GetTotalBeta();
-     float maxBeta = x.GetMaxBeta();
-     float missingBeta = x.GetMissing();//return the max for Missing data!
+     //Determin if there is enought Odds Ratios 
+     if (ORBad > ORGood) ORPresent = false;
 
-     // Determine clinical risk level
-     std::string riskLevel;
-     std::string clinicalGuidance;
+     if (ORPresent)
+     {
+         // Get risk results
+         float yourOR = x.GetCombinedOR();
+         float maxOR = x.GetMaxPossibleOR();
+         float totalBeta = x.GetTotalBeta();
+         float maxBeta = x.GetMaxBeta();
+         float missingBeta = x.GetMissing();//return the max for Missing data!
+         // Determine clinical risk level
+         std::string riskLevel;
+         std::string clinicalGuidance;
 
-     if (yourOR > 50.0f) {
-         riskLevel = "VERY HIGH";
-         clinicalGuidance = "Strong genetic predisposition!";
-     }
-     else if (yourOR > 20.0f) {
-         riskLevel = "HIGH";
-         clinicalGuidance = "Significant genetic risk!";
-     }
-     else if (yourOR > 10.0f) {
-         riskLevel = "MODERATELY HIGH";
-         clinicalGuidance = "Elevated genetic risk.";
-     }
-     else if (yourOR > 5.0f) {
-         riskLevel = "MODERATE";
-         clinicalGuidance = "Above average genetic risk.";
-     }
-     else if (yourOR > 2.0f) {
-         riskLevel = "SLIGHTLY ELEVATED";
-         clinicalGuidance = "Mildly increased genetic susceptibility.";
-     }
-     else {
-         riskLevel = "AVERAGE";
-         clinicalGuidance = "No significant genetic predisposition.";
-     }
+         if (yourOR > 50.0f) {
+             riskLevel = "VERY HIGH";
+             clinicalGuidance = "Strong genetic predisposition!";
+         }
+         else if (yourOR > 20.0f) {
+             riskLevel = "HIGH";
+             clinicalGuidance = "Significant genetic risk!";
+         }
+         else if (yourOR > 10.0f) {
+             riskLevel = "MODERATELY HIGH";
+             clinicalGuidance = "Elevated genetic risk.";
+         }
+         else if (yourOR > 5.0f) {
+             riskLevel = "MODERATE";
+             clinicalGuidance = "Above average genetic risk.";
+         }
+         else if (yourOR > 2.0f) {
+             riskLevel = "SLIGHTLY ELEVATED";
+             clinicalGuidance = "Mildly increased genetic susceptibility.";
+         }
+         else {
+             riskLevel = "AVERAGE";
+             clinicalGuidance = "No significant genetic predisposition.";
+         }
 
-     // Display odds ratio
-     {//Scope contains and destroys stream object better than a reset that could be forgotten
-         float percentOfMax = (totalBeta / maxBeta) * 100.0f;
-         std::ostringstream stream;
-         stream << std::fixed << std::setprecision(2) << percentOfMax << "%";
-         std::string result = stream.str();
-         s = "Your genetic risk score: " + result; //4/25/2026 Major FIX Pecentage LOG risk! as OR would be 96.33 and LOG % 47.74% OR would become unintuitively large for max!
-     }//Scope contains and destroys stream object better than a reset that could be forgotten
-     str2.resize(s.length(), L' ');
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+         // Display odds ratio
+         {//Scope contains and destroys stream object better than a reset that could be forgotten
+             float percentOfMax = (totalBeta / maxBeta) * 100.0f;
+             std::ostringstream stream;
+             stream << std::fixed << std::setprecision(2) << percentOfMax << "%";
+             std::string result = stream.str();
+             s = "Your genetic risk score: " + result; //4/25/2026 Major FIX Pecentage LOG risk! as OR would be 96.33 and LOG % 47.74% OR would become unintuitively large for max!
+         }//Scope contains and destroys stream object better than a reset that could be forgotten
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
-     //ADD explaintion line as the maximum would nevver exist so you may have 30% of and achivable 70%
-     s = "(Percentage of theoretical maximum risk for this PPI file)";
-     str2.resize(s.length(), L' ');
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-   
-     {//Added the Percentage max in missing data!
-         // Calculate how much of maxBeta comes from missing SNPs
-         float missingPercent = (missingBeta / maxBeta) * 100.0f;
-         std::ostringstream stream;
-         stream << std::fixed << std::setprecision(2) << missingPercent << "%";
-         std::string result = stream.str();
-         s = "Missing data accounts for a Maximum of " + result;
+         //ADD explaintion line as the maximum would nevver exist so you may have 30% of and achivable 70%
+         s = "(Percentage of theoretical maximum risk for this PPI file)";
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+         {//Added the Percentage max in missing data!
+             // Calculate how much of maxBeta comes from missing SNPs
+             float missingPercent = (missingBeta / maxBeta) * 100.0f;
+             std::ostringstream stream;
+             stream << std::fixed << std::setprecision(2) << missingPercent << "%";
+             std::string result = stream.str();
+             s = "Missing data accounts for a Maximum of " + result;
+         }
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+         // Display risk level
+         s = "Risk level: " + riskLevel;
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
+         // Display clinical guidance
+         s = "Interpretation: " + clinicalGuidance; //NOT putinng medical advise! Just risk and HOPE people at RISK follow up with Medical Professionals!
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+         {//Scope contains and destroys stream object better than a reset that could be forgotten
+         // Optional: Show log-risk for statistical context at 3 places of decimal for readablitly and sci should be based on medical testing!
+             std::ostringstream s2;
+             s2 << std::fixed << std::setprecision(3) << totalBeta;
+             std::string sbeta = s2.str();
+             std::ostringstream s3;
+             s3 << std::fixed << std::setprecision(3) << maxBeta;
+             std::string betaMax = s3.str(); //(naming old Guy video format joke!)
+             s = "Log-risk score: " + sbeta + " (Range: 0 - " + betaMax + ")";
+         }//Scope contains and destroys stream object better than a reset that could be forgotten
+         str2.resize(s.length(), L' ');
+         std::copy(s.begin(), s.end(), str2.begin());
+         wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
+         SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
+
      }
-     str2.resize(s.length(), L' ');
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-     // Display risk level
-     s = "Risk level: " + riskLevel;
-     str2.resize(s.length(), L' ');
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-
-     // Display clinical guidance
-     s = "Interpretation: " + clinicalGuidance; //NOT putinng medical advise! Just risk and HOPE people at RISK follow up with Medical Professionals!
-     str2.resize(s.length(), L' ');
-     std::copy(s.begin(), s.end(), str2.begin());
-     wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
-     {//Scope contains and destroys stream object better than a reset that could be forgotten
-     // Optional: Show log-risk for statistical context at 3 places of decimal for readablitly and sci should be based on medical testing!
-     std::ostringstream s2;
-     s2 << std::fixed << std::setprecision(3) << totalBeta;
-     std::string sbeta = s2.str();
-     std::ostringstream s3;
-     s3 << std::fixed << std::setprecision(3) << maxBeta;
-     std::string betaMax = s3.str(); //(naming old Guy video format joke!)
-     s = "Log-risk score: " + sbeta + " (Range: 0 - " + betaMax + ")";  
-     }//Scope contains and destroys stream object better than a reset that could be forgotten
-    str2.resize(s.length(), L' ');
-    std::copy(s.begin(), s.end(), str2.begin());
-    wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
-    SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
     // Add an empty row
     SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)L"");
     // MD5 hash
