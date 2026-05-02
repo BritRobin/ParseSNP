@@ -17,7 +17,7 @@
  */
 
 #include "SnipParser.h"
-#include <atomic>
+//#include <atomic> //Redundant 5/2/2026
 
 
 // Use 'variant::index' to know the type strored in variant (zero-based index). 
@@ -139,11 +139,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 
                     //second in the line is the chromosome position
                     snp[inx].pos = atoi(num);
-                    //DEBUG
-                    if (snp[inx].pos == 0) {
-                        int a = 1;
-                    }
-                    //DEBUG
+                    //removed debug code 5/2/2026
                     //If we had run out of data restart loop read next line
                     if (rdindex >= READ_LIMIT) continue;
                     //As the last two values are not numeric we have to rely on the file still being TAB delimited
@@ -203,7 +199,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                 }
                 else 
                 {  //i + 1 < searchEnd && i + 1 < READ_LIMIT
-                    for (int indx = 0; indx < (READ_LIMIT - 4); indx++)
+                    for (int indx = 0; indx < (READ_LIMIT - 3); indx++) //5/2/2026 over by 1
                     {
                         if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
                         {
@@ -407,7 +403,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
                 }
                 else
                 {
-                    for (int indx = 0; indx < READ_LIMIT; indx++)
+                    for (int indx = 0; indx < (READ_LIMIT - 3); indx++) //fixed for read past end of buffer 5/2/2026
                     {
                         if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
                         {
@@ -645,7 +641,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     loadCount_++;
 
                 }
-            } //FTDNA do not ref NCBI build
+                } //FTDNA do not ref NCBI build
                 loopbreak++;
                 if (loopbreak == INVALID_LINE_LIMIT)
                 {
@@ -711,7 +707,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
 			//sex_ = 'F'; //Sex already set in original load
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
-            int inx = loadCount_, rst, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026
+            int inx = loadCount_, rst = 0, rdindex = 0;  //merge code //nasty bug loadCount_+1 created a hole 3/28/2026 init rst 5/2/2026
             wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
             std::string vercheck;       //more efficient
             initMergeCopy();            //create merge subset
@@ -1105,9 +1101,8 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                         if (inx >= DNA_SNP_BUFFER_SIZE)
                         {
                             fs.close();
-                            errorCode_ = 3; // Buffer overflow during merge
-                            abortMerge_ = true;  // Signal merge failure
-                            return false;
+                            errorCode_ = 3; // Buffer overflow 
+                            return false;   //removed merge variable! C&P error 5/2/2026
                         }
 
                         //increment count of lines loaded
@@ -1399,8 +1394,7 @@ void SnipParser::initMergeCopy(void)
     }
     else {
         // No data loaded - create empty buffer
-        snpM.clear();
-        snpM.resize(0);  // Or just leave it empty
+        snpM.clear(); //5/2/2026 removed redundant resize(0)
     }
 }
 
@@ -1411,7 +1405,7 @@ void SnipParser::revertMerge(void)
     //Reset rsid to '\0'
     for (unsigned int i = 1 + origloadcount_; i < loadCount_; i++)
     {
-        snp[i].rs = '\0';
+        snp[i].rs = 0; //Fixed 5/2/2026 its not a string it's an int! '\0'
     }
     //reset load count
     loadCount_ = origloadcount_;
@@ -1797,8 +1791,10 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
     std::string result_message = "N/A";
 
     // Convert OR to log odds (beta)
-    float beta = log(oddsratio);
+    float beta   = 0.0f;  //theoretical log(0) infinity possible bug fix 5/2/2026
     float copies = 2.0f;
+
+    if(oddsratio > 0.0f ) beta = log(oddsratio);
 
     if (loadCount_ > 0)
     {

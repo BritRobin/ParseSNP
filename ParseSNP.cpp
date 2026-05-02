@@ -12,7 +12,6 @@
 #include <windows.h>
 #include <tchar.h>
 #include <stdlib.h>
-#include <Winuser.h>
 #include <shlobj_core.h>
 #include <shtypes.h>
 #include <filesystem>
@@ -26,8 +25,7 @@
 #pragma comment(lib, "winspool.lib")
 #include <memory>
 #include <vector>
-//temp
-#include <iostream>
+
 
 #define MAX_LOADSTRING 100
 namespace fs = std::filesystem; // In C++17 
@@ -237,7 +235,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //Form Control Message Handler
 INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    HANDLE hBmp;
+    //HANDLE hBmp; //redundant 5-2-2026
     switch (Message)
     {
 
@@ -248,7 +246,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         if(hBmp != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
 		//Enabled Bitmap
 		HBITMAP hBmp2 = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
-        if (hBmp2 != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp);
+        if (hBmp2 != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp2); //Another C&P error sending wrong bitmap 5/2/2026
 
         // Store the bitmap handle so we can delete it later
         SetProp(hwnd, L"BUTTONBITMAP_NORMAL", hBmp2);
@@ -393,7 +391,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                 }
              return TRUE;
             }
-            return TRUE;
+            return TRUE; //redundated but left it just in case I am wrong
         }
 
         case IDC_LIST3:
@@ -504,7 +502,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
          // Pad if it's a single-character chromosome (1–9, X, Y)
          if (chr_s.size() == 1) chr_s = " " + chr_s;  //Fixed 1/19/2026
 
-         std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Position: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2 + "";
+         std::string s = " Chromosome: " + chr_s + "  RSID " + " RS" + std::to_string(rs_number) + "  Position: " + std::to_string(position) + "  Alleles: " + allele1 + "  " + allele2;//redundate + "" as es, since C++11, std::string is guaranteed to maintain a null terminator (\0) 5/2/2026
          // Copy string to wstring.
          USES_CONVERSION_EX;
          CA2W str2(s.c_str()); //Use Macro Like everywhere else cleaner 4/25/2026
@@ -533,7 +531,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
         // Cleanup code - moved to proper location
         HBITMAP hBmp2 = (HBITMAP)RemoveProp(hwnd, L"BUTTONBITMAP_NORMAL");
-        if (hBmp) {
+        if (hBmp2) { //Checking the wrong Object that had just been destroyed 100% resource leak 5/2/2026
             DeleteObject(hBmp2);
         }
 
@@ -1810,7 +1808,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                             //Get Pathagenic window entry count
                                             HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                                             int  lcount;
-                                            bool beginFormating = false;
+                                           // bool beginFormating = false; //DEAD CODE 5-2-2026
                                             std::string  lbuffer;
                                             lcount = SendMessage(plst, LB_GETCOUNT, 0, 0);
                                             TCHAR text[MAIN_TOTAL_BUFFER_SIZE] = { '0' };
@@ -1827,7 +1825,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     const char* write_it = lbuffer.c_str();
                                                     fstrm.write(write_it, lbuffer.length());
                                                     if (lbuffer._Starts_with("NCBI")) {
-                                                        beginFormating = true;
+                                                       // beginFormating = true; //DEAD CODE 5-2-2026
                                                         fstrm.write("\n", 1);
                                                     }
                                                 }
@@ -1843,10 +1841,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
 
                 //Release all resources in REVERSE order of creation and check for nullptr before releasing to avoid crashes
-                if (pDefaultFolder) { pDefaultFolder->Release(); pDefaultFolder = nullptr; }
-                if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+                //cleanup should be pszFilePath → pItem → pDefaultFolder → pFileWrite FIXED 5/2/2026
                 if (pszFilePath) { CoTaskMemFree(pszFilePath); pszFilePath = nullptr; }
                 if (pItem) { pItem->Release(); pItem = nullptr; };
+                if (pDefaultFolder) { pDefaultFolder->Release(); pDefaultFolder = nullptr; }
+                if (pFileWrite) { pFileWrite->Release(); pFileWrite = nullptr; };
+            
                 CoUninitialize();
             }
          break;
@@ -3241,8 +3241,12 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                 ext[2] = 'P';
                                 ext[3] = 'I';
                                 ext[4] = L'\0';
+                               /*
                                 StrCpyW(filename, pszFilePath);//we know 
-                                wcscat_s(filename, ext);
+                                wcscat_s(filename, ext);*/
+                                //No Bounds check 5/2/2026
+                                wcscpy_s(filename, _countof(filename), pszFilePath);
+                                wcscat_s(filename, _countof(filename), ext);
                                 {//Write the file
                                     //Open file for write 
                                     std::fstream  fstrm;
@@ -3282,10 +3286,9 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 }
                                             }
                                             fstrm.close();
-                                            //Open file for write 
-                                            std::fstream  fstrmd5;
-                                            if (!fstrmd5.bad())
+                                            //Open file for write //Removed reduntant state check on New Stream and put definition in scope!
                                             {   //filestream 
+                                                std::fstream  fstrmd5;
                                                 MD5 md5;
                                                 ext[0] = '.';
                                                 ext[1] = 'M';
@@ -3302,8 +3305,11 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                                                 wcstombs_s(&charsConverted, file, dest, (wchar_t const*)filename, srce);
                                                 hash = md5.digestFile(file);
                                                 std::transform(hash.begin(), hash.end(), hash.begin(), ::toupper);
-                                                StrCpyW(filename, pszFilePath); //we know 
-                                                wcscat_s(filename, ext);
+                                               /* StrCpyW(filename, pszFilePath); //we know 
+                                                wcscat_s(filename, ext);*/
+                                                //No Bounds check 5/2/2026
+                                                wcscpy_s(filename, _countof(filename), pszFilePath);
+                                                wcscat_s(filename, _countof(filename), ext);
                                                 fstrmd5.open(filename, std::ios::out);
                                                 if (fstrmd5.is_open()) {
                                                     fstrmd5.write(hash.c_str(), hash.length());
