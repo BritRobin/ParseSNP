@@ -169,7 +169,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
-
+    ghWnd = hWnd;
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
@@ -186,11 +186,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		std::wstring pathogenicsPath = parseSNPPath + L"\\Pathogenics";  //Documents\ParseSNP\Pathogenics
 
         // === Start - STORE THE PATHs IN YOUR EXISTING GLOBAL ===
-        g_myPath = parseSNPPath;                 // This now holds "C:\Users\...\Documents\ParseSNP"
+        g_myPath              = parseSNPPath;    // This now holds "C:\Users\...\Documents\ParseSNP"
 		g_PathogenicsFilePath = pathogenicsPath; // Store Pathogenics path in global
-        g_currentProject = projectsPath;         // Store Projects Path in global
-		g_SourceFilePath = documentsPath;        // Store Source for RAW DNA txt file to documents in global
-        g_documentsPath  = documentsPath;        // Pementant reference to top level of \Users\<current user>\Documents 
+        g_currentProject      = projectsPath;    // Store Projects Path in global
+		g_SourceFilePath      = documentsPath;   // Store Source for RAW DNA txt file to documents in global
+        g_documentsPath       = documentsPath;   // Pementant reference to top level of \Users\<current user>\Documents 
         // === End - STORE THE PATHs IN YOUR EXISTING GLOBAL ===
 
         try {
@@ -201,19 +201,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
             // Set the working directory to the PARENT ParseSNP folder
             if (SetCurrentDirectoryW(parseSNPPath.c_str())) {
                 // Success! Working directory is now Documents\ParseSNP
-
-#ifdef _DEBUG
-                wchar_t currentDir[MAX_PATH];
-                GetCurrentDirectoryW(MAX_PATH, currentDir);
-                OutputDebugStringW(L"Working directory set to: ");
-                OutputDebugStringW(currentDir);
-                OutputDebugStringW(L"\n");
-
-                // Also output g_myPath to verify
-                OutputDebugStringW(L"g_myPath global set to: ");
-                OutputDebugStringW(g_myPath.c_str());
-                OutputDebugStringW(L"\n");
-#endif
             }
             else {
                 // Handle error if needed
@@ -247,7 +234,7 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 		//Enabled Bitmap
 		HBITMAP hBmp2 = (HBITMAP)LoadImage(GetModuleHandleA(nullptr), MAKEINTRESOURCE(IDB_BITMAP2), IMAGE_BITMAP, 81, 24, LR_DEFAULTCOLOR);
         if (hBmp2 != NULL) SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), (UINT)BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBmp2); //Another C&P error sending wrong bitmap 5/2/2026
-
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         // Store the bitmap handle so we can delete it later
         SetProp(hwnd, L"BUTTONBITMAP_NORMAL", hBmp2);
         SetProp(hwnd, L"BUTTONBITMAP_DISABLED", hBmp);
@@ -2294,6 +2281,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
              if (mergeLoad & 2) EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_DISABLED);
              else EnableMenuItem(GetMenu(hWnd), ID_FILE_MERGEFTDNA, MF_BYCOMMAND | MF_ENABLED);
            }
+         DrawMenuBar(hWnd); //Fix for disapearing Menu bar and blacked out drop downs! BUG Fix 5/3/2026
 	}
 	else {//NO FILE LOADED, DISABLE EVERYTHING
             std::string s = "0";
@@ -2304,13 +2292,13 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
             EnableWindow(GetDlgItem(aDiag, IDC_BUTTON_SEARCH), FALSE);
             EnableWindow(GetDlgItem(aDiag, IDC_EDIT_SEARCH),   FALSE);
             //Set a limit on rs field
-            SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fux 3/9/21
+            SendMessageW(GetDlgItem(aDiag, IDC_EDIT_SEARCH), EM_SETLIMITTEXT, 9, 0); //bug fix 3/9/21
             //Show source path
             SetWindowTextW(GetDlgItem(aDiag, IDC_SOURCE), NULL); 
             SetWindowTextW(GetDlgItem(aDiag, IDC_SEX), NULL);
             EnableMenuItem(GetMenu(hWnd), ID_FILE_EXPORT, MF_BYCOMMAND | MF_GRAYED);  //ensure export is deactivated
             EnableMenuItem(GetMenu(GetParent(aDiag)), ID_PATHOGENICS_LOAD, MF_BYCOMMAND | MF_GRAYED);
-         
+            DrawMenuBar(hWnd); //Fix for disapearing Menu bar and blacked out drop downs! BUG Fix 5/3/2026
 
             // Swap to grayscale image No Need to disable the button as you loose the bitmap and the button is protected
             HBITMAP hBmp = (HBITMAP)GetProp(aDiag, L"BUTTONBITMAP_DISABLED");
@@ -2706,6 +2694,7 @@ INT_PTR CALLBACK ProjectDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     switch (message)
     {
     case WM_INITDIALOG:
+         DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
          return (INT_PTR)TRUE;
 
     case WM_COMMAND:
@@ -2756,6 +2745,7 @@ INT_PTR CALLBACK ErrorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             // Use the string
             SetDlgItemTextA(hDlg, IDC_FSERROR, pErrorText->c_str());
         }
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return TRUE;
     }
     case WM_COMMAND:
@@ -2784,6 +2774,7 @@ INT_PTR CALLBACK Deletemsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         //Moved here to fix crash!
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
         //Set Icon
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
@@ -2826,11 +2817,11 @@ INT_PTR CALLBACK MergeAbortmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     {
     case WM_INITDIALOG: {
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         std::string s = "The Merge operation was aborted due to too many differences between existing SNP alleles.\nNo changes have been made.";
 		USES_CONVERSION_EX; //Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
-
         return (INT_PTR)TRUE;
     }
 
@@ -2882,6 +2873,7 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         std::string se(sx.str());
         lp = A2W_EX(se.c_str(), se.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_MERGED), lp);
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return (INT_PTR)TRUE;
     }
 
@@ -2922,7 +2914,7 @@ INT_PTR CALLBACK MergeWarnmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		USES_CONVERSION_EX;//Added Null check
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_STATIC), lp);
-
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return (INT_PTR)TRUE;
     }
 
@@ -2976,7 +2968,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             rcParent.right = GetSystemMetrics(SM_CXSCREEN);
             rcParent.bottom = GetSystemMetrics(SM_CYSCREEN);
         }
-
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         // Calculate centered position
         int parentWidth = rcParent.right - rcParent.left;
         int parentHeight = rcParent.bottom - rcParent.top;
@@ -3091,6 +3083,7 @@ INT_PTR CALLBACK SearchFailmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDNF), lp);
         lp = A2W_EX(e.c_str(), e.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDNF3), lp);
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return (INT_PTR)TRUE;
     }
 
@@ -3147,6 +3140,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
             SetProp(hDlg, L"DIALOG_ICON", hicon);
         }
+        DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         //Updated Icon code to prevent resource leaks
         USES_CONVERSION_EX;//Added Null check
         s = "All fields not marked with an asterisks are mandatory.\nNon-mandatory fields not entered are replaced with dashes.\nYou should reference the source URL of the data you enter.\nYou can delete an entry from the list by double clicking it.\nWhen a .PPI file is created a .MD5 file will be created containg its MD5 hash.  A .PPI file created from valid data and run against an acurate sequence should still be seen as indicative not diagnostic!\n\n** If you have genetic medical worries you should speak with a Dr or Genetic counselor! **";
