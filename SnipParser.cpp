@@ -252,7 +252,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
         int loopbreak = 0;
         //merge variables
         mergefile_ = 0;
-        merged_ = allcecked_ = 0;
+        merged_ = allchecked_ = 0;
         errorCode_ = 0; //Reset Error Code
 		//initialize both variables to current loadcount_
         end_index_ = loadCount_;
@@ -700,7 +700,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             int fdind = 0; //ftdna-illumina
             //merge variables
             mergefile_ = 0;
-            merged_ = allcecked_ = 0;
+            merged_ = allchecked_ = 0;
             end_index_ = origloadcount_ = loadCount_;
             abortMerge_ = false;
             //merge variables
@@ -1156,7 +1156,7 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         errorCode_ = 0; //Reset Error Code
         //merge variables
         mergefile_ = 0;
-        merged_ = allcecked_ = 0;
+        merged_ = allchecked_ = 0;
         end_index_ = origloadcount_ = loadCount_;
         //merge variables
         bool singleAllele = false;
@@ -1424,13 +1424,14 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
 	if (end_index_ == 0 || end_index_ >= DNA_SNP_BUFFER_SIZE) {//fixed bug 1/25/2026
         return true;  // Nothing to search or invalid
     }
+    //Fixed should count all lines processed, (which is not the number of lines in the file due to propiety codes of corrupt lines) Massive bug! 5/5/2026
+    allchecked_++;
     // SAFETY CHECK 2 - Use < not <=
     for (unsigned int i = 0; i < end_index_; ++i) {
         if (snpM[i].rs == code) //Does the code exist in the original dataset
-        {//yes we already have it!
-            allcecked_++;
-            //FOR BACKWARDS SEARCH
-            // Start from end of line
+        {   /* yes we already have it!
+               FOR BACKWARDS SEARCH
+               Start from end of line */
             const char* lineEnd = line.c_str() + line.length();
             const char* ptr = lineEnd - 1;//point to last char
             /* REPLACE NO READS! [START]
@@ -1556,7 +1557,7 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             }
             end_index_--;
 
-            if (allcecked_ > 1250 && ((allcecked_ >> 2) < failcheck_)) {
+            if (allchecked_ > (unsigned int)1250 && ((allchecked_ >> 2) < failcheck_)) {
                 abortMerge_ = true;
             }
 

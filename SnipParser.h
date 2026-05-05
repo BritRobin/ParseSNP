@@ -35,7 +35,7 @@ public:
 	bool mergeRs(int code, const std::string& line);	
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	bool MergeState(void) const { return abortMerge_; } //returns if merge failed
-	unsigned int MergeProcessed(void) { return(allcecked_); }//Return Merged FIXED 12/31/2025
+	unsigned int MergeProcessed(void) { return(allchecked_); }//Return Merged FIXED 12/31/2025
 	std::string errorInfo(unsigned int error); //return error message for error code
 	std::string PVer(void) const { return  Pversion_; } //return version number
 	std::string PAbout(void) const { return PAbouttxt_; } //return program/class about info
@@ -94,7 +94,7 @@ private:
 	static constexpr unsigned int BUFFER_SIZE					 = 260;
 	//more defensive code for invalid files
 	unsigned int end_index_		= 0;
-	unsigned int allcecked_		= 0;
+	unsigned int allchecked_	= 0;
 	unsigned int failcheck_		= 0;
 	unsigned int merged_        = 0;
 	unsigned int origloadcount_ = 0;
@@ -115,7 +115,7 @@ private:
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_				 = '-';
 	std::string NCBIBuild_	 = "";
-	std::string Pversion_	 = "1.1.0"; //SET **VERSION** HERE
+	std::string Pversion_	 = "1.1.1"; //SET **VERSION** HERE
 	std::string PAbouttxt_	 = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
 
 	unsigned int illuminaU_  = 0;
