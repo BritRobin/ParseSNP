@@ -250,14 +250,7 @@ bool  SnipParser::MergeAncestory(wchar_t* fi_)
     {
         char nbuffer[BUFFER_SIZE] = { '\0' };
         int loopbreak = 0;
-        //merge variables
-        mergefile_ = 0;
-        merged_ = allchecked_ = 0;
         errorCode_ = 0; //Reset Error Code
-		//initialize both variables to current loadcount_
-        end_index_ = loadCount_;
-        origloadcount_ = loadCount_;
-        //merge variables
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -698,12 +691,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
             // END: Check if file has content using fs
         //Check file was opened  
             int fdind = 0; //ftdna-illumina
-            //merge variables
-            mergefile_ = 0;
-            merged_ = allchecked_ = 0;
-            end_index_ = origloadcount_ = loadCount_;
-            abortMerge_ = false;
-            //merge variables
+            //Moved Merge vairable reset to initMergeCopy
 			//sex_ = 'F'; //Sex already set in original load
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
@@ -892,7 +880,11 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
               return false;
              }
     }
-
+    //merge failed
+    if (abortMerge_) {
+        revertMerge();
+        return false;
+    }
     return true;
 };
 
@@ -1154,11 +1146,6 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE] = { '\0' };
         int loopbreak = 0;
         errorCode_ = 0; //Reset Error Code
-        //merge variables
-        mergefile_ = 0;
-        merged_ = allchecked_ = 0;
-        end_index_ = origloadcount_ = loadCount_;
-        //merge variables
         bool singleAllele = false;
         //Open file for read 
         fs.open(fi_, std::ios::in);
@@ -1365,6 +1352,11 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
                return false;
              }
     }
+    //merge failed
+    if (abortMerge_) {
+        revertMerge();
+        return false;
+    }
     return true;
 };
 
@@ -1372,6 +1364,14 @@ bool  SnipParser::Mergef23andMe(wchar_t* fi_)
 //make merge copy
 void SnipParser::initMergeCopy(void)
 {
+    //merge variables MOVED Here 5/5/2026
+    allchecked_     = 0;
+    mergefile_      = 0;
+    merged_         = 0;
+    missmatchchk_   = 0;
+    end_index_ = origloadcount_ = loadCount_;
+    abortMerge_ = false;
+    //merge variables  MOVED Here 5/5/2026
  //removed Mutex do to recursive lock issue! 03/22/2026
     if (loadCount_ > 0) {//Code creates a copy of existing SNP data into snpM
         // Ensure snpM is large enough for existing data + some headroom
@@ -1432,6 +1432,7 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
         {   /* yes we already have it!
                FOR BACKWARDS SEARCH
                Start from end of line */
+            missmatchchk_++;   //I had allchecked_ trying to do two differnt jobs 5-5-2026 ver.1.1.1
             const char* lineEnd = line.c_str() + line.length();
             const char* ptr = lineEnd - 1;//point to last char
             /* REPLACE NO READS! [START]
@@ -1445,7 +1446,6 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                 char tempB  = '\0';
 				char tnum[2] = { '\0' };
 				int tempPos = 0;
-
                 while (ptr > line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {   ptr--;    } // Skip trailing whitespace
 				//get last allele in line decrementing pointer until we find a valid allele or hit the start of the line
                 while (ptr > line.c_str() && (*ptr != 'A' && *ptr != 'C' && *ptr != 'G' && *ptr != 'T' && *ptr != 'D' && *ptr != 'I' && *ptr != '-' && *ptr != '0')) {  ptr--;  }
@@ -1555,9 +1555,12 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             if (i != end_index_ - 1) {
                 snpM[i] = snpM[end_index_ - 1];
             }
+
             end_index_--;
 
-            if (allchecked_ > (unsigned int)1250 && ((allchecked_ >> 2) < failcheck_)) {
+            //checks for two many diffenreces in the values of matching RSIDs
+            if (missmatchchk_ > (unsigned int)1250 && ((missmatchchk_ >> 2) < failcheck_)) 
+            { 
                 abortMerge_ = true;
             }
 

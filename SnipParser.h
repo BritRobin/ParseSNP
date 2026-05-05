@@ -95,6 +95,7 @@ private:
 	//more defensive code for invalid files
 	unsigned int end_index_		= 0;
 	unsigned int allchecked_	= 0;
+	unsigned int missmatchchk_	= 0;
 	unsigned int failcheck_		= 0;
 	unsigned int merged_        = 0;
 	unsigned int origloadcount_ = 0;
