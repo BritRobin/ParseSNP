@@ -543,12 +543,12 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 //  WM_COMMAND  - process the application menu
 //  WM_PAINT    - Paint the main window
 //  WM_DESTROY  - post a quit message and return
-//
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-         // other commands
+    // other commands
     case WM_COMMAND:
     {// START : WM_COMMAND switch case :
       int wmId = LOWORD(wParam);
@@ -894,6 +894,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
         }
         //Set the default source folder to Documents root as a standard documents folder.
+        case ID_FILE_OPENGENESFORGOODTXTFILE: //Genes for Good uses the same format as 23andMe
         case ID_OPEN23: //almost idenitcal format same code handles both
         {
             HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
