@@ -338,3 +338,11 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# Additional project-specific clutter
+Output-*.txt
+*.ixx
+*.mfcribbon-ms
+CppProperties.json
+bitmap1.bmp
+RCa*
