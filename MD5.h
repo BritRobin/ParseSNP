@@ -87,6 +87,10 @@ private:
         unsigned char buffer[64];                         /* input buffer */
     } context;
 
+    // This version of the digest is actually
+    // a "printf'd" version of the digest.
+    char digestChars[48]; //made private 5/9/2026
+
 #pragma region static helper functions
     // The core of the MD5 algorithm is here.
     // MD5 basic transformation. Transforms state based on block.
@@ -302,11 +306,7 @@ public:
 
 public:
     // an MD5 digest is a 16-byte number (32 hex digits)
-    BYTE digestRaw[20];
-
-    // This version of the digest is actually
-    // a "printf'd" version of the digest.
-    char digestChars[48];
+    BYTE digestRaw[16]; //set exactly 16 to prevent confusion 5/9/2026
 
     /// Load a file from disk and digest it
     // Digests a file and returns the result.
@@ -318,9 +318,10 @@ public:
         errno_t err;
         int len;
         unsigned char buffer[1024];
-        if ((err = fopen_s(&file, filename, "rb")) != 0) {
-               fprintf_s(stderr, "cannot open file '%s'\n",
-                filename);
+        if ((err = fopen_s(&file, filename, "rb")) != 0)
+        {
+           fprintf_s(stderr, "cannot open file '%s'\n", filename);
+           return nullptr; //without this the function then returns digestChars, which still contains the previous digest (or uninitialized data). fix 5/9/2026
         }
         //fixed for safe functions    
        // if ((file = fopen(filename, "rb")) == NULL)
