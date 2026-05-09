@@ -522,7 +522,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                             fdind++; //Get second chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
-                            fdind++;
+                            fdind++; 
                             fdind++; //Skip Alpha char
                         }
                         while (isdigit((int)nbuffer[fdind]) && fdind < 24)
@@ -726,7 +726,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = '\0';
-
+                    rdindex += fdind;//ftdna-illumina
                     if (nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's')
                     {
                         while (isdigit((unsigned char)nbuffer[rdindex]) && rdindex < _countof(nbuffer) && nmindex < _countof(num) - 1)
@@ -752,7 +752,7 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                             fdind++; //Get second chromosome digit
                             num[nmindex] = nbuffer[fdind];
                             nmindex++;
-                            fdind++;
+                            fdind++; 
                             fdind++; //Skip Alpha char
                         }
                         while (isdigit((int)nbuffer[fdind]) && fdind < 24)

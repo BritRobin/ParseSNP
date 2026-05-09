@@ -50,7 +50,7 @@ public:
 	float GetMissing() const { return missing_beta_; } //return the max for Missing data!
 	double GetCombinedOR() const { return std::exp(total_beta_); } //Changed to double to avoid overflow
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio);
-	// Conservative buffer size
+	// Conservative buffer size change for future code beyond this program?
 	static const int DNA_SNP_BUFFER_SIZE = 1600000;
 	//Error code
 	unsigned int errorCode_ = 0;
