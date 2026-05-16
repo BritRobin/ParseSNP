@@ -159,7 +159,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Module.ixx" />
     <ClCompile Include="ParseSNP.cpp" />
     <ClCompile Include="SnipParser.cpp" />
   </ItemGroup>
@@ -168,14 +167,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\Desktop\SNPedia_logo.bmp" />
-    <Image Include="bitmap1.bmp" />
     <Image Include="ParseSNP.ico" />
-    <Image Include="small.ico" />
     <Image Include="SNPedia_logo.bmp" />
     <Image Include="SNPedia_logoDeActivated.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="RibbonFile.mfcribbon-ms" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

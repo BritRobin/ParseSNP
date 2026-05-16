@@ -448,7 +448,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             fs.seekg(0, std::ios::end);
             std::streampos size = fs.tellg();
             fs.seekg(0, std::ios::beg);  // Reset to beginning
-
+            // Detect 0 byte files
             if (size == 0)
             {
                 errorCode_ = 4;  // Empty file error
@@ -716,13 +716,14 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                 vercheck = nbuffer;
                 //Merge code
                 rdindex = 2;  //shadow declaration 4/4/2026
+              
                 if (nbuffer[fdind] == '\"') fdind++; //ftdna-illumina
                 //GET RS Number numeric part only 
 
                 if (((nbuffer[fdind] == 'r' && nbuffer[fdind + 1] == 's') || (nbuffer[fdind] == 'V' && nbuffer[fdind + 1] == 'G')) && isdigit((int)nbuffer[fdind + 2]))
                 {//ftdna-illumina
-                    int ftdna = 0;
                     char num[25];
+                    int  ftdna   = 0;
                     int  nmindex = 0;
                     loopbreak = 0;
                     num[0] = '\0';
@@ -738,7 +739,6 @@ bool  SnipParser::MergeFTDNA(wchar_t* fi_)
                         num[nmindex] = '\0';
                         //First in the line is the RS number
                         rst = atoi(num);
-
                     }
                     else
                     {

@@ -163,12 +163,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     int x = (screenWidth - width) / 2;
     int y = (screenHeight - height) / 2;
 
-    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
+
+    // Use a fixed window style: no resizing border
+    DWORD dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;        //Fixed release 1.1.1 5/16/2026
+    // If you still want a Maximize button (but the window won't be resizable),
+    // add WS_MAXIMIZEBOX. Maximize will fill the screen but edges won't be draggable.
+    // dwStyle |= WS_MAXIMIZEBOX;
+
+    HWND hWnd = CreateWindowW(szWindowClass, szTitle, dwStyle, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
+
+   // HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x, y, width, height, nullptr, nullptr, hInstance, nullptr);
 
     if (!hWnd)
     {
         return FALSE;
     }
+
     ghWnd = hWnd;
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
@@ -3016,7 +3026,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
          }
         case IDC_STATIC_LNK: {
-            if ((INT_PTR)ShellExecute(NULL, TEXT("open"), TEXT("https://github.com/BritRobin/ParseSNP"), NULL, NULL, SW_SHOWNORMAL) <= 32) return (INT_PTR)FALSE;/* error */
+            if ((INT_PTR)ShellExecute(NULL, TEXT("open"), TEXT("https://britrobin.github.io/ParseSNP/"), NULL, NULL, SW_SHOWNORMAL) <= 32) return (INT_PTR)FALSE;/* error */
             else return (INT_PTR)TRUE;
          }
         }

@@ -41,9 +41,6 @@
     <ClCompile Include="SnipParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Module.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ParseSNP.rc">
@@ -51,13 +48,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="ParseSNP.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="bitmap1.bmp">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\..\..\..\Desktop\SNPedia_logo.bmp">
@@ -69,10 +60,5 @@
     <Image Include="SNPedia_logoDeActivated.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="RibbonFile.mfcribbon-ms">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>
