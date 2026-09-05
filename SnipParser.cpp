@@ -17,7 +17,34 @@
  */
 
 #include "SnipParser.h"
-//#include <atomic> //Redundant 5/2/2026
+
+/*Calculate build number*/
+std::string SnipParser::DetectBuildFromSNPs() {
+    int grch37_matches = 0;
+    int grch38_matches = 0;
+
+    for (const auto& marker : markers) {
+        for (unsigned int i = 0; i < loadCount_; i++) {
+            if (snp[i].rs == marker.rsid) {
+                if (snp[i].pos == marker.pos_grch37) grch37_matches++;
+                if (snp[i].pos == marker.pos_grch38) grch38_matches++;
+                break;
+            }
+        }
+    }
+
+    if (grch38_matches > grch37_matches) return "38";
+    if (grch37_matches > grch38_matches) return "37";
+    return "";
+}
+
+std::string SnipParser::NCBIBuild(void) 
+{
+    if (atoi(NCBIBuild_.c_str()) == 0) {
+        NCBIBuild_ = DetectBuildFromSNPs();
+    }
+    return NCBIBuild_; 
+} //return the NCBI Build the file was based on gives position a referance as well as being a clue to the age of the files contents 
 
 
 // Use 'variant::index' to know the type strored in variant (zero-based index). 
@@ -28,8 +55,10 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
     std::fstream  fs;
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
-        int loopbreak = 0;
+        int loopbreak   = 0;
         int noreadcount = 0;
+        int X_error     = 0;
+
 		//RE-INIT loadCount_ !!!!!! 3/21/2026 - was missing in original code and caused merge issues as loadcount_ was not reset on new file load!
 		loadCount_ = 0;
         //RE-INIT loadCount_ !!!!!! 3/21/2026 - was missing in original code and caused merge issues as loadcount_ was not reset on new file load!
@@ -57,6 +86,7 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
             snp.resize(DNA_SNP_BUFFER_SIZE);
             //END: reset loadcount_ and vector for next file for next file
 			wcscpy_s(fileLoaded_, _countof(fileLoaded_), fi_); //store latest filename. Fixed for correct defined usage 1/24/2026
+            sex_ = 'M'; //changes to female for any a != b X reads 
             while (fs.getline(nbuffer, READ_LIMIT)) //read a line into a temporary buffer
             {   //More parser hardening
                 if (fs.fail() && !fs.eof())
@@ -158,39 +188,11 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                     }
                     //Is Char
                     snp[inx].b = nbuffer[rdindex];
-                    //Determine Sex
-                    if ((snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4') && snp[inx].a == '0' && snp[inx].b == '0')
-                    {
-                        noreadcount++;
+                    int pos = snp[inx].pos;
+                    if ((pos > 2699520 && pos < 154931044) &&  snp[inx].ch[0] == '2' && snp[inx].ch[1] == '3' && snp[inx].a != snp[inx].b) { //ancestry dropped 'Y' 24  too fixed in 1.2
+                        X_error++;
+                        if(X_error > 100) sex_ = 'F'; //allow for array max error in a real file I had 35 non PAR heterozgous X values
                     }
-                    if (noY == true && (snp[inx].ch[0] == '2' && snp[inx].ch[1] == '4'))
-                    {
-                        noY = false;
-                    }
-                    // SEX DETERMINATION LOGIC FOR ANCESTRYDNA FILES:
-                    // ==============================================
-                    // AncestryDNA files use special chromosome numbering:
-                    // - 23 = X chromosome
-                    // - 24 = Y chromosome  
-                    // - 25 = PAR region
-                    // - 26 = mtDNA
-                    //
-                    // Files are structured in ascending chromosome order, so:
-                    // 1. If NO "24" entries appear => definitely FEMALE (no Y chromosome data)
-                    // 2. If "24" entries exist but show '0'/'0' (no reads) => FEMALE
-                    //    (Female samples still get Y positions in array but with null alleles)
-                    // 3. If "24" entries exist with actual nucleotide alleles => MALE
-                    //
-                    // The `noreadcount > 15` check is a redundancy for robustness:
-                    // - In theory, checking `noY` alone should suffice
-                     // - In practice, it catches edge cases (corrupt files, mixed data)
-                    // - 15 was chosen empirically as a safe threshold [But can be altered in the header file.
-                    //
-                    // ALTERNATIVE SIMPLIFIED LOGIC (equally valid):
-                    // sex_ = (noY == true) ? 'F' : 'M';
-                    // ==============================================
-					if (noY == true || noreadcount > Y_CHROMOSOME_NO_READ_THRESHOLD) sex_ = 'F'; //3/12/2026 - evaluation logic updated
-                    else sex_ = 'M';
                     //Determine Sex
                     //increment the primary index
                     inx++;
@@ -204,8 +206,10 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
                         if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
                         {
                             int searchEnd = (indx + 12 < READ_LIMIT) ? (indx + 12) : (READ_LIMIT - 1);  // Don't exceed buffer 1/17/2026
+                            if (nbuffer[indx + 4] == ' ') indx++; //Allow for a space needed for 23toMe sanity otherwise
                             for (int i = indx + 4; i <= searchEnd - 2; i++)  // Need space for i and i+1
                             {
+
                                 if (isdigit((unsigned char)nbuffer[i]) && isdigit((unsigned char)nbuffer[i + 1])) //Logic Bug fix check BOTH chars are digits!
                                 {
                                     char sub[3] = { nbuffer[i], nbuffer[i + 1], '\0' };
@@ -238,7 +242,9 @@ bool  SnipParser::Ancestory(wchar_t* fi_)
 			  errorCode_ = 1;//File not found or could not be opened.
               return false;
              }
+
     }
+
 
     return true;
 };
@@ -440,6 +446,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
         errorCode_ = 0; //Reset Error Code
+        int X_error = 0; //error margin for X in males
         //Open file for read 
         fs.open(fi_, std::ios::in);
         //Check file was opened  
@@ -460,7 +467,7 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
             int fdind = 0; //ftdna-illumina
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
-            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+            sex_ = 'M'; //Set sex to male will change to Female is X  is found!
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
@@ -562,9 +569,9 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                         strcpy_s(snp[inx].ch, sizeof(snp[inx].ch), num);//Safe from overflow 4/11/2026
                     }
                     else {
-                            snp[inx].ch[0] = nbuffer[rdindex]; //X & Y sinle char so why waste a strcpy call!
-                            if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia cass fix
-                            if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia cass fix
+                            snp[inx].ch[0] = nbuffer[rdindex]; //X & Y single char so why waste a strcpy call!
+                            if (snp[inx].ch[0] == 'x') snp[inx].ch[0] = 'X'; //paranoia case fix
+                            if (snp[inx].ch[0] == 'y') snp[inx].ch[0] = 'Y'; //paranoia case fix
                             snp[inx].ch[1] = '\0';
                          }
 
@@ -619,8 +626,10 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
                     if (snp[inx].b == '-') snp[inx].b = '0';
                     //increment the primary index
                      //Move Sex check here
-                    if (snp[inx].ch[0] == 'Y' && snp[inx].a != '0') {
-                        sex_ = 'M';
+                    int pos = snp[inx].pos;
+                    if ((pos > 2699520 && pos < 154931044) && snp[inx].ch[0] == 'X' && snp[inx].a != snp[inx].b) { //Version 1.2.0 fixed for companies omitting Y chromosone!
+                        X_error++;
+                        if (X_error > 100) sex_ = 'F'; //allow for array max error 
                     }
                     inx++;
                     if (inx >= DNA_SNP_BUFFER_SIZE)
@@ -635,7 +644,28 @@ bool  SnipParser::FTDNA(wchar_t* fi_)
 
                 }
                 } //FTDNA do not ref NCBI build
-                loopbreak++;
+                else {
+                        for (int indx = 0; indx < (READ_LIMIT - 3); indx++) //fixed for read past end of buffer 5/2/2026
+                        {
+                        if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
+                         {
+                            int searchEnd = (indx + 12 < READ_LIMIT) ? (indx + 12) : (READ_LIMIT - 1);  // Don't exceed buffer 1/17/2026
+                            if (nbuffer[indx + 4] == ' ') indx++; //Allow for a space needed for 23toMe sanity otherwise
+                            for (int i = indx + 3; i < searchEnd; i++)
+                            {
+                                if (isdigit((int)nbuffer[i]))
+                                {
+                                    char sub[3] = "";
+                                    sub[0] = nbuffer[i];
+                                    sub[1] = nbuffer[i + 1];
+                                    sub[2] = '\0';
+                                    NCBIBuild_ = sub;
+                                    break;
+                                }
+                            }
+                         }
+                    }
+                }
                 if (loopbreak == INVALID_LINE_LIMIT)
                 {
                     fs.close();//be sure to close the open filestream
@@ -897,6 +927,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
     {
         char nbuffer[TOTAL_BUFFER_SIZE];
         int loopbreak = 0;
+        int X_error = 0;
         bool singleAllele = false;
         errorCode_ = 0; //Reset Error Code
         //Open file for read 
@@ -919,7 +950,7 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
             int inx = 0;
             //START: reset loadcount_ and vector for next file for next file
             loadCount_ = 0;
-            sex_ = 'F'; //Set sex to female will change if 'Y' is found!
+            sex_ = 'M'; //Set to Male scan X chromosone for no Homozygous enteries outsit PAR1/2 to set 'F'
             //Illumina unloaded count
             illuminaU_ = illuminaT_ = 0; //Reset Transaled / Untransalated counts
             snp.clear();
@@ -1085,8 +1116,10 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             if (snp[inx].b == '-') snp[inx].b = '0';
                         }
                         //Move Sex check here
-                        if (snp[inx].ch[0] == 'Y' && snp[inx].a != '0') {
-                            sex_ = 'M';
+                        int pos = snp[inx].pos; // 23andMe does sequence for 2 alleles in X PAR zones and single Allele otherwise in Males! Doesn't sequence X
+                        if ((pos > 2699520 && pos < 154931044) && snp[inx].ch[0] == 'X' && snp[inx].b!=NULL && snp[inx].a != snp[inx].b) { //Version 1.2.0 fixed for companies omitting Y chromosone!
+                            X_error++;
+                            if (X_error > 100) sex_ = 'F'; //allow for array max error 
                         }
                         //increment the primary index
                         inx++;
@@ -1107,6 +1140,29 @@ bool  SnipParser::f23andMe(wchar_t* fi_)
                             return false;
                         }
 
+                    }
+                }
+                else {
+                       for (int indx = 0; indx < (READ_LIMIT - 3); indx++) //fixed for read past end of buffer 5/2/2026
+                        {
+                        if ((nbuffer[indx] == 'U' && nbuffer[indx + 1] == 'I' && nbuffer[indx + 2] == 'L' && nbuffer[indx + 3] == 'D') || (nbuffer[indx] == 'u' && nbuffer[indx + 1] == 'i' && nbuffer[indx + 2] == 'l' && nbuffer[indx + 3] == 'd'))
+                        {
+                            int searchEnd = (indx + 12 < READ_LIMIT) ? (indx + 12) : (READ_LIMIT - 1);  // Don't exceed buffer 1/17/2026
+                            if (nbuffer[indx + 4] == ' ') indx++; //Allow for a space needed for 23toMe sanity 
+
+                            for (int i = indx + 3; i < indx + 12; i++) 
+                            {
+                                if (isdigit((int)nbuffer[i]))
+                                {
+                                    char sub[3] = "";
+                                    sub[0] = nbuffer[i];
+                                    sub[1] = nbuffer[i + 1];
+                                    sub[2] = '\0';
+                                    NCBIBuild_ = sub;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 //does not ref ncbi build

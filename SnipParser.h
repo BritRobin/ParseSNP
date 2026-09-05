@@ -17,7 +17,6 @@ struct SM;
 struct ST;
 class SnipParser
 {
-
 public:
 	std::string fi_ = "";
 	bool Ancestory(wchar_t* fi_);
@@ -39,14 +38,15 @@ public:
 	std::string errorInfo(unsigned int error); //return error message for error code
 	std::string PVer(void) const { return  Pversion_; } //return version number
 	std::string PAbout(void) const { return PAbouttxt_; } //return program/class about info
-	std::string NCBIBuild(void) const {	return NCBIBuild_; } //return the NCBI Build the file was based on gives position a referance as well as being a clue to the age of the files contents 
+	std::string DetectBuildFromSNPs(void); //Find the build number from offsets
+	std::string NCBIBuild(void); //Define here added code to the fuction to ensure a value is found or we have tried!!!
 	//New OR code more acurate more contained in the class
 	// NEW getters for beta values //rewrite 4/19/2026
 	void ResetRisk() { total_beta_ = 0.0f; max_beta_ = 0.0f; missing_beta_ = 0.0f; }
 	float GetTotalBeta(void) const { return total_beta_; }
 	float GetMaxBeta(void) const { return max_beta_; }
 	float GetMaxPossibleOR() const { return exp(max_beta_); }
-	float GetPercentile() const { return (max_beta_ > 0.0f) ? (total_beta_ / max_beta_) * 100.0f : 0.0f;	}//Add bounds check 4/20/2026 
+	float GetPercentile() const { return (max_beta_ > 0.0f) ? (total_beta_ / max_beta_) * 100.0f : 0.0f;}//Add bounds check 4/20/2026 
 	float GetMissing() const { return missing_beta_; } //return the max for Missing data!
 	double GetCombinedOR() const { return std::exp(total_beta_); } //Changed to double to avoid overflow
 	std::string PathogenicCall(int rsid, char riskallele, float oddsratio);
@@ -116,15 +116,38 @@ private:
 	wchar_t fileLoaded_[260] = { '\0' };
 	char sex_				 = '-';
 	std::string NCBIBuild_	 = "";
-	std::string Pversion_	 = "1.1.1 \nfor educational and research purposes only!"; //SET **VERSION** HERE
+	std::string Pversion_	 = "1.2.0 \nfor educational and research purposes only!"; //SET **VERSION** HERE
 	std::string PAbouttxt_	 = "Written by Robin Taylor. 2021 - 2026 \nReleased under GNU GPL v3.0"; //ABOUT INFO
-
+	//Build detection
+	struct BuildMarker {
+		int rsid;
+		int pos_grch37; // hg19
+		int pos_grch38; // hg38
+	};
 	unsigned int illuminaU_  = 0;
 	unsigned int illuminaT_  = 0;
 	int FTDNADecode(std::string code);
 	int f23andMeDecode(std::string code);
 	void initMergeCopy(void);
 	void revertMerge(void);
+	//set of test values for NCBI build 37 vs 38 Offset differnces  {rsid,37offset,38offset}
+	const BuildMarker markers[16] = {/* Add more markers with known shifts mainly chr 17*/
+	{ 12184267, 715265, 779885 },
+	{ 4575098,161155392,161185602 },
+	{ 9303281,38074046,39917793 },
+	{ 7219923,38074518,39918265 },
+	{ 12603332,38082807,39926554 },
+	{ 3744246,38084350,39928097 },
+	{ 4795405,38088417,39932164 },
+	{ 4794820,38089344,39933091 },
+	{ 8079416,38092713,39936460 },
+	{ 9907088,38035116,39878863 },
+	{ 12452894,38036586,39880333 },
+	{ 12232497,38040119,39880333 },
+	{ 9901146,38043343,39883866 },
+	{ 12950743,38049233, 39892980 },
+	{ 7359623,38049589,39893336 },
+	{ 8067378,38051348,39895095 }
+	};
 };
-
 #endif

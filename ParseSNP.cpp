@@ -936,7 +936,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };
                         //set file type options
@@ -1052,7 +1052,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };
                         //set file type options
@@ -1163,7 +1163,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             LPCWSTR b = L"All Files";
                             COMDLG_FILTERSPEC rgSpec[] =
                             {
-                                {a, L"*.txt" },
+                                {a, L"*.txt;*.csv" },
                                 {b, L"*.*" },
                             };
                             //set file type options
@@ -1260,7 +1260,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };
                         //set file type options
@@ -1352,7 +1352,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };
                         //set file type options
@@ -1450,7 +1450,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                      LPCWSTR b = L"All Files";
                      COMDLG_FILTERSPEC rgSpec[] =
                      {
-                         {a, L"*.txt" },
+                         {a, L"*.txt;*.csv" },
                          {b, L"*.*" },
                      };
                      //set file type options
@@ -1532,7 +1532,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     hr = pFileWrite->SetFolder(pDefaultFolder);  // Set initial folder to Pathogenics file path 2/21/2026 
                     if (SUCCEEDED(hr))
                     {
-                        COMDLG_FILTERSPEC rgSpec[] = { {L"Text Files", L"*.txt"}, {L"All Files", L"*.*"} };
+                        COMDLG_FILTERSPEC rgSpec[] = { {L"Text Files", L"*.txt;*.csv"}, {L"All Files", L"*.*"} };
                         pFileWrite->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
                         pFileWrite->SetDefaultExtension(L"txt");  // Helpful addition
 
@@ -1601,7 +1601,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };
                         //set file type options
@@ -1780,7 +1780,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         LPCWSTR b = L"All Files";
                         COMDLG_FILTERSPEC rgSpec[] =
                         {
-                            {a, L"*.txt" },
+                            {a, L"*.txt;*.csv" },
                             {b, L"*.*" },
                         };//file spec
                         //set file type options
@@ -2226,7 +2226,7 @@ void ScreenUpdate(HWND hWnd, int unsigned x, PWSTR FilePath, PWSTR build, char s
 {
     if (x > 0)
     {//Data loaded
-        std::string s = std::to_string(x);
+        std::string s = std::to_string(x),bld="";
         USES_CONVERSION_EX;
         LPWSTR lp = A2W_EX(s.c_str(), s.length());
         LPWSTR fp = A2W_EX("Female", 6);
