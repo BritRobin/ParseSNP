@@ -401,14 +401,13 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                 int local_rs_number = 0;
                 HWND plst = GetDlgItem(aDiag, IDC_LIST2);
                 lcount = (int)SendMessage(plst, LB_GETCOUNT, 0, 0);
-                if (lcount > 0 && lcount != -1)//Ensure on left double click there are to lookup
+                if (lcount > 0 && lcount != -1)//Ensure on left double click is data to lookup
                 {
                     TCHAR buffer[MAIN_READ_LIMIT];
                     gselected = SendMessage(plst, LB_GETCURSEL, 0, 0);
                     //get selected text
                     SendMessage(plst, LB_GETTEXT, (WPARAM)gselected, (LPARAM)buffer);
-                    if (buffer[0] == L'R' && buffer[1] == L'S') {
-
+                    if (buffer[0] == L'r' && buffer[1] == L's' && isdigit(buffer[3])) { //Changed Case to match new 1.2 case and added isdigit() for format confirmation
                         //selected is an RS nummber
                         char lookup[16] = { 0 }, lbuffer[16] = { 0 };
 						int cp = 0; //stop juck copy
@@ -741,12 +740,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                     str = A2T(lbuffer);
                                                     // Convert to std::filesystem::path explicitly
                                                     std::filesystem::path filePath(str);
-                                                    if (!std::filesystem::exists(filePath)) {//IF we dont have a stored valid source file exit load 4/18/2026
-                                                        std::string errorMsg;
-                                                        errorMsg = x.errorInfo(4);
-                                                        std::string* errPtr = &errorMsg;  // Get pointer to string
-                                                        DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
-                                                        break;
+                                                    if (!std::filesystem::exists(filePath))
+                                                    {  //IF we dont have a stored valid source file exit load 4/18/2026
+                                                       std::string errorMsg;
+                                                       errorMsg = x.errorInfo(4);
+                                                       std::string* errPtr = &errorMsg;  // Get pointer to string
+                                                       DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILE_ERROR), aDiag, ErrorDialog, (LPARAM)errPtr);
+                                                       break;
                                                     }
                                                     fstrm.getline(lbuffer, 256);//DNA file type to open
                                                     int xsw = atoi(lbuffer);
@@ -2096,7 +2096,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
-     s = "-- Comparison With Loaded SNP Data --";
+     s = "          --- Comparison With Loaded SNP Data ---";
      str2.resize(s.length(), L' ');
      std::copy(s.begin(), s.end(), str2.begin());
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
@@ -2112,16 +2112,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      while (fp->getline(lbuffer, READ_LIMIT))
      {
          int rsid        = 0;
-         int rs_spaces  = 16;
+         int rs_spaces  = 14; // 16
          int gene_space = 16; // max length of two max lenght genes componded with a separtor '/' is 29 but that is too much see 'if' statement
-         char chr[4] = "";//only needs 2 but allways buffer
+         char chr[4] = "";    // only needs 2 but allways buffer
          char temp[255] = "";
          char riskallele = '\0';
          float oddsratio = 0.0;
 
-         s = "";
-
-         for (int i = 0; i <= READ_LIMIT;) {
+         s = ""; 
+             for (int i = 0; i <= READ_LIMIT;) {
              // Parse RSID
              if (lbuffer[i++] == 'R' && lbuffer[i++] == 'S') {
                  char number[MAIN_TOTAL_BUFFER_SIZE];
@@ -2134,7 +2133,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  number[n] = '\0';
                  rsid = atoi(number);
                  //re-write 1.2
-                 s += "rs" + (std::string)number; //rs is always lower case!
+                 s += "rs" + (std::string)number + " "; //rs is always lower case! add the 1 minimum padding space
                  n = rs_spaces - s.length();
                  for (int x = 0; x < n; x++)
                  {
@@ -2154,7 +2153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                    }
              chr[2] = '\0';//Null treminate
              i++;
-             s += (std::string)chr + "  ";
+             s += (std::string)chr + "   ";
              while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++; //skip actual spaces in the loaded file
              int n = 0;
              while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
@@ -2164,7 +2163,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  i++;
              }
              temp[n] = '\0';
-             if (gene_space > n) gene_space -= n; //calculate evet spacing
+             if (gene_space > n) gene_space -= n; //calculate even spacing
              else gene_space = 1; //if we go the max theoretically posible with two max length genes combine xx/yy then we will have massive unneccasery padding so small 'if' protected
              s += (std::string)temp;
              for (int x = 0; x < gene_space; x++)
@@ -2313,13 +2312,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
          SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
          {//Scope contains and destroys stream object better than a reset that could be forgotten
          // Optional: Show log-risk for statistical context at 3 places of decimal for readablitly and sci should be based on medical testing!
-             std::ostringstream s2;
-             s2 << std::fixed << std::setprecision(3) << totalBeta;
-             std::string sbeta = s2.str();
-             std::ostringstream s3;
-             s3 << std::fixed << std::setprecision(3) << maxBeta;
-             std::string betaMax = s3.str(); //(naming old Guy video format joke!)
-             s = "Log-risk score: " + sbeta + " (Range: 0 - " + betaMax + ")";
+          std::ostringstream s2;
+          s2 << std::fixed << std::setprecision(3) << totalBeta;
+          std::string sbeta = s2.str();
+          std::ostringstream s3;
+          s3 << std::fixed << std::setprecision(3) << maxBeta;
+          std::string betaMax = s3.str(); //(naming old Guy video format joke!)
+          s = "Log-risk score: " + sbeta + " (Range: 0 - " + betaMax + ")";
          }//Scope contains and destroys stream object better than a reset that could be forgotten
          str2.resize(s.length(), L' ');
          std::copy(s.begin(), s.end(), str2.begin());
