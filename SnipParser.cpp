@@ -1921,7 +1921,7 @@ std::string SnipParser::PathogenicCall(int rsid, char riskallele, float oddsrati
     // RSID not found
     max_beta_ += beta * copies; //theorical Max Updated at every return
     missing_beta_ += beta * copies; //throeretical maximum for missing data
-    return "RSID not present in your file";
+    return "rsID not present in your file";
 }
 
 int SnipParser::FTDNADecode(std::string code)

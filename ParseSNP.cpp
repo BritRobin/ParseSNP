@@ -154,9 +154,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // Store instance handle in our global variable
 
-    const int width = 1000;
-    const int height = 700;
-
+   /* const int width = 1000;
+      const int height = 700; Version to 1.1.x*/
+    const int width = 1138;
+    const int height = 740;
     // Calculate centered position
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
@@ -262,6 +263,111 @@ INT_PTR CALLBACK FormDlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         }
         return TRUE;
     }
+
+    case WM_CTLCOLORSTATIC:
+    {
+        HDC hdc = (HDC)wParam;
+        HWND hCtrl = (HWND)lParam;
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_BUILD))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_SEX))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_SOURCE))
+        {
+            SetTextColor(hdc, RGB(128, 128, 128));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_COUNT))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+        if (x.IllumTransVG() != 0 || x.IllumUntransVG() != 0)
+        { //Use Colours ONLY in transaltion is needed in OLD files pre-2026
+            if (hCtrl == GetDlgItem(hwnd, IDC_COUNT_TRANS))
+            {
+                SetTextColor(hdc, RGB(0, 128, 0));
+                SetBkColor(hdc, RGB(248, 248, 248));
+                return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+            }
+
+            if (hCtrl == GetDlgItem(hwnd, IDC_COUNT_TRANS2))
+            {
+                SetTextColor(hdc, RGB(128, 0, 0));
+                SetBkColor(hdc, RGB(248, 248, 248));
+                return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+            }
+        }
+        else {
+              //Not used then greyed out
+                if (hCtrl == GetDlgItem(hwnd, IDC_COUNT_TRANS))
+                {
+                    SetTextColor(hdc, RGB(128, 128, 128));
+                    SetBkColor(hdc, RGB(248, 248, 248));
+                    return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+                }
+
+                if (hCtrl == GetDlgItem(hwnd, IDC_COUNT_TRANS2))
+                {
+                    SetTextColor(hdc, RGB(128, 128, 128));
+                    SetBkColor(hdc, RGB(248, 248, 248));
+                    return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+                }
+
+              }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_EDIT_ALLES1))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_AllELE2))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_EDIT_POSIT))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_EDIT_CHRNUM))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        if (hCtrl == GetDlgItem(hwnd, IDC_EDIT1))
+        {
+            SetTextColor(hdc, RGB(0, 0, 180));
+            SetBkColor(hdc, RGB(248, 248, 248));
+            return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
+        }
+
+        break;  // let Windows handle the rest
+    }
+
     case WM_COMMAND:
     {
         switch (LOWORD(wParam))
@@ -660,7 +766,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                                                             strx = x.NCBIBuild();
                                                             CA2CT pszConvertedAnsiString(strx.c_str());
                                                             HWND plst = GetDlgItem(aDiag, IDC_LIST2);
-                                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR pathy listbox
+                                                            SendMessage(plst, LB_RESETCONTENT, NULL, NULL);//CLR path listbox
                                                             // New code Beta 0.2
                                                             g_SourceFilePath = str;
                                                             loadedFiletype = 1;
@@ -1927,19 +2033,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
  }
 
- bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite 4/19/2026
+ bool ProcessPpiFile(HWND aDiag, std::fstream* fp, const char* utf8Path)//rewrite 9/19/2026 - ver. 1.2
  {
      //reset display area
      HWND plst = GetDlgItem(aDiag, IDC_LIST2);
      constexpr int TOTAL_BUFFER_SIZE = MAIN_TOTAL_BUFFER_SIZE;
      constexpr int READ_LIMIT = MAIN_READ_LIMIT;
      constexpr int PROCESS_LIMIT = 255;
-     const int GENE_PADDING = 8;
+     const int GENE_PADDING = 18;//Gene legnth to pad out! More in 1.2
      const int SHORT_ODDS_THRESHOLD = 4;
      bool ORPresent = true;
      int ORGood = 0;
      int ORBad  = 0;
-     int PaddingSpaces = 0;
+
 
      char lbuffer[TOTAL_BUFFER_SIZE] = { 0 };
      char filename[TOTAL_BUFFER_SIZE] = { 0 };
@@ -2005,10 +2111,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      // Process each line
      while (fp->getline(lbuffer, READ_LIMIT))
      {
-         int rsid = 0;
+         int rsid        = 0;
+         int rs_spaces  = 16;
+         int gene_space = 16; // max length of two max lenght genes componded with a separtor '/' is 29 but that is too much see 'if' statement
+         char chr[4] = "";//only needs 2 but allways buffer
+         char temp[255] = "";
          char riskallele = '\0';
          float oddsratio = 0.0;
-         PaddingSpaces = 0;
+
+         s = "";
 
          for (int i = 0; i <= READ_LIMIT;) {
              // Parse RSID
@@ -2022,39 +2133,68 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  }
                  number[n] = '\0';
                  rsid = atoi(number);
+                 //re-write 1.2
+                 s += "rs" + (std::string)number; //rs is always lower case!
+                 n = rs_spaces - s.length();
+                 for (int x = 0; x < n; x++)
+                 {
+                     s += " "; //add padding
+                 }
+
              }
 
              // Skip spaces to chromosome
              while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
-             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
-             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++;
-
-             // Skip gene name
-             int c = i;
-             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT) i++;
-             int x = (i - c);
-             int genePadding = GENE_PADDING - x;
-             if (genePadding > 0) PaddingSpaces = PaddingSpaces + genePadding;
-             else PaddingSpaces = PaddingSpaces + 1;
-
-             // Skip to risk allele space and left braket
+             chr[0] = lbuffer[i];
+             i++;
+             if (lbuffer[i] != ' ') chr[1] = lbuffer[i];
+             else { //Numeric allignemnt  
+                    chr[1] = chr[0]; //so 0-9 always line up in the Ones column
+                    chr[0] = ' ';    //space in the tens column 
+                   }
+             chr[2] = '\0';//Null treminate
+             i++;
+             s += (std::string)chr + "  ";
+             while (lbuffer[i] == ' ' && i < PROCESS_LIMIT) i++; //skip actual spaces in the loaded file
+             int n = 0;
+             while (lbuffer[i] != ' ' && i < PROCESS_LIMIT)
+             {
+                 temp[n] = lbuffer[i];
+                 n++;
+                 i++;
+             }
+             temp[n] = '\0';
+             if (gene_space > n) gene_space -= n; //calculate evet spacing
+             else gene_space = 1; //if we go the max theoretically posible with two max length genes combine xx/yy then we will have massive unneccasery padding so small 'if' protected
+             s += (std::string)temp;
+             for (int x = 0; x < gene_space; x++)
+             {
+                 s += " ";
+             }
+             
+             // Skip to risk allele space and left bracket
              while ((lbuffer[i] == ' ' || lbuffer[i] == '[') && i < PROCESS_LIMIT) i++;
+
              //Get risk Allele
              riskallele = lbuffer[i];
              i++;
-             // Skip to risk allele space and right braket
+
+             // Skip to risk allele space and right bracket
              while ((lbuffer[i] == ' ' || lbuffer[i] == ']') && i < PROCESS_LIMIT) i++;
+
+             s += std::string("[") + riskallele + ']' + "   "; //continue to constructed formated string without the 1st strng consructor in evluats char as small 8 bit int!;
 
              // Parse odds ratio (the basis of our predictive statistics if it's isn't there we need to skip that output!
              {
-                 char number[MAIN_TOTAL_BUFFER_SIZE];
                  int n = 0;
-                 while (i < PROCESS_LIMIT && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
+                 char number[16] = "";
+                 
+                 while (i < PROCESS_LIMIT && n < sizeof(number) && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
                      number[n] = lbuffer[i];
                      i++;
                      n++;
                  }
-                 if (n < SHORT_ODDS_THRESHOLD && PaddingSpaces > 1) PaddingSpaces++;
+
                  number[n] = '\0';
                  if (strlen(number) > 0) oddsratio = atof(number);
                  //This logic is in case someone took a study with OR numbers then add 1 or more RSIDs and Risk Alleles with no Odds Ratio
@@ -2063,23 +2203,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  else ORBad++;
              }
 
-             while (lbuffer[i] != '\0' && i < PROCESS_LIMIT) i++;
-             break;
+             break;//DONE!
          }
 
          if (rsid > 0) {
              std::string ret_result = x.PathogenicCall(rsid, riskallele, oddsratio);
 
-             // Visual alignment
-             if (ret_result == "RSID not present in your file" ||
-                 ret_result == "No data for this SNP (0/0)") {
-                 PaddingSpaces++;
-             }
-
-             s = lbuffer;
-             for (int i = 0; i < PaddingSpaces; i++) {
-                 s += " ";
-             }
              s += ret_result;
 
              str2.resize(s.length(), L' ');
@@ -3630,7 +3759,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             std::string s;
             s = s_rsid + "  " + s_chr + "  " + s_gene + "  " + s_riskallele + "  " + s_oddsratio;
             std::wstring str2(s.length(), L' '); // Make room for characters
-            int lcount, lindex = -1;
+            int lcount = 0, lindex = -1;
 
             // Copy string to wstring.
             std::copy(s.begin(), s.end(), str2.begin());
@@ -3646,7 +3775,7 @@ INT_PTR CALLBACK Pathogen(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             SetWindowTextW(GetDlgItem(hDlg, IDC_EDIT_CHRNUM), lp);
             SetWindowTextW(GetDlgItem(hDlg, IDC_RSIDP), lp);
         }
-                      break;
+        break;
         case IDC_LIST1:
         {
             switch (HIWORD(wParam))

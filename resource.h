@@ -28,6 +28,7 @@
 #define IDC_STATIC_RESULT               1005
 #define IDC_EDIT_CHRNUM                 1006
 #define IDC_EDIT1                       1007
+#define IDC_STATIC_RESULT2              1008
 #define IDC_EDIT_POSIT                  1009
 #define IDC_EDIT_ALLES1                 1010
 #define IDC_AllELE2                     1011
@@ -41,6 +42,7 @@
 #define IDC_COUNT_TRANS                 1019
 #define IDC_STATIC_TRANS2               1020
 #define IDC_COUNT_TRANS2                1021
+#define IDC_STEXT2                      1022
 #define IDC_LIST2                       1028
 #define IDC_LIST3                       1029
 #define IDC_ProjectNm                   1029
