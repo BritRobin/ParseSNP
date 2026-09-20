@@ -2189,7 +2189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                  int n = 0;
                  char number[16] = "";
                  
-                 while (i < PROCESS_LIMIT && n < sizeof(number) && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
+                 while (i < PROCESS_LIMIT && n < (sizeof(number) -1) && lbuffer[i] != '\0' && (isdigit((unsigned char)lbuffer[i]) || lbuffer[i] == '.')) {
                      number[n] = lbuffer[i];
                      i++;
                      n++;
