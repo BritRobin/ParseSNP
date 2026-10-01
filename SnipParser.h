@@ -29,8 +29,12 @@ public:
 	wchar_t sex(void) const { return sex_; } //return sex as determined by XX or XY chromosones the sequences won't give data for non-typical cases
 	unsigned int IllumTransVG(void) const {	return illuminaT_;	} //Return the number of translated VG codes
 	unsigned int IllumUntransVG(void) const	{ return illuminaU_; } //Return the number of untranslated VG codes
-	int SNPCount(void) const { return loadCount_; } //return the number of lines loaded
+	unsigned int SNPCount(void) const { return loadCount_; } //return the number of lines loaded
 	unsigned int merged(void) const { return merged_; }
+	unsigned int merge_mismatch_errors(void) { return mismatch_rsids_; } //returns the file disaggrement from squencing errors
+	unsigned int matchedrsIDs(void) { return matchcount_; } //return the times a rsID in one file matches the rsID in the other!
+	// Returns the number of RSIDs present in BOTH files (regardless of allele agreement).
+	// For the count of allele disagreements, see merge_mismatch_errors().
 	bool mergeRs(int code, const std::string& line);	
 	bool RsSearch(int* rs, char* chr1, char* chr2,  char* chr3,  char* chr4, int* pos, char* a, char* b);
 	bool MergeState(void) const { return abortMerge_; } //returns if merge failed
@@ -93,14 +97,15 @@ private:
 	static constexpr unsigned int INVALID_LINE_LIMIT			 = 2000;
 	static constexpr unsigned int BUFFER_SIZE					 = 260;
 	//more defensive code for invalid files
-	unsigned int end_index_		= 0;
-	unsigned int allchecked_	= 0;
-	unsigned int missmatchchk_	= 0;
-	unsigned int failcheck_		= 0;
-	unsigned int merged_        = 0;
-	unsigned int origloadcount_ = 0;
-	unsigned int mergefile_     = 0;
-	unsigned int loadCount_     = 0;
+	unsigned int end_index_		 = 0;
+	unsigned int allchecked_	 = 0;
+	unsigned int matchcount_	 = 0;
+	unsigned int failcheck_		 = 0;
+	unsigned int merged_         = 0;
+	unsigned int origloadcount_  = 0;
+	unsigned int mergefile_      = 0;
+	unsigned int loadCount_      = 0;
+	unsigned int mismatch_rsids_ = 0;
 	//Pathogenic value // Changed to double in case of float overflow! - 4/20/2026
 	double total_beta_			= 0.0f;		// Sum of log odds
 	double missing_beta_		= 0.0f;		// The Max for Missing or No-read data

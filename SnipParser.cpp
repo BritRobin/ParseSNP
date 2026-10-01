@@ -1424,7 +1424,9 @@ void SnipParser::initMergeCopy(void)
     allchecked_     = 0;
     mergefile_      = 0;
     merged_         = 0;
-    missmatchchk_   = 0;
+    matchcount_     = 0;
+    mismatch_rsids_ = 0;
+
     end_index_ = origloadcount_ = loadCount_;
     abortMerge_ = false;
     //merge variables  MOVED Here 5/5/2026
@@ -1482,15 +1484,43 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
     }
     //Fixed should count all lines processed, (which is not the number of lines in the file due to propiety codes of corrupt lines) Massive bug! 5/5/2026
     allchecked_++;
+
     // SAFETY CHECK 2 - Use < not <=
     for (unsigned int i = 0; i < end_index_; ++i) {
         if (snpM[i].rs == code) //Does the code exist in the original dataset
-        {   /* yes we already have it!
-               FOR BACKWARDS SEARCH
-               Start from end of line */
-            missmatchchk_++;   //I had allchecked_ trying to do two differnt jobs 5-5-2026 ver.1.1.1
+        {   /* yes we already have it!*/
+            // Detect no-read in the merge line (both alleles are 0 or -)
+            bool lineIsNoRead = false;
+            {
+                const char* p = line.c_str() + line.length() - 1;
+                int alleleChars = 0;
+                bool sawRealAllele = false;
+
+                while (p >= line.c_str() && alleleChars < 2) {
+                    if (*p == 'A' || *p == 'C' || *p == 'G' || *p == 'T') {
+                        sawRealAllele = true;
+                        alleleChars++;
+                    }
+                    else if (*p == '0' || *p == '-') {
+                        alleleChars++;
+                    }
+                    p--;
+                }
+
+                lineIsNoRead = !sawRealAllele;
+            }
+
+            if (lineIsNoRead) {
+                return false;   // merge line has no data — not a mismatch
+            }
+            // Detect no-read in the merge line (both alleles are 0 or -)
+            /* FOR BACKWARDS SEARCH Start from end of line */
+            matchcount_++;           //I had allchecked_ trying to do two differnt jobs 5-5-2026 ver.1.1.1
             const char* lineEnd = line.c_str() + line.length();
+            //Local comparision store variables for found values not matched!!
+            char storeA, storeB; //HUGE issue what if the squencers output puts the alleles in a different order!! That is valid and can and may happpen!
             const char* ptr = lineEnd - 1;//point to last char
+            storeA = storeB = '\0'; // Using NULL does not work quite the same I feel it should but it doesn't
             /* REPLACE NO READS! [START]
                Here we don't ADD a new RSid we update a value that was a No Read in the original data.
                Technically we are Adding an RSid as the oringinal entry was a failed read with no Data
@@ -1502,8 +1532,8 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                 char tempB  = '\0';
 				char tnum[2] = { '\0' };
 				int tempPos = 0;
-                while (ptr > line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {   ptr--;    } // Skip trailing whitespace
-				//get last allele in line decrementing pointer until we find a valid allele or hit the start of the line
+                while (ptr > line.c_str() && (*ptr == ' ' || *ptr == ',' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) { ptr--; }// Skip trailing whitespace 1.2 add ',' for csv files
+                //get last allele in line decrementing pointer until we find a valid allele or hit the start of the line
                 while (ptr > line.c_str() && (*ptr != 'A' && *ptr != 'C' && *ptr != 'G' && *ptr != 'T' && *ptr != 'D' && *ptr != 'I' && *ptr != '-' && *ptr != '0')) {  ptr--;  }
 				if (*ptr == '\0' || *ptr == '-' || *ptr == '0') return false;    //if we have noread or found nothing valid return false
 				//assign first hit to tempB but it may be tempA value if there is only one allele in the line
@@ -1561,13 +1591,12 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
             
 
             // ---- NEW: BACKWARDS SEARCH ----
-            // Skip trailing whitespace
-            while (ptr > line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
-                ptr--;
-            }
-
+            while (ptr > line.c_str() && (*ptr == ' ' || *ptr == ',' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) { ptr--; }// Skip trailing whitespace 1.2 add ',' for csv files
             // Check second allele FIRST (it's last in string)
-            bool foundB = false;
+            bool foundB = false; //init inverted pair check B
+            bool foundA = false; //init inverted pair check A
+            bool singleAlleleLine = false; //in the case of X and Y etc
+
             if (snpM[i].b != '-' && snpM[i].b != '0') {
                 // Search backwards for second allele
                 const char* searchPtr = ptr;
@@ -1577,22 +1606,23 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                         ptr = searchPtr - 1;  // Move before found allele
                         break;
                     }
+                    //found a Valid value but not a matching value foundB remains false
+                    if (*searchPtr == 'A' || *searchPtr == 'T' || *searchPtr == 'C' || *searchPtr == 'G' || *searchPtr == 'I' || *searchPtr == 'D') {
+                        storeB = *searchPtr;
+                        ptr = searchPtr - 1;  // Move before found allele
+                        break;
+                    }
                     searchPtr--;
                 }
-                if (!foundB) failcheck_++;
+
             }
-            else {
-                  // No second allele (male X chromosome, etc.)
-                  foundB = true;  // Consider it "found"
-                 }
+            else foundB = true; //NO READ on second allele is posible and so 'A -' is valid  
+           //the issue now is what if there is no B value and the code reads position allele!
 
             // Check first allele (search in remaining part)
-            bool foundA = false;
-            if (foundB || snpM[i].b == '-' || snpM[i].b == '0') {
-                // Skip any whitespace between alleles
-                while (ptr >= line.c_str() && (*ptr == ' ' || *ptr == '\t')) {
-                    ptr--;
-                }
+            if (foundB || storeB != '\0') { //storeB assigned means we found a valid value that does not match
+                
+                while (ptr >= line.c_str() && (*ptr == ' ' || *ptr == '\t' || *ptr == ',')) {  ptr--;  }// SKIP WHITESPACE between alleles - ver. 1.2
 
                 // Search for first allele
                 const char* searchPtr = ptr;
@@ -1601,9 +1631,35 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
                         foundA = true;
                         break;
                     }
+                 //found a Valid value but not a matching value
+                 if (*searchPtr == 'A' || *searchPtr == 'T' || *searchPtr == 'C' || *searchPtr == 'G' || *searchPtr == 'I' || *searchPtr == 'D') {
+                     storeA = *searchPtr;
+                     ptr = searchPtr - 1;  // Move before found allele
+                     break;
+                    }
+                     else 
+                        if(isdigit(*searchPtr)) {  //found position data so there is only on allele
+                                                 foundA = true; //leave foundB == true becuase we have found its value in so much as it it not there
+                                                 singleAlleleLine = true;
+                                                 break; //we hit position alleles are done!!!
+                                                 }
                     searchPtr--;
                 }
-                if (!foundA) failcheck_++;
+                
+                int h = 0;
+                if (storeA == snpM[i].a) h++;
+                if (storeA == snpM[i].b) h++;
+                if (storeB == snpM[i].a) h++;
+                if (storeB == snpM[i].b) h++;
+
+                bool matched = false;
+                if (!singleAlleleLine) matched = (foundA && foundB) || (h == 2);
+                else if (foundA = true and h == 1) matched = true;
+                
+                if (!matched) {
+                    failcheck_++;
+                    mismatch_rsids_++;
+                }
             }
             // ---- END BACKWARDS SEARCH ----
 
@@ -1614,8 +1670,8 @@ bool SnipParser::mergeRs(int code, const std::string& line) {
 
             end_index_--;
 
-            //checks for two many diffenreces in the values of matching RSIDs
-            if (missmatchchk_ > (unsigned int)1250 && ((missmatchchk_ >> 2) < failcheck_)) 
+            //checks for too many diffenreces in the values of matching RSIDs
+            if (matchcount_ > (unsigned int)1250 && ((matchcount_ >> 2) < failcheck_))
             { 
                 abortMerge_ = true;
             }

@@ -76,6 +76,7 @@
 #define IDC_ABTTXT                      1064
 #define IDC_FSERROR                     1065
 #define IDOKFS                          1066
+#define IDC_PERCENTERR                  1067
 #define ID_OPENFILE                     32772
 #define ID_OPEN23                       32774
 #define ID_FILE_OPENFTDNA               32775
@@ -108,7 +109,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        145
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         1067
+#define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

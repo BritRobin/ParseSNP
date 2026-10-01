@@ -2096,7 +2096,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
      SendMessage(plst, LB_ADDSTRING, 0, (LPARAM)global_s);
 
-     s = "          --- Comparison With Loaded SNP Data ---";
+     s = "-- Comparison With Loaded SNP Data --";
      str2.resize(s.length(), L' ');
      std::copy(s.begin(), s.end(), str2.begin());
      wcsncpy_s(global_s, str2.c_str(), PROCESS_LIMIT);
@@ -3006,12 +3006,26 @@ INT_PTR CALLBACK MergeReportmsg(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         std::string sf(ss.str());
         lp = A2W_EX(sf.c_str(), sf.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_EDITTOTAL), lp);
-        mergeTotal += x.merged();
+        mergeTotal += x.merged(); //don't know why I assinged this value!
         std::ostringstream sx;
         sx << x.merged();
         std::string se(sx.str());
         lp = A2W_EX(se.c_str(), se.length());
         if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_MERGED), lp);
+        //Add percentage error reporting to merge
+        std::ostringstream sy;
+        unsigned int count = 0;
+        unsigned int matchtotal = 0;
+        float errorRate = 0.0f;
+        count = x.merge_mismatch_errors();
+        matchtotal = x.matchedrsIDs();
+        if (count > 0) {
+                        errorRate = ((float)count / (float)matchtotal) * 100.0f;
+                        }
+        sy << std::fixed << std::setprecision(2) << errorRate << "%";
+        std::string sr(sy.str());
+        lp = A2W_EX(sr.c_str(), sr.length());
+        if (lp != NULL) SetWindowTextW(GetDlgItem(hDlg, IDC_PERCENTERR), lp);
         DrawMenuBar(ghWnd); //Fix for Parent window Menu Redraw 5/3/2026
         return (INT_PTR)TRUE;
     }
